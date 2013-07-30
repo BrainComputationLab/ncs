@@ -1,0 +1,22 @@
+{
+  "#submodel_0": {
+    "type": "model_import",
+    "location": "submodel.json"
+  },
+  "#submodel_1": {
+    "type": "model_import",
+    "location": "submodel.json"
+  },
+  "#extra_neuron_group": {
+    "type": "neuron_group",
+    "count": 250,
+    "specification": "#submodel_0:izh_parameters"
+  },
+  "#user_name_for_all_neurons": {
+    "type": "neuron_alias",
+    "subgroups": [
+      "#submodel_0:user_name_for_all_neurons",
+      "#submodel_1:user_name_for_all_neurons"
+    ]
+  }
+}

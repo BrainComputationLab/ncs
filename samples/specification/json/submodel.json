@@ -1,0 +1,60 @@
+{
+  "#izh_parameters": {
+    "type": "model_parameters",
+    "model_type": "izhikevich",
+    "a": { "type": "exact", "value": 1.0},
+    "b": { "type": "normal", "mean": 1.0, "std_dev": 0.1},
+    "c": { "type": "exact", "value": 1.0},
+    "d": { "type": "exact", "value": 1.0},
+    "u": { "type": "exact", "value": 1.0},
+    "v": { "type": "exact", "value": 1.0}
+  },
+  "#sphere_generator": {
+    "type": "geometry_generator",
+    "generator_type": "sphere",
+    "radius": { "type": "uniform", "min_value": 0.0, "max_value": 1.0 }
+  },
+  "#neuron_group_0": {
+    "type": "neuron_group",
+    "count": 100,
+    "specification": "#izh_parameters",
+    "geometry": "#sphere_generator"
+  },
+  "#neuron_group_1": {
+    "type": "neuron_group",
+    "count": 100,
+    "specification": "#izh_parameters"
+  },
+  "#user_name_for_group_0": {
+    "type": "neuron_alias",
+    "subgroups": [
+      "#neuron_group_0"
+    ]
+  },
+  "#user_name_for_all_neurons": {
+    "type": "neuron_alias",
+    "subgroups": [
+      "#user_name_for_group_0",
+      "#neuron_group_1"
+    ]
+  },
+  "#flat_parameters": {
+    "type": "model_parameters",
+    "model_type": "flat_synapse",
+    "current": { "type": "uniform", "min_value": -1.0, "max_value": 1.0 },
+    "delay": { "type": "exact", "value": 1.0 }
+  },
+  "#synapse_group_0": {
+    "type": "synapse_group",
+    "probability": 0.5,
+    "presynaptic": "#neuron_group_0",
+    "postsynaptic": "#user_name_for_group_0",
+    "specification": "#flat_parameters"
+  },
+  "#user_name_for_synapses": {
+    "type": "synapse_alias",
+    "subgroups": [
+      "#synapse_group_0"
+    ]
+  }
+}
