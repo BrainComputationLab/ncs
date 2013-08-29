@@ -1,5 +1,7 @@
 #pragma once
+#ifndef SWIG
 #include <vector>
+#endif // SWIG
 
 #include <ncs/spec/NeuronGroup.h>
 

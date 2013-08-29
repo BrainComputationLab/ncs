@@ -23,7 +23,7 @@ public:
 
     @param value The integer value to always generate.
   */
-  ExactInteger(std::int64_t value);
+  ExactInteger(long value);
 
   /**
     Generates an integer.
@@ -31,7 +31,7 @@ public:
     @param rng A random number generator.
     @return A 64-bit integer.
   */
-  virtual std::int64_t generateInt(RNG* rng);
+  virtual long generateInt(RNG* rng);
 
   /**
     Generates a floating point value.
@@ -49,7 +49,7 @@ public:
   virtual const std::string& name() const;
 private:
   // The integer value to always generate.
-  std::int64_t value_;
+  long value_;
 };
 
 /**

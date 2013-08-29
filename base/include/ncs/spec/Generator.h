@@ -37,7 +37,7 @@ public:
     @param rng A random number generator.
     @return A 64-bit integer.
   */
-  virtual std::int64_t generateInt(RNG* rng);
+  virtual long generateInt(RNG* rng);
 
   /**
     Generates a floating point value.

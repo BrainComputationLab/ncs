@@ -22,7 +22,7 @@ public:
   /**
     Generates geometry.
   */
-  virtual Geometry generate(RNG& rng) = 0;
+  virtual Geometry generate(RNG* rng) = 0;
 };
 
 } // namespace spec

@@ -23,6 +23,10 @@ const std::vector<NeuronGroup*>& SynapseGroup::getPostsynapticGroups() const {
   return postsynaptic_neurons_;
 }
 
+ModelParameters* SynapseGroup::getModelParameters() const {
+  return model_parameters_;
+}
+
 double SynapseGroup::getConnectionProbability() const {
   return connection_probability_;
 }
