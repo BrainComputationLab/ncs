@@ -10,7 +10,8 @@
   "#extra_neuron_group": {
     "type": "neuron_group",
     "count": 250,
-    "specification": "#submodel_0:izh_parameters"
+    "specification": "#submodel_0:izh_parameters",
+    "geometry": "#submodel_0:box_generator"
   },
   "#user_name_for_all_neurons": {
     "type": "neuron_alias",

@@ -9,21 +9,24 @@
     "u": { "type": "exact", "value": 1.0},
     "v": { "type": "exact", "value": 1.0}
   },
-  "#sphere_generator": {
+  "#box_generator": {
     "type": "geometry_generator",
-    "generator_type": "sphere",
-    "radius": { "type": "uniform", "min_value": 0.0, "max_value": 1.0 }
+    "generator_type": "box",
+    "x": { "type": "uniform", "min_value": -1.0, "max_value": 1.0 },
+    "y": { "type": "uniform", "min_value": -1.0, "max_value": 1.0 },
+    "z": { "type": "uniform", "min_value": -1.0, "max_value": 1.0 }
   },
   "#neuron_group_0": {
     "type": "neuron_group",
     "count": 100,
     "specification": "#izh_parameters",
-    "geometry": "#sphere_generator"
+    "geometry": "#box_generator"
   },
   "#neuron_group_1": {
     "type": "neuron_group",
     "count": 100,
-    "specification": "#izh_parameters"
+    "specification": "#izh_parameters",
+    "geometry": "#box_generator"
   },
   "#user_name_for_group_0": {
     "type": "neuron_alias",
