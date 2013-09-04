@@ -39,7 +39,7 @@ std::vector<std::string> File::getContents(const std::string& path) {
   struct dirent* result = entry;
   while (0 == readdir_r(directory, entry, &result) && nullptr != result) {
     if (entry->d_type == DT_REG || entry->d_type == DT_REG) {
-      contents.push_back(std::string(entry->d_name));
+      contents.push_back(path + "/" + std::string(entry->d_name));
     }
   }
   free(entry);

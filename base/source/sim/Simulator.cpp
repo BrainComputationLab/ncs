@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <mpi.h>
 #include <queue>
+#include <unistd.h>
 
 #include <ncs/sim/Bit.h>
 #include <ncs/sim/ClusterDescription.h>
@@ -96,8 +97,13 @@ bool Simulator::gatherModelStatistics_() {
 }
 
 bool Simulator::loadNeuronSimulatorPlugins_() {
-  // TODO(rvhoang): Determine paths at runtime
-  std::vector<std::string> paths = File::getContents("plugins/neurons");
+  auto plugin_path_ptr = std::getenv("NCS_PLUGIN_PATH");
+  if (!plugin_path_ptr) {
+    std::cerr << "NCS_PLUGIN_PATH was not set." << std::endl;
+    return false;
+  }
+  std::string plugin_path(plugin_path_ptr);
+  std::vector<std::string> paths = File::getContents(plugin_path + "/neuron");
   neuron_simulator_generators_ =
     PluginLoader<NeuronSimulator>::loadPaths(paths, "NeuronSimulator");
   return nullptr != neuron_simulator_generators_;
