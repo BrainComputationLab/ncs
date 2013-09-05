@@ -5,7 +5,8 @@ namespace ncs {
 namespace sim {
 
 ClusterDescription::
-ClusterDescription(const std::vector<MachineDescription*>& machines) {
+ClusterDescription(const std::vector<MachineDescription*>& machines)
+  : machines_(machines) {
 }
 
 const std::vector<MachineDescription*>&

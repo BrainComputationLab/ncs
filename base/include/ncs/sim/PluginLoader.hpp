@@ -25,6 +25,7 @@ loadPlugin_(const std::string& path,
   void* handle = dlopen(path.c_str(), RTLD_NOW | RTLD_LOCAL);
   if (nullptr == handle) {
     std::cerr << "Failed to open plugin " << path << std::endl;
+    std::cerr << "Reason:" << dlerror() << std::endl;
     return false;
   }
   bool (*function)(FactoryMap<PluginType>*);

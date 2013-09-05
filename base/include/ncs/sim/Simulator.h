@@ -5,6 +5,7 @@
 #include <ncs/sim/MPI.h>
 #include <ncs/sim/NeuronSimulator.h>
 #include <ncs/sim/PluginLoader.h>
+#include <ncs/sim/SynapseSimulator.h>
 #include <ncs/spec/ModelSpecification.h>
 
 namespace ncs {
@@ -23,6 +24,8 @@ private:
   bool assignNeuronIDs_();
   bool loadNeuronSimulatorPlugins_();
   bool loadNeuronInstantiators_();
+  bool loadSynapseSimulatorPlugins_();
+  bool loadSynapseInstantiators_();
 
   spec::ModelSpecification* model_specification_;
   ModelStatistics* model_statistics_;
@@ -30,9 +33,12 @@ private:
   ClusterDescription* cluster_;
   FactoryMap<NeuronSimulator>* neuron_simulator_generators_;
   std::map<spec::NeuronGroup*, std::vector<Neuron*>> neurons_by_group_;
-  std::map<spec::NeuronGroup*, void*> instantiators_by_group_;
+  std::map<spec::NeuronGroup*, void*> neuron_instantiators_by_group_;
   Neuron* neurons_;
   unsigned int num_neurons_;
+
+  FactoryMap<SynapseSimulator>* synapse_simulator_generators_;
+  std::map<spec::SynapseGroup*, void*> synapse_instantiators_by_group_;
 };
 
 } // namespace sim

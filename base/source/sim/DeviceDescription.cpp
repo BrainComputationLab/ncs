@@ -55,6 +55,7 @@ DeviceDescription::getDevicesOnThisMachine(unsigned int enabled_device_types) {
     // TODO(rvhoang): Find a reasonable estimation of the number of cores and
     // clock rate per CPU
     unsigned int num_cores = std::thread::hardware_concurrency();
+    num_cores = std::max(num_cores, 1u);
     // For now, use 2MHz per core
     double power = num_cores * 2000000.0;
     results.push_back(new DeviceDescription(true, power, DeviceType::CPU));

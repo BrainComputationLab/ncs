@@ -45,6 +45,18 @@ bool Simulator::initialize(int argc, char** argv) {
     return false;
   }
 
+  std::clog << "Loading synapse simulator plugins..." << std::endl;
+  if (!loadSynapseSimulatorPlugins_()) {
+    std::cerr << "Failed to load synapse simulator plugins." << std::endl;
+    return false;
+  }
+
+  std::clog << "Loading synapse instantiators..." << std::endl;
+  if (!loadSynapseInstantiators_()) {
+    std::cerr << "Failed to load synapse instantiators." << std::endl;
+    return false;
+  }
+
   std::clog << "Gathering cluster data..." << std::endl;
   if (!gatherClusterData_(DeviceType::CPU | DeviceType::CUDA)) {
     std::cerr << "Failed to gather cluster data." << std::endl;
@@ -119,7 +131,37 @@ bool Simulator::loadNeuronInstantiators_() {
         key_value.first << " of type " << type << std::endl;
       return false;
     }
-    instantiators_by_group_[group] = instantiator(group->getModelParameters());
+    neuron_instantiators_by_group_[group] = 
+      instantiator(group->getModelParameters());
+  }
+  return true;
+}
+
+bool Simulator::loadSynapseSimulatorPlugins_() {
+  auto plugin_path_ptr = std::getenv("NCS_PLUGIN_PATH");
+  if (!plugin_path_ptr) {
+    std::cerr << "NCS_PLUGIN_PATH was not set." << std::endl;
+    return false;
+  }
+  std::string plugin_path(plugin_path_ptr);
+  std::vector<std::string> paths = File::getContents(plugin_path + "/synapse");
+  synapse_simulator_generators_ =
+    PluginLoader<SynapseSimulator>::loadPaths(paths, "SynapseSimulator");
+  return nullptr != synapse_simulator_generators_;
+}
+
+bool Simulator::loadSynapseInstantiators_() {
+  for (auto key_value : model_specification_->synapse_groups) {
+    spec::SynapseGroup* group = key_value.second;
+    const std::string& type = group->getModelParameters()->getType();
+    auto instantiator = synapse_simulator_generators_->getInstantiator(type);
+    if (!instantiator) {
+      std::cerr << "Failed to get instantiator for group " <<
+        key_value.first << " of type " << type << std::endl;
+      return false;
+    }
+    synapse_instantiators_by_group_[group] = 
+      instantiator(group->getModelParameters());
   }
   return true;
 }
@@ -136,7 +178,7 @@ bool Simulator::allocateNeurons_() {
     neurons_by_group_[group] = std::vector<Neuron*>();
     std::vector<Neuron*>& group_neurons = neurons_by_group_[group];
     unsigned int num_neurons = group->getNumberOfCells();
-    void* instantiator_data = instantiators_by_group_[group];
+    void* instantiator_data = neuron_instantiators_by_group_[group];
     for (unsigned int i = 0; i < num_neurons; ++i) {
       Neuron* neuron = neurons_ + allocated_neurons;
       group_neurons.push_back(neuron);
@@ -175,6 +217,11 @@ bool Simulator::distributeNeurons_() {
         total_compute_load * device->getPower() / total_compute_power;
       device_loads.push(load);
     }
+  }
+
+  if (device_loads.empty()) {
+    std::cerr << "No compute devices available." << std::endl;
+    return false;
   }
 
   // Distribute neurons by distributing the heaviest ones first and then

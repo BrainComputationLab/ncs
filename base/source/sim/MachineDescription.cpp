@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include <ncs/sim/MachineDescription.h>
 
 namespace ncs {
