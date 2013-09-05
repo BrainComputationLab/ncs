@@ -1,1 +1,2 @@
 ADD_SUBDIRECTORY(neuron)
+ADD_SUBDIRECTORY(synapse)

@@ -131,8 +131,13 @@ bool Simulator::loadNeuronInstantiators_() {
         key_value.first << " of type " << type << std::endl;
       return false;
     }
-    neuron_instantiators_by_group_[group] = 
-      instantiator(group->getModelParameters());
+    void* instantiator_data = instantiator(group->getModelParameters());
+    if (!instantiator_data) {
+      std::cerr << "Failed to create instantiator for group " <<
+        key_value.first << std::endl;
+      return false;
+    }
+    neuron_instantiators_by_group_[group] = instantiator_data; 
   }
   return true;
 }
@@ -160,8 +165,13 @@ bool Simulator::loadSynapseInstantiators_() {
         key_value.first << " of type " << type << std::endl;
       return false;
     }
-    synapse_instantiators_by_group_[group] = 
-      instantiator(group->getModelParameters());
+    void* instantiator_data = instantiator(group->getModelParameters());
+    if (!instantiator_data) {
+      std::cerr << "Failed to create instantiator for group " <<
+        key_value.first << std::endl;
+      return false;
+    }
+    synapse_instantiators_by_group_[group] = instantiator_data; 
   }
   return true;
 }

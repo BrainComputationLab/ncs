@@ -43,9 +43,9 @@
   },
   "#flat_parameters": {
     "type": "model_parameters",
-    "model_type": "flat_synapse",
+    "model_type": "flat",
     "current": { "type": "uniform", "min_value": -1.0, "max_value": 1.0 },
-    "delay": { "type": "exact", "value": 1.0 }
+    "delay": { "type": "exact", "value": 5 }
   },
   "#synapse_group_0": {
     "type": "synapse_group",
