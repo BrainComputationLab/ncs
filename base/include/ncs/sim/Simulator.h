@@ -17,6 +17,7 @@ public:
   Simulator(spec::ModelSpecification* model_specification);
   bool initialize(int argc, char** argv);
 private:
+  bool initializeSeeds_();
   bool gatherClusterData_(unsigned int enabled_device_types);
   bool gatherModelStatistics_();
   bool allocateNeurons_();
@@ -26,11 +27,16 @@ private:
   bool loadNeuronInstantiators_();
   bool loadSynapseSimulatorPlugins_();
   bool loadSynapseInstantiators_();
+  bool distributeSynapses_();
+
+  int getNeuronSeed_() const;
+  int getSynapseSeed_() const;
 
   spec::ModelSpecification* model_specification_;
   ModelStatistics* model_statistics_;
   Communicator* communicator_;
   ClusterDescription* cluster_;
+
   FactoryMap<NeuronSimulator>* neuron_simulator_generators_;
   std::map<spec::NeuronGroup*, std::vector<Neuron*>> neurons_by_group_;
   std::map<spec::NeuronGroup*, void*> neuron_instantiators_by_group_;
@@ -39,6 +45,10 @@ private:
 
   FactoryMap<SynapseSimulator>* synapse_simulator_generators_;
   std::map<spec::SynapseGroup*, void*> synapse_instantiators_by_group_;
+  std::map<spec::SynapseGroup*, std::vector<Synapse*>> synapses_by_group_;
+
+  int neuron_seed_;
+  int synapse_seed_;
 };
 
 } // namespace sim

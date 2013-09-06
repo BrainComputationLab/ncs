@@ -47,6 +47,20 @@ DeviceDescription::getNeuronPlugin(const std::string& type) {
   return neuron_plugins_[index];
 }
 
+unsigned int DeviceDescription::getSynapsePluginIndex(const std::string& type) {
+  if (synapse_type_to_plugin_index_.count(type) == 0) {
+    synapse_plugins_.push_back(new SynapsePluginDescription(type));
+    synapse_type_to_plugin_index_[type] = synapse_plugins_.size() - 1;
+  }
+  return synapse_type_to_plugin_index_[type];
+}
+
+SynapsePluginDescription*
+DeviceDescription::getSynapsePlugin(const std::string& type) {
+  unsigned int index = getSynapsePluginIndex(type);
+  return synapse_plugins_[index];
+}
+
 std::vector<DeviceDescription*> 
 DeviceDescription::getDevicesOnThisMachine(unsigned int enabled_device_types) {
   std::vector<DeviceDescription*> results;

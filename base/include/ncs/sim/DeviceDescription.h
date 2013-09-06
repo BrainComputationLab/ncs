@@ -19,6 +19,8 @@ public:
   const std::vector<NeuronPluginDescription*>& getNeuronPlugins() const;
   NeuronPluginDescription* getNeuronPlugin(const std::string& type);
   unsigned int getNeuronPluginIndex(const std::string& type);
+  SynapsePluginDescription* getSynapsePlugin(const std::string& type);
+  unsigned int getSynapsePluginIndex(const std::string& type);
   static std::vector<DeviceDescription*>
     getDevicesOnThisMachine(unsigned int enabled_device_types);
 private:
@@ -27,6 +29,8 @@ private:
   DeviceType::Type device_type_;
   std::vector<NeuronPluginDescription*> neuron_plugins_;
   std::map<std::string, unsigned int> neuron_type_to_plugin_index_;
+  std::vector<SynapsePluginDescription*> synapse_plugins_;
+  std::map<std::string, unsigned int> synapse_type_to_plugin_index_;
 };
 
 } // namespace sim

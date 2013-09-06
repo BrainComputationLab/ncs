@@ -1,7 +1,12 @@
-#include <algorithm>
 #include <mpi.h>
-#include <queue>
 #include <unistd.h>
+
+#include <algorithm>
+#include <map>
+#include <queue>
+#include <random>
+#include <string>
+#include <vector>
 
 #include <ncs/sim/Bit.h>
 #include <ncs/sim/ClusterDescription.h>
@@ -20,6 +25,12 @@ Simulator::Simulator(spec::ModelSpecification* model_specification)
 }
 
 bool Simulator::initialize(int argc, char** argv) {
+  std::clog << "Initializing seeds..." << std::endl;
+  if (!initializeSeeds_()) {
+    std::cerr << "Failed to initialize seeds." << std::endl;
+    return false;
+  }
+
   std::clog << "Initializing MPI..." << std::endl;
   if (!MPI::initialize(argc, argv)) {
     std::cerr << "Failed to initialize MPI." << std::endl;
@@ -87,8 +98,21 @@ bool Simulator::initialize(int argc, char** argv) {
     return false;
   }
 
+  std::clog << "Distributing synapses..." << std::endl;
+  if (!distributeSynapses_()) {
+    std::cerr << "Failed to distribute synapses." << std::endl;
+    return false;
+  }
+
   std::clog << "Initialization complete..." << std::endl;
 
+  return true;
+}
+
+bool Simulator::initializeSeeds_() {
+  // TODO(rvhoang): get seeds from input
+  neuron_seed_ = 0;
+  synapse_seed_ = 0;
   return true;
 }
 
@@ -137,7 +161,7 @@ bool Simulator::loadNeuronInstantiators_() {
         key_value.first << std::endl;
       return false;
     }
-    neuron_instantiators_by_group_[group] = instantiator_data; 
+    neuron_instantiators_by_group_[group] = instantiator_data;
   }
   return true;
 }
@@ -171,7 +195,7 @@ bool Simulator::loadSynapseInstantiators_() {
         key_value.first << std::endl;
       return false;
     }
-    synapse_instantiators_by_group_[group] = instantiator_data; 
+    synapse_instantiators_by_group_[group] = instantiator_data;
   }
   return true;
 }
@@ -193,7 +217,7 @@ bool Simulator::allocateNeurons_() {
       Neuron* neuron = neurons_ + allocated_neurons;
       group_neurons.push_back(neuron);
       neuron->instantiator = instantiator_data;
-      // TODO: fill in seed here
+      // TODO(rvhoang): fill in seed here
       ++allocated_neurons;
     }
   }
@@ -272,6 +296,11 @@ bool Simulator::distributeNeurons_() {
       device_loads.push(device_load);
     }
   }
+
+  while (!device_loads.empty()) {
+    delete device_loads.top();
+    device_loads.pop();
+  }
   return true;
 }
 
@@ -311,6 +340,77 @@ bool Simulator::assignNeuronIDs_() {
   return true;
 }
 
-} // namespace sim
+bool Simulator::distributeSynapses_() {
+  unsigned int this_device_index = cluster_->getThisMachineIndex();
+  auto isOnThisMachine = [=](Neuron* neuron) {
+    return neuron->location.machine == this_device_index;
+  };
+  std::mt19937 generator(getSynapseSeed_());
 
-} // namespace ncs
+  // TODO(rvhoang): I was here
+  std::map<std::string, std::vector<Synapse*>> this_machine_synapses_by_type;
+  for (auto key_value : model_specification_->synapse_groups) {
+    synapse_types.add(key_value.second->getModelParameters()->getType());
+  }
+
+  for (auto key_value : model_specification_->synapse_groups) {
+    spec::SynapseGroup* group = key_value.second;
+    const auto& presynaptic_groups = group->getPresynapticGroups();
+    unsigned int num_presynaptic_neurons = 0;
+    std::vector<unsigned int> presynaptic_counts;
+    for (auto neuron_group : presynaptic_groups) {
+      num_presynaptic_neurons += neuron_group->getNumberOfCells();
+      presynaptic_counts.push_back(neuron_group->getNumberOfCells());
+    }
+    const auto& postsynaptic_groups = group->getPostsynapticGroups();
+    unsigned int num_postsynaptic_neurons = 0;
+    std::vector<unsigned int> postsynaptic_counts;
+    for (auto neuron_group : postsynaptic_groups) {
+      num_postsynaptic_neurons += neuron_group->getNumberOfCells();
+      postsynaptic_counts.push_back(neuron_group->getNumberOfCells());
+    }
+    double probability = group->getConnectionProbability();
+    unsigned int num_connections =
+      num_presynaptic_neurons *
+      num_postsynaptic_neurons *
+      probability;
+    std::discrete_distribution<>
+      presynaptic_distribution(presynaptic_counts.begin(),
+                               presynaptic_counts.end());
+    std::discrete_distribution<>
+      postsynaptic_distribution(postsynaptic_counts.begin(),
+                                postsynaptic_counts.end());
+    for (unsigned int i = 0; i < num_connections; ++i) {
+      spec::NeuronGroup* presynaptic_group =
+        presynaptic_groups[presynaptic_distribution(generator)];
+      spec::NeuronGroup* postsynaptic_group =
+        postsynaptic_groups[postsynaptic_distribution(generator)];
+      std::uniform_int_distribution<unsigned int> neuron_selector;
+      const auto& presynaptic_neurons = neurons_by_group_[presynaptic_group];
+      const auto& postsynaptic_neurons = neurons_by_group_[postsynaptic_group];
+      Neuron* presynaptic_neuron =
+        presynaptic_neurons[neuron_selector(generator) %
+                            presynaptic_neurons.size()];
+      Neuron* postsynaptic_neuron =
+        postsynaptic_neurons[neuron_selector(generator) %
+                             postsynaptic_neurons.size()];
+      unsigned int synapse_seed = generator();
+      if (isOnThisMachine(presynaptic_neuron)) {
+      } else {
+      }
+    }
+  }
+  return true;
+}
+
+int Simulator::getNeuronSeed_() const {
+  return neuron_seed_;
+}
+
+int Simulator::getSynapseSeed_() const {
+  return synapse_seed_;
+}
+
+}  // namespace sim
+
+}  // namespace ncs
