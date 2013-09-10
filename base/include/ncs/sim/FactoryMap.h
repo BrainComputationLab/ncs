@@ -29,18 +29,32 @@ public:
                                       InstantiatorDestructor destructor);
   template<DeviceType::Type MType>
   std::function<Product<MType>*()> getProducer(const std::string& type);
+
+  template<DeviceType::Type MType>
+    friend class FactoryMapTypeExtractor;
 private:
   template<DeviceType::Type MType>
   bool register_(const std::string& type,
                  std::function<Product<MType>*()> producer,
                  std::map<std::string,
                           std::function<Product<MType>*()>>& map);
+  template<DeviceType::Type MType>
+  std::map<std::string, std::function<Product<MType>*()>>& getMap_();
+
   std::map<std::string, CUDAProducer> cuda_factories_;
   std::map<std::string, CPUProducer> cpu_factories_;
   std::map<std::string, CLProducer> cl_factories_;
   std::map<std::string, Instantiator> instantiators_;
   std::map<std::string, InstantiatorDestructor> destructors_;
   std::string product_type_;
+};
+
+template<DeviceType::Type MType>
+class FactoryMapTypeExtractor {
+public:
+  template<template<DeviceType::Type> class Product>
+  static std::map<std::string, std::function<Product<MType>*()>>&
+    extract(FactoryMap<Product>& factory);
 };
 
 } // namespace sim

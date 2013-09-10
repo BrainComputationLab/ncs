@@ -1,4 +1,5 @@
 #pragma once
+#include <ncs/sim/NeuronSimulator.h>
 #include <ncs/spec/Generator.h>
 
 struct Instantiator {
@@ -10,7 +11,12 @@ struct Instantiator {
   ncs::spec::Generator* v;
 };
 
-class IzhikevichSimulator : public ncs::sim::NeuronSimulator {
+template<ncs::sim::DeviceType::Type MemoryType>
+class IzhikevichSimulator : public ncs::sim::NeuronSimulator<MemoryType> {
 public:
+  virtual bool addNeuron(void* instantiator, unsigned int seed);
+  virtual bool initialize();
 private:
 };
+
+#include "Izhikevich.hpp"

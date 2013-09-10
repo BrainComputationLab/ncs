@@ -20,6 +20,7 @@ register_(const std::string& type,
     return false;
   }
   map[type] = producer;
+  return true;
 }
 
 template<template<DeviceType::Type> class Product>
@@ -66,6 +67,18 @@ registerInstantiatorDestructor(const std::string& type,
 }
 
 template<template<DeviceType::Type> class Product>
+template<DeviceType::Type MType>
+std::function<Product<MType>*()>
+FactoryMap<Product>::getProducer(const std::string& type) {
+  auto& map = FactoryMapTypeExtractor<MType>::extract(*this);
+  auto result = map.find(type);
+  if (result == map.end()) {
+    return std::function<Product<MType>*()>();
+  }
+  return result->second;
+}
+
+template<template<DeviceType::Type> class Product>
 typename FactoryMap<Product>::Instantiator
 FactoryMap<Product>::getInstantiator(const std::string& type) {
   if (instantiators_.count(type) == 0) {
@@ -74,6 +87,30 @@ FactoryMap<Product>::getInstantiator(const std::string& type) {
     return Instantiator();
   }
   return instantiators_[type];
+}
+
+template<>
+template<template<DeviceType::Type> class Product>
+std::map<std::string, std::function<Product<DeviceType::CUDA>*()>>&
+FactoryMapTypeExtractor<DeviceType::CUDA>::
+extract(FactoryMap<Product>& factory) {
+  return factory.cuda_factories_;
+}
+
+template<>
+template<template<DeviceType::Type> class Product>
+std::map<std::string, std::function<Product<DeviceType::CPU>*()>>&
+FactoryMapTypeExtractor<DeviceType::CPU>::
+extract(FactoryMap<Product>& factory) {
+  return factory.cpu_factories_;
+}
+
+template<>
+template<template<DeviceType::Type> class Product>
+std::map<std::string, std::function<Product<DeviceType::CL>*()>>&
+FactoryMapTypeExtractor<DeviceType::CL>::
+extract(FactoryMap<Product>& factory) {
+  return factory.cl_factories_;
 }
 
 } // namespace sim

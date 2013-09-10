@@ -1,4 +1,4 @@
-#include <ncs/sim/FactoryMap.h>
+#pragma once
 #include <ncs/spec/ModelParameters.h>
 
 namespace ncs {

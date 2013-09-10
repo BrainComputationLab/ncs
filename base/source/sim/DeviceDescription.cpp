@@ -10,10 +10,14 @@ namespace ncs {
 namespace sim {
 
 DeviceDescription::
-DeviceDescription(bool on_this_machine, double power, DeviceType::Type device_type)
+DeviceDescription(bool on_this_machine,
+                  double power,
+                  DeviceType::Type device_type,
+                  int device_index)
   : on_this_machine_(on_this_machine),
     power_(power),
-    device_type_(device_type) {
+    device_type_(device_type),
+    device_index_(device_index) {
 }
 
 bool DeviceDescription::isOnThisMachine() const {
@@ -59,6 +63,10 @@ SynapsePluginDescription*
 DeviceDescription::getSynapsePlugin(const std::string& type) {
   unsigned int index = getSynapsePluginIndex(type);
   return synapse_plugins_[index];
+}
+
+int DeviceDescription::getDeviceIndex() const {
+  return device_index_;
 }
 
 std::vector<DeviceDescription*> 

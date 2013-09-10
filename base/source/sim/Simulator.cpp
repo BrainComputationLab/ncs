@@ -104,6 +104,12 @@ bool Simulator::initialize(int argc, char** argv) {
     return false;
   }
 
+  std::clog << "Initializing devices..." << std::endl;
+  if (!initializeDevices_()) {
+    std::cerr << "Failed to initialize devices." << std::endl;
+    return false;
+  }
+
   std::clog << "Initialization complete..." << std::endl;
 
   return true;
@@ -236,7 +242,7 @@ bool Simulator::distributeNeurons_() {
     double current_load;
   };
   auto LowerDeviceLoad = [](DeviceLoad* left, DeviceLoad* right) {
-    return (left->max_load - left->current_load) >
+    return (left->max_load - left->current_load) <
            (right->max_load - right->current_load);
   };
   std::priority_queue<DeviceLoad*,
@@ -447,6 +453,40 @@ bool Simulator::distributeSynapses_() {
     }
     delete [] synapse_plugins_by_device;
     delete [] synapse_plugin_index;
+  }
+  return true;
+}
+
+bool Simulator::initializeDevices_() {
+  bool result = true;
+  for (auto description : cluster_->getThisMachine()->getDevices()) {
+    DeviceBase* device = nullptr;
+    switch(description->getDeviceType()) {
+    case DeviceType::CUDA:
+      device = new Device<DeviceType::CUDA>();
+      break;
+    case DeviceType::CPU:
+      device = new Device<DeviceType::CPU>();
+      break;
+    case DeviceType::CL:
+      device = new Device<DeviceType::CL>();
+      break;
+    default:
+      std::cerr << "Unknown device type: " << description->getDeviceType() <<
+        std::endl;
+      break;
+    }
+    if (!device) {
+      std::cerr << "Failed to create a device." << std::endl;
+      return false;
+    }
+    if (!device->initialize(description,
+                            neuron_simulator_generators_,
+                            synapse_simulator_generators_)) {
+      std::cerr << "Failed to initialize device." << std::endl;
+      return false;
+    }
+    devices_.push_back(device);
   }
   return true;
 }

@@ -1,6 +1,8 @@
 #pragma once
 
 #include <ncs/sim/ClusterDescription.h>
+#include <ncs/sim/Device.h>
+#include <ncs/sim/FactoryMap.h>
 #include <ncs/sim/ModelStatistics.h>
 #include <ncs/sim/MPI.h>
 #include <ncs/sim/NeuronSimulator.h>
@@ -28,6 +30,7 @@ private:
   bool loadSynapseSimulatorPlugins_();
   bool loadSynapseInstantiators_();
   bool distributeSynapses_();
+  bool initializeDevices_();
 
   int getNeuronSeed_() const;
   int getSynapseSeed_() const;
@@ -49,6 +52,8 @@ private:
 
   int neuron_seed_;
   int synapse_seed_;
+
+  std::vector<DeviceBase*> devices_;
 };
 
 } // namespace sim

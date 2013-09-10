@@ -1,5 +1,4 @@
 #include <ncs/sim/FactoryMap.h>
-#include <ncs/sim/NeuronSimulator.h>
 
 #include "Izhikevich.h"
 
@@ -33,11 +32,24 @@ void* createInstantiator(ncs::spec::ModelParameters* parameters) {
   return instantiator;
 }
 
+template<ncs::sim::DeviceType::Type MType>
+ncs::sim::NeuronSimulator<MType>* createSimulator() {
+  return new IzhikevichSimulator<MType>();
+}
+
 extern "C" {
 
 bool load(ncs::sim::FactoryMap<ncs::sim::NeuronSimulator>* plugin_map) {
   bool result = true;
   result &= plugin_map->registerInstantiator("izhikevich", createInstantiator);
+
+  const auto CPU = ncs::sim::DeviceType::CPU;
+  result &= 
+    plugin_map->registerCPUProducer("izhikevich", createSimulator<CPU>);
+
+  const auto CUDA = ncs::sim::DeviceType::CUDA;
+  result &=
+    plugin_map->registerCUDAProducer("izhikevich", createSimulator<CUDA>);
   return result;
 }
   
