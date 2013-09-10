@@ -347,14 +347,16 @@ bool Simulator::distributeSynapses_() {
   };
   std::mt19937 generator(getSynapseSeed_());
 
-  // TODO(rvhoang): I was here
   std::map<std::string, std::vector<Synapse*>> this_machine_synapses_by_type;
   for (auto key_value : model_specification_->synapse_groups) {
-    synapse_types.add(key_value.second->getModelParameters()->getType());
-  }
+    const auto& type = key_value.second->getModelParameters()->getType();
+    if (this_machine_synapses_by_type.count(type) == 0) {
+      this_machine_synapses_by_type[type] = std::vector<Synapse*>();
+    }
+    std::vector<Synapse*>& synapses = this_machine_synapses_by_type[type];
 
-  for (auto key_value : model_specification_->synapse_groups) {
     spec::SynapseGroup* group = key_value.second;
+    void* instantiator = synapse_instantiators_by_group_[group];
     const auto& presynaptic_groups = group->getPresynapticGroups();
     unsigned int num_presynaptic_neurons = 0;
     std::vector<unsigned int> presynaptic_counts;
@@ -394,11 +396,57 @@ bool Simulator::distributeSynapses_() {
       Neuron* postsynaptic_neuron =
         postsynaptic_neurons[neuron_selector(generator) %
                              postsynaptic_neurons.size()];
+      // Roll regardless
       unsigned int synapse_seed = generator();
       if (isOnThisMachine(presynaptic_neuron)) {
+        Synapse* synapse = new Synapse();
+        synapse->seed = synapse_seed;
+        synapse->instantiator = instantiator;
+        synapse->presynaptic_neuron = presynaptic_neuron;
+        synapse->postsynaptic_neuron = postsynaptic_neuron;
+        synapse->location.device = presynaptic_neuron->location.device;
+        synapse->location.machine = presynaptic_neuron->location.machine;
+        synapses.push_back(synapse);
       } else {
+        // We don't care about synapses that don't affect our neurons
       }
     }
+  }
+
+  const std::vector<DeviceDescription*>& devices =
+    cluster_->getThisMachine()->getDevices();
+  unsigned int num_devices = devices.size();
+  for (auto key_value : this_machine_synapses_by_type) {
+    const std::string& type = key_value.first;
+    const std::vector<Synapse*>& synapses = key_value.second;
+    bool* device_has_this_type = new bool[num_devices];
+    for (unsigned int i = 0; i < num_devices; ++i) {
+      device_has_this_type[i] = false;
+    }
+    for (auto synapse : synapses) {
+      device_has_this_type[synapse->location.device] = true;
+    }
+    SynapsePluginDescription** synapse_plugins_by_device =
+      new SynapsePluginDescription*[num_devices];
+    unsigned int* synapse_plugin_index = new unsigned int[num_devices];
+    for (unsigned int i = 0; i < num_devices; ++i) {
+      if (device_has_this_type[i]) {
+        synapse_plugins_by_device[i] = devices[i]->getSynapsePlugin(type);
+        synapse_plugin_index[i] = devices[i]->getSynapsePluginIndex(type);
+      } else {
+        synapse_plugins_by_device[i] = nullptr;
+      }
+    }
+    delete [] device_has_this_type;
+
+    for (auto synapse : synapses) {
+      unsigned int device_location = synapse->location.device;
+      synapse->location.plugin = synapse_plugin_index[device_location];
+      synapse->id.plugin =
+        synapse_plugins_by_device[device_location]->addSynapse(synapse);
+    }
+    delete [] synapse_plugins_by_device;
+    delete [] synapse_plugin_index;
   }
   return true;
 }

@@ -9,3 +9,8 @@ struct Instantiator {
   ncs::spec::Generator* u;
   ncs::spec::Generator* v;
 };
+
+class IzhikevichSimulator : public ncs::sim::NeuronSimulator {
+public:
+private:
+};

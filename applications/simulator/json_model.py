@@ -167,7 +167,6 @@ class JSONModel:
       model_name = str(spec["specification"])
       presynaptic_name = str(spec["presynaptic"])
       probability = float(spec["probability"])
-      print probability
       presynaptic_groups = list()
       if presynaptic_name in self.neuron_groups:
         presynaptic_groups.append(self.neuron_groups[presynaptic_name])
