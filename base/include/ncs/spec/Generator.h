@@ -53,6 +53,10 @@ public:
     @return The name of this specific generator type.
   */
   virtual const std::string& name() const = 0;
+
+  inline Generator* base() {
+    return this;
+  }
 };
 
 } // namespace spec

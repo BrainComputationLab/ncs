@@ -6,6 +6,8 @@ bool set(ncs::spec::Generator*& target,
          const std::string& parameter,
          ncs::spec::ModelParameters* parameters) {
   ncs::spec::Generator* generator = parameters->getGenerator(parameter);
+  ncs::spec::RNG rng(0);
+  std::cout << generator->generateDouble(&rng) << std::endl;
   target = generator;
   if (!generator) {
     std::cerr << "izhikevich requires " << parameter << " to be defined." <<

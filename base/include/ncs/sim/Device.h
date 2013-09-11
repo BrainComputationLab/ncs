@@ -3,6 +3,7 @@
 #include <ncs/sim/DeviceType.h>
 #include <ncs/sim/FactoryMap.h>
 #include <ncs/sim/NeuronSimulator.h>
+#include <ncs/sim/PluginDescription.h>
 #include <ncs/sim/SynapseSimulator.h>
 
 namespace ncs {
@@ -28,6 +29,8 @@ public:
                           FactoryMap<NeuronSimulator>* neuron_plugins,
                           FactoryMap<SynapseSimulator>* synapse_plugins);
 private:
+  bool initializeNeuronSimulator_(NeuronSimulator<MemoryType>* simulator,
+                                  NeuronPluginDescription* description);
   std::map<std::string, int> neuron_type_map_;
   std::vector<NeuronSimulator<MemoryType>*> neuron_simulators_;
 };

@@ -219,6 +219,7 @@ bool Simulator::allocateNeurons_() {
     std::vector<Neuron*>& group_neurons = neurons_by_group_[group];
     unsigned int num_neurons = group->getNumberOfCells();
     void* instantiator_data = neuron_instantiators_by_group_[group];
+    std::cout << instantiator_data << std::endl;
     for (unsigned int i = 0; i < num_neurons; ++i) {
       Neuron* neuron = neurons_ + allocated_neurons;
       group_neurons.push_back(neuron);

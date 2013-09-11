@@ -31,6 +31,25 @@ initialize(DeviceDescription* description,
         DeviceType::as_string(MemoryType) << " was not found." << std::endl;
       return false;
     }
+    NeuronSimulator<MemoryType>* simulator = generator();
+    if (!initializeNeuronSimulator_(simulator, plugin_description)) {
+      std::cerr << "Failed to initialize neuron plugin." << std::endl;
+      delete simulator;
+      return false;
+    }
+  }
+  return true;
+}
+
+template<DeviceType::Type MemoryType>
+bool Device<MemoryType>::
+initializeNeuronSimulator_(NeuronSimulator<MemoryType>* simulator,
+                           NeuronPluginDescription* description) {
+  for (auto neuron : description->getNeurons()) {
+    if (!simulator->addNeuron(neuron)) {
+      std::cerr << "Failed to add a neuron to the simulator." << std::endl;
+      return false;
+    }
   }
   return true;
 }
