@@ -212,6 +212,7 @@ bool Simulator::allocateNeurons_() {
     std::cerr << "Neurons were already allocated." << std::endl;
     return false;
   }
+  spec::RNG rng(getNeuronSeed_());
   neurons_ = new Neuron[model_statistics_->getNumberOfNeurons()];
   unsigned int allocated_neurons = 0;
   for (auto key_value : model_specification_->neuron_groups) {
@@ -224,7 +225,7 @@ bool Simulator::allocateNeurons_() {
       Neuron* neuron = neurons_ + allocated_neurons;
       group_neurons.push_back(neuron);
       neuron->instantiator = instantiator_data;
-      // TODO(rvhoang): fill in seed here
+      neuron->seed = rng();
       ++allocated_neurons;
     }
   }
