@@ -155,6 +155,7 @@ bool Simulator::loadNeuronInstantiators_() {
   for (auto key_value : model_specification_->neuron_groups) {
     spec::NeuronGroup* group = key_value.second;
     const std::string& type = group->getModelParameters()->getType();
+    auto gen = group->getModelParameters()->getGenerator("a");
     auto instantiator = neuron_simulator_generators_->getInstantiator(type);
     if (!instantiator) {
       std::cerr << "Failed to get instantiator for group " <<
@@ -219,7 +220,6 @@ bool Simulator::allocateNeurons_() {
     std::vector<Neuron*>& group_neurons = neurons_by_group_[group];
     unsigned int num_neurons = group->getNumberOfCells();
     void* instantiator_data = neuron_instantiators_by_group_[group];
-    std::cout << instantiator_data << std::endl;
     for (unsigned int i = 0; i < num_neurons; ++i) {
       Neuron* neuron = neurons_ + allocated_neurons;
       group_neurons.push_back(neuron);

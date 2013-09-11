@@ -1,4 +1,4 @@
-%module(directors="1") pyncs
+%module pyncs
 %{
 #include <include/ncs/sim/Simulation.h>
 #include <include/ncs/spec/BoxGenerator.h>
@@ -32,8 +32,6 @@
     };
   }
 %}
-
-%feature("directors");
 
 %template(string_to_model_parameters_map) std::map<std::string, ncs::spec::ModelParameters*>;
 %{

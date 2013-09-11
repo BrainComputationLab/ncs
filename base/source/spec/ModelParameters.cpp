@@ -10,12 +10,6 @@ ModelParameters::ModelParameters(const std::string& type,
                                  std::map<std::string, Generator*> parameters)
   : type_(type),
     parameters_(parameters) {
-  for (auto key_value : parameters_) {
-    auto gen = key_value.second;
-    std::cout << gen << std::endl;
-    //RNG rng(0);
-    //std::cout << gen->generateDouble(&rng) << std::endl;
-  }
 }
 
 const std::string& ModelParameters::getType() const {

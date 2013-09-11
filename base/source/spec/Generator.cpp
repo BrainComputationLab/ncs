@@ -21,6 +21,11 @@ double Generator::generateDouble(RNG* rng) {
   std::terminate();
 }
 
+const std::string& Generator::name() const {
+  static std::string s = "Unknown";
+  return s;
+}
+
 } // namespace spec
 
 } // namespace ncs

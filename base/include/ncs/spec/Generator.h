@@ -2,6 +2,7 @@
 
 #ifndef SWIG
 #include <cstdint>
+#include <iostream>
 #include <random>
 #include <string>
 #endif // SWIG
@@ -52,7 +53,7 @@ public:
 
     @return The name of this specific generator type.
   */
-  virtual const std::string& name() const = 0;
+  virtual const std::string& name() const;
 
   inline Generator* base() {
     return this;

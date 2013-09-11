@@ -1,5 +1,11 @@
 #!/usr/bin/python
+import ctypes
 import sys
+flag = sys.getdlopenflags()
+sys.setdlopenflags(flag | ctypes.RTLD_GLOBAL)
+#ctypes.cdll.LoadLibrary("/home/roger/git/ncs/build/base/libncs_sim.so")
+#ctypes.cdll.LoadLibrary("/home/roger/git/ncs/build/base/libncs_spec.so")
+
 
 import json_model 
 import pyncs

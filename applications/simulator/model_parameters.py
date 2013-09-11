@@ -9,9 +9,7 @@ def Build(spec):
     if key == "model_type":
       continue
     value_generator = generator.Build(generator_spec)
+    value_generator.thisown = False
     parameters[str(key)] = value_generator
-    print value_generator.base().name()
-  for value in parameters.values():
-    print value.base().name()
   return pyncs.ModelParameters(str(model_type), pyncs.string_to_generator_map(parameters))
 
