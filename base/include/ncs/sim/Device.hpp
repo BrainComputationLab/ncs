@@ -51,6 +51,10 @@ initializeNeuronSimulator_(NeuronSimulator<MemoryType>* simulator,
       return false;
     }
   }
+  if (!simulator->initialize()) {
+    std::cerr << "Failed to initialize a neuron simulator." << std::endl;
+    return false;
+  }
   return true;
 }
 
