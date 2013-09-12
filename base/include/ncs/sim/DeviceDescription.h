@@ -22,6 +22,7 @@ public:
   const std::vector<NeuronPluginDescription*>& getNeuronPlugins() const;
   NeuronPluginDescription* getNeuronPlugin(const std::string& type);
   unsigned int getNeuronPluginIndex(const std::string& type);
+  const std::vector<SynapsePluginDescription*>& getSynapsePlugins() const;
   SynapsePluginDescription* getSynapsePlugin(const std::string& type);
   unsigned int getSynapsePluginIndex(const std::string& type);
   int getDeviceIndex() const;

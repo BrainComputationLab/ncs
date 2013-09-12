@@ -51,6 +51,11 @@ DeviceDescription::getNeuronPlugin(const std::string& type) {
   return neuron_plugins_[index];
 }
 
+const std::vector<SynapsePluginDescription*>&
+DeviceDescription::getSynapsePlugins() const {
+  return synapse_plugins_;
+}
+
 unsigned int DeviceDescription::getSynapsePluginIndex(const std::string& type) {
   if (synapse_type_to_plugin_index_.count(type) == 0) {
     synapse_plugins_.push_back(new SynapsePluginDescription(type));

@@ -29,10 +29,20 @@ public:
                           FactoryMap<NeuronSimulator>* neuron_plugins,
                           FactoryMap<SynapseSimulator>* synapse_plugins);
 private:
+  bool initializeNeurons_(DeviceDescription* description,
+                          FactoryMap<NeuronSimulator>* neuron_plugins);
   bool initializeNeuronSimulator_(NeuronSimulator<MemoryType>* simulator,
                                   NeuronPluginDescription* description);
+
+  bool initializeSynapses_(DeviceDescription* description,
+                           FactoryMap<SynapseSimulator>* synapse_plugins);
+  bool initializeSynapseSimulator_(SynapseSimulator<MemoryType>* simulator,
+                                  SynapsePluginDescription* description);
+
   std::map<std::string, int> neuron_type_map_;
   std::vector<NeuronSimulator<MemoryType>*> neuron_simulators_;
+
+  std::vector<SynapseSimulator<MemoryType>*> synapse_simulators_;
 };
 
 } // namespace sim
