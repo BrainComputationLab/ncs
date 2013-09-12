@@ -5,6 +5,7 @@
 #include <ncs/sim/DeviceType.h>
 #include <ncs/sim/FactoryMap.h>
 #include <ncs/sim/NeuronSimulator.h>
+#include <ncs/sim/NeuronSimulatorUpdater.h>
 #include <ncs/sim/PluginDescription.h>
 #include <ncs/sim/SynapseSimulator.h>
 
@@ -22,7 +23,7 @@ public:
 private:
 };
 
-template<DeviceType::Type MemoryType>
+template<DeviceType::Type MType>
 class Device : public DeviceBase {
 public:
   virtual DeviceType::Type getDeviceType() const;
@@ -33,21 +34,22 @@ public:
 private:
   bool initializeNeurons_(DeviceDescription* description,
                           FactoryMap<NeuronSimulator>* neuron_plugins);
-  bool initializeNeuronSimulator_(NeuronSimulator<MemoryType>* simulator,
+  bool initializeNeuronSimulator_(NeuronSimulator<MType>* simulator,
                                   NeuronPluginDescription* description);
   bool initializeNeuronVoltages_();
 
   bool initializeSynapses_(DeviceDescription* description,
                            FactoryMap<SynapseSimulator>* synapse_plugins);
-  bool initializeSynapseSimulator_(SynapseSimulator<MemoryType>* simulator,
+  bool initializeSynapseSimulator_(SynapseSimulator<MType>* simulator,
                                   SynapsePluginDescription* description);
 
   std::map<std::string, int> neuron_type_map_;
-  std::vector<NeuronSimulator<MemoryType>*> neuron_simulators_;
+  std::vector<NeuronSimulator<MType>*> neuron_simulators_;
   std::vector<size_t> neuron_device_id_offsets_;
   size_t neuron_device_vector_size_;
+  NeuronSimulatorUpdater<MType>* neuron_simulator_updater_;
 
-  std::vector<SynapseSimulator<MemoryType>*> synapse_simulators_;
+  std::vector<SynapseSimulator<MType>*> synapse_simulators_;
 };
 
 } // namespace sim

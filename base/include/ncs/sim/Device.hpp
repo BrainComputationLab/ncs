@@ -4,13 +4,13 @@ namespace ncs {
 
 namespace sim {
 
-template<DeviceType::Type MemoryType>
-DeviceType::Type Device<MemoryType>::getDeviceType() const {
-  return MemoryType;
+template<DeviceType::Type MType>
+DeviceType::Type Device<MType>::getDeviceType() const {
+  return MType;
 }
 
-template<DeviceType::Type MemoryType>
-int Device<MemoryType>::getNeuronTypeIndex(const std::string& type) const {
+template<DeviceType::Type MType>
+int Device<MType>::getNeuronTypeIndex(const std::string& type) const {
   auto result = neuron_type_map_.find(type);
   if (result == neuron_type_map_.end()) {
     std::cerr << "No neuron of type " << type << " found on this device." <<
@@ -20,8 +20,8 @@ int Device<MemoryType>::getNeuronTypeIndex(const std::string& type) const {
   return result->second;
 }
 
-template<DeviceType::Type MemoryType>
-bool Device<MemoryType>::
+template<DeviceType::Type MType>
+bool Device<MType>::
 initialize(DeviceDescription* description,
            FactoryMap<NeuronSimulator>* neuron_plugins,
            FactoryMap<SynapseSimulator>* synapse_plugins) {
@@ -39,20 +39,20 @@ initialize(DeviceDescription* description,
   return true;
 }
 
-template<DeviceType::Type MemoryType>
-bool Device<MemoryType>::
+template<DeviceType::Type MType>
+bool Device<MType>::
 initializeNeurons_(DeviceDescription* description,
                    FactoryMap<NeuronSimulator>* neuron_plugins) {
   size_t neuron_device_id_offset = 0;
   for (auto plugin_description : description->getNeuronPlugins()) {
     const std::string& type = plugin_description->getType();
-    auto generator = neuron_plugins->getProducer<MemoryType>(type);
+    auto generator = neuron_plugins->getProducer<MType>(type);
     if (!generator) {
       std::cerr << "Neuron plugin for type " << type << " for device type " <<
-        DeviceType::as_string(MemoryType) << " was not found." << std::endl;
+        DeviceType::as_string(MType) << " was not found." << std::endl;
       return false;
     }
-    NeuronSimulator<MemoryType>* simulator = generator();
+    NeuronSimulator<MType>* simulator = generator();
     if (!initializeNeuronSimulator_(simulator, plugin_description)) {
       std::cerr << "Failed to initialize neuron plugin." << std::endl;
       delete simulator;
@@ -66,9 +66,9 @@ initializeNeurons_(DeviceDescription* description,
   return true;
 }
 
-template<DeviceType::Type MemoryType>
-bool Device<MemoryType>::
-initializeNeuronSimulator_(NeuronSimulator<MemoryType>* simulator,
+template<DeviceType::Type MType>
+bool Device<MType>::
+initializeNeuronSimulator_(NeuronSimulator<MType>* simulator,
                            NeuronPluginDescription* description) {
   for (auto neuron : description->getNeurons()) {
     if (!simulator->addNeuron(neuron)) {
@@ -83,19 +83,19 @@ initializeNeuronSimulator_(NeuronSimulator<MemoryType>* simulator,
   return true;
 }
 
-template<DeviceType::Type MemoryType>
-bool Device<MemoryType>::
+template<DeviceType::Type MType>
+bool Device<MType>::
 initializeSynapses_(DeviceDescription* description,
                     FactoryMap<SynapseSimulator>* synapse_plugins) {
   for (auto plugin_description : description->getSynapsePlugins()) {
     const std::string& type = plugin_description->getType();
-    auto generator = synapse_plugins->getProducer<MemoryType>(type);
+    auto generator = synapse_plugins->getProducer<MType>(type);
     if (!generator) {
       std::cerr << "Synapse plugin for type " << type << " for device type " <<
-        DeviceType::as_string(MemoryType) << " was not found." << std::endl;
+        DeviceType::as_string(MType) << " was not found." << std::endl;
       return false;
     }
-    SynapseSimulator<MemoryType>* simulator = generator();
+    SynapseSimulator<MType>* simulator = generator();
     if (!initializeSynapseSimulator_(simulator, plugin_description)) {
       std::cerr << "Failed to initialize synapse plugin." << std::endl;
       delete simulator;
@@ -106,9 +106,9 @@ initializeSynapses_(DeviceDescription* description,
   return true;
 }
 
-template<DeviceType::Type MemoryType>
-bool Device<MemoryType>::
-initializeSynapseSimulator_(SynapseSimulator<MemoryType>* simulator,
+template<DeviceType::Type MType>
+bool Device<MType>::
+initializeSynapseSimulator_(SynapseSimulator<MType>* simulator,
                             SynapsePluginDescription* description) {
   for (auto synapse : description->getSynapses()) {
     if (!simulator->addSynapse(synapse)) {

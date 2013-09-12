@@ -1,5 +1,4 @@
 #include <ncs/sim/DataBuffer.h>
-#include <ncs/sim/Device.h>
 
 namespace ncs {
 

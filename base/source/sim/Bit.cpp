@@ -4,7 +4,7 @@ namespace ncs {
 
 namespace sim {
 
-unsigned int Bit::bits_per_word = 32;
+unsigned int Bit::bits_per_word = sizeof(Bit::Word) * 8;
 
 unsigned int Bit::num_words(unsigned int num_elements) {
   return (num_elements + bits_per_word - 1) / bits_per_word;
@@ -18,7 +18,7 @@ unsigned int Bit::mask(unsigned int position) {
   return 0x80000000 >> position;
 }
 
-bool Bit::extract(unsigned int word, unsigned int position) {
+bool Bit::extract(Word word, unsigned int position) {
   return word & mask(position);
 }
 

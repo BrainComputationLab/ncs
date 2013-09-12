@@ -8,7 +8,6 @@
 #include <stack>
 #include <map>
 
-#include <ncs/sim/Device.h>
 #include <ncs/sim/Memory.h>
 
 namespace ncs
@@ -18,7 +17,6 @@ namespace sim
 {
 
 //Forward Declarations
-class DeviceBase;
 class DataBuffer;
 class Publisher;
 template<class PublicationType, class PublisherType> class Subscription;
@@ -103,9 +101,6 @@ class Publisher {
 public:
 	///Constructor
 	Publisher();
-
-	///The device the publisher resides on if any
-	DeviceBase* device;
 
 	///Base subscription type.
 	typedef class ncs::sim::Subscription<DataBuffer, Publisher> Subscription;
