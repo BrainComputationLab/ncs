@@ -1,5 +1,4 @@
 #include <ncs/sim/FactoryMap.h>
-#include <ncs/sim/SynapseSimulator.h>
 
 #include "Flat.h"
 
@@ -29,11 +28,23 @@ void* createInstantiator(ncs::spec::ModelParameters* parameters) {
   return instantiator;
 }
 
+template<ncs::sim::DeviceType::Type MType>
+ncs::sim::SynapseSimulator<MType>* createSimulator() {
+  return new FlatSimulator<MType>();
+}
+
 extern "C" {
 
 bool load(ncs::sim::FactoryMap<ncs::sim::SynapseSimulator>* plugin_map) {
   bool result = true;
   result &= plugin_map->registerInstantiator("flat", createInstantiator);
+  
+  const auto CPU = ncs::sim::DeviceType::CPU;
+  result &= plugin_map->registerCPUProducer("flat", createSimulator<CPU>);
+
+  const auto CUDA = ncs::sim::DeviceType::CUDA;
+  result &= plugin_map->registerCUDAProducer("flat", createSimulator<CUDA>);
+  
   return result;
 }
   
