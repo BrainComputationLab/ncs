@@ -1,5 +1,7 @@
 #pragma once
 
+#include <ncs/sim/DataBuffer.h>
+#include <ncs/sim/DeviceDescription.h>
 #include <ncs/sim/DeviceType.h>
 #include <ncs/sim/FactoryMap.h>
 #include <ncs/sim/NeuronSimulator.h>
