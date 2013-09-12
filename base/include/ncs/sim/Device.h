@@ -33,6 +33,7 @@ private:
                           FactoryMap<NeuronSimulator>* neuron_plugins);
   bool initializeNeuronSimulator_(NeuronSimulator<MemoryType>* simulator,
                                   NeuronPluginDescription* description);
+  bool initializeNeuronVoltages_();
 
   bool initializeSynapses_(DeviceDescription* description,
                            FactoryMap<SynapseSimulator>* synapse_plugins);
@@ -41,6 +42,7 @@ private:
 
   std::map<std::string, int> neuron_type_map_;
   std::vector<NeuronSimulator<MemoryType>*> neuron_simulators_;
+  std::vector<size_t> neuron_device_id_offsets_;
 
   std::vector<SynapseSimulator<MemoryType>*> synapse_simulators_;
 };

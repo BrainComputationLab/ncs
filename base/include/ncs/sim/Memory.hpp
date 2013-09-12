@@ -120,6 +120,16 @@ bool Memory<DeviceType::CUDA>::To<DeviceType::CUDA>::copy(const T* src,
   }
 }
 
+namespace mem {
+
+template<DeviceType::Type DestType, DeviceType::Type SourceType, typename T>
+bool copy(T* dst, T* src, size_t count) {
+  return Memory<SourceType>::template
+    To<DestType>::copy(src, dst, sizeof(T) * count);
+}
+
+} // namespace mem
+
 } // namespace sim
 
 } // namespace ncs

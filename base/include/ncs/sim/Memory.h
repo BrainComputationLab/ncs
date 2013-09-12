@@ -21,6 +21,15 @@ public:
 private:
 };
 
+namespace mem {
+
+  template<DeviceType::Type DestType, DeviceType::Type SourceType, typename T>
+  bool copy(T* dst, T* src, size_t count);
+
+} // namespace mem
+
+
+
 } // namespace sim
 
 } // namespace ncs

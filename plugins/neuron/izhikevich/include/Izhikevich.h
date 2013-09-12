@@ -19,6 +19,7 @@ public:
   IzhikevichSimulator();
   virtual bool addNeuron(ncs::sim::Neuron* neuron);
   virtual bool initialize();
+  virtual bool initializeVoltages(float* plugin_voltages);
   virtual ~IzhikevichSimulator();
 private:
   struct Buffers {
@@ -36,6 +37,7 @@ private:
   float* d_;
   float* u_;
   float* v_;
+  unsigned int num_neurons_;
 };
 
 #include "Izhikevich.hpp"

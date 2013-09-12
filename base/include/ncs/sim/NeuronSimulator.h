@@ -15,6 +15,7 @@ class NeuronSimulator {
 public:
   virtual bool addNeuron(Neuron* neuron) = 0;
   virtual bool initialize() = 0;
+  virtual bool initializeVoltages(float* plugin_voltages) = 0;
 private:
 };
 
