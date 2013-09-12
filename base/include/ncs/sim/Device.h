@@ -43,6 +43,7 @@ private:
   std::map<std::string, int> neuron_type_map_;
   std::vector<NeuronSimulator<MemoryType>*> neuron_simulators_;
   std::vector<size_t> neuron_device_id_offsets_;
+  size_t neuron_device_vector_size_;
 
   std::vector<SynapseSimulator<MemoryType>*> synapse_simulators_;
 };

@@ -1,3 +1,5 @@
+#include <ncs/sim/Bit.h>
+
 namespace ncs {
 
 namespace sim {
@@ -41,6 +43,7 @@ template<DeviceType::Type MemoryType>
 bool Device<MemoryType>::
 initializeNeurons_(DeviceDescription* description,
                    FactoryMap<NeuronSimulator>* neuron_plugins) {
+  size_t neuron_device_id_offset = 0;
   for (auto plugin_description : description->getNeuronPlugins()) {
     const std::string& type = plugin_description->getType();
     auto generator = neuron_plugins->getProducer<MemoryType>(type);
@@ -56,7 +59,10 @@ initializeNeurons_(DeviceDescription* description,
       return false;
     }
     neuron_simulators_.push_back(simulator);
+    neuron_device_id_offsets_.push_back(neuron_device_id_offset);
+    neuron_device_id_offset += Bit::pad(neuron_device_id_offset);
   }
+  neuron_device_vector_size_ = neuron_device_id_offset;
   return true;
 }
 

@@ -82,6 +82,7 @@ bool Memory<DeviceType::CPU>::To<DeviceType::CUDA>::copy(const T* src,
       cudaGetErrorString(cudaGetLastError()) << std::endl;
     return false;
   }
+  return true;
 }
 
 template<>
@@ -100,6 +101,7 @@ bool Memory<DeviceType::CUDA>::To<DeviceType::CPU>::copy(const T* src,
       cudaGetErrorString(cudaGetLastError()) << std::endl;
     return false;
   }
+  return true;
 }
 
 template<>
@@ -118,6 +120,7 @@ bool Memory<DeviceType::CUDA>::To<DeviceType::CUDA>::copy(const T* src,
       cudaGetErrorString(cudaGetLastError()) << std::endl;
     return false;
   }
+  return true;
 }
 
 namespace mem {
