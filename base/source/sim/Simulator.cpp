@@ -471,7 +471,8 @@ bool Simulator::initializeDevices_() {
       device = new Device<DeviceType::CPU>();
       break;
     case DeviceType::CL:
-      device = new Device<DeviceType::CL>();
+      // TODO(rvhoang): CL memory ops not implemented yet
+      // device = new Device<DeviceType::CL>();
       break;
     default:
       std::cerr << "Unknown device type: " << description->getDeviceType() <<

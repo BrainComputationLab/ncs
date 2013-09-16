@@ -8,6 +8,7 @@
 #include <ncs/sim/NeuronSimulatorUpdater.h>
 #include <ncs/sim/PluginDescription.h>
 #include <ncs/sim/SynapseSimulator.h>
+#include <ncs/sim/VectorExchanger.h>
 
 namespace ncs {
 
@@ -37,6 +38,9 @@ private:
   bool initializeNeuronSimulator_(NeuronSimulator<MType>* simulator,
                                   NeuronPluginDescription* description);
   bool initializeNeuronVoltages_();
+  bool initializeNeuronUpdater_();
+
+  bool initializeVectorExchangers_();
 
   bool initializeSynapses_(DeviceDescription* description,
                            FactoryMap<SynapseSimulator>* synapse_plugins);
@@ -48,6 +52,8 @@ private:
   std::vector<size_t> neuron_device_id_offsets_;
   size_t neuron_device_vector_size_;
   NeuronSimulatorUpdater<MType>* neuron_simulator_updater_;
+
+  DeviceVectorExtractor<MType>* fire_vector_extractor_;
 
   std::vector<SynapseSimulator<MType>*> synapse_simulators_;
 };

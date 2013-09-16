@@ -31,6 +31,18 @@ initialize(DeviceDescription* description,
     return false;
   }
 
+  std::clog << "Initializing NeuronSimulatorUpdater..." << std::endl;
+  if (!initializeNeuronUpdater_()) {
+    std::cerr << "Failed to initialize NeuronSimulatorUpdater." << std::endl;
+    return false;
+  }
+
+  std::clog << "Initializing vector exchangers..." << std::endl;
+  if (!initializeVectorExchangers_()) {
+    std::cerr << "Failed to initialize vector exchangers." << std::endl;
+    return false;
+  }
+
   std::clog << "Initializing synapses..." << std::endl;
   if (!initializeSynapses_(description, synapse_plugins)) {
     std::cerr << "Failed to initialize synapses." << std::endl;
@@ -78,6 +90,22 @@ initializeNeuronSimulator_(NeuronSimulator<MType>* simulator,
   }
   if (!simulator->initialize()) {
     std::cerr << "Failed to initialize a neuron simulator." << std::endl;
+    return false;
+  }
+  return true;
+}
+
+template<DeviceType::Type MType>
+bool Device<MType>::initializeNeuronUpdater_() {
+  neuron_simulator_updater_ = new NeuronSimulatorUpdater<MType>();
+  return true;
+}
+
+template<DeviceType::Type MType>
+bool Device<MType>::initializeVectorExchangers_() {
+  fire_vector_extractor_ = new DeviceVectorExtractor<MType>();
+  if (!fire_vector_extractor_->init(neuron_simulator_updater_)) {
+    std::cerr << "Failed to initialize DeviceVectorExtractor." << std::endl;
     return false;
   }
   return true;
