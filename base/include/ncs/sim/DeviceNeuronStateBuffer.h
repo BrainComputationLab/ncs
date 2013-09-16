@@ -14,6 +14,7 @@ public:
   float* getVoltages();
   Bit::Word* getFireBits();
   bool isValid() const;
+  size_t getVectorSize() const;
   ~DeviceNeuronStateBuffer();
 private:
   float* voltages_;
