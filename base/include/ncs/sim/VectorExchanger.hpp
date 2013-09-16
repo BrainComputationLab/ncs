@@ -32,6 +32,37 @@ DeviceVectorExtractor<MType>::~DeviceVectorExtractor() {
   delete state_subscription_;
 }
 
+template<DeviceType::Type MType>
+GlobalVectorInjector<MType>::
+GlobalVectorInjector(size_t global_neuron_vector_size,
+                     size_t num_buffers)
+  : global_neuron_vector_size_(global_neuron_vector_size),
+    num_buffers_(num_buffers),
+    subscription_(nullptr) {
+}
+
+template<DeviceType::Type MType>
+bool GlobalVectorInjector<MType>::init(CPUGlobalPublisher* publisher) {
+  for (size_t i = 0; i < num_buffers_; ++i) {
+    auto buffer =
+      new GlobalNeuronStateBuffer<MType>(global_neuron_vector_size_);
+    if (!buffer->isValid()) {
+      delete buffer;
+      return false;
+    }
+    this->addBlank_(buffer);
+  }
+  subscription_ = publisher->subscribe();
+  return nullptr != subscription_;
+}
+
+template<DeviceType::Type MType>
+GlobalVectorInjector<MType>::~GlobalVectorInjector() {
+  if (subscription_) {
+    delete subscription_;
+  }
+}
+
 } // namespace sim
 
 } // namespace ncs

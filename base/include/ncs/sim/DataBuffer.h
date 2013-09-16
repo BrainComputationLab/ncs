@@ -192,7 +192,7 @@ protected:
 
 		@param blank A fully allocated publication ready to be written to
 	*/
-	void _addBlank(T* blank);
+	void addBlank_(T* blank);
 
 	/**
 		Retrieves a blank that is not being consumed by any subscribers and
