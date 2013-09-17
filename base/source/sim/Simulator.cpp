@@ -10,6 +10,7 @@
 
 #include <ncs/sim/Bit.h>
 #include <ncs/sim/ClusterDescription.h>
+#include <ncs/sim/CUDADevice.h>
 #include <ncs/sim/File.h>
 #include <ncs/sim/MPI.h>
 #include <ncs/sim/Simulator.h>
@@ -489,7 +490,7 @@ bool Simulator::initializeDevices_() {
     DeviceBase* device = nullptr;
     switch(description->getDeviceType()) {
     case DeviceType::CUDA:
-      device = new Device<DeviceType::CUDA>();
+      device = new CUDADevice(description->getDeviceIndex());
       break;
     case DeviceType::CPU:
       device = new Device<DeviceType::CPU>();
@@ -507,12 +508,23 @@ bool Simulator::initializeDevices_() {
       std::cerr << "Failed to create a device." << std::endl;
       return false;
     }
+    if (!device->threadInit()) {
+      std::cerr << "Failed to initialize device thread." << std::endl;
+      delete device;
+      return false;
+    }
     if (!device->initialize(description,
                             neuron_simulator_generators_,
                             synapse_simulator_generators_,
                             vector_exchanger_,
                             global_neuron_vector_size_)) {
       std::cerr << "Failed to initialize device." << std::endl;
+      delete device;
+      return false;
+    }
+    if (!device->threadDestroy()) {
+      std::cerr << "Failed to destroy device thread." << std::endl;
+      delete device;
       return false;
     }
     devices_.push_back(device);

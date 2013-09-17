@@ -51,6 +51,29 @@ initialize(DeviceDescription* description,
     std::cerr << "Failed to initialize synapses." << std::endl;
     return false;
   }
+
+  std::clog << "Initializing FireTable..." << std::endl;
+  if (!initializeFireTable_()) {
+    std::cerr << "Failed to initialize fire table." << std::endl;
+    return false;
+  }
+
+  std::clog << "Initializing FireTableUpdater..." << std::endl;
+  if (!initializeFireTableUpdater_(description)) {
+    std::cerr << "Failed to initialize FireTableUpdater." << std::endl;
+    return false;
+  }
+
+  return true;
+}
+
+template<DeviceType::Type MType>
+bool Device<MType>::threadInit() {
+  return true;
+}
+
+template<DeviceType::Type MType>
+bool Device<MType>::threadDestroy() {
   return true;
 }
 
@@ -198,6 +221,28 @@ initializeFireTable_() {
   return true;
 }
 
+template<DeviceType::Type MType>
+bool Device<MType>::
+initializeFireTableUpdater_(DeviceDescription* description) {
+  std::vector<Synapse*> synapse_vector;
+  for (auto plugin : description->getSynapsePlugins()) {
+    for (auto synapse : plugin->getSynapses()) {
+      synapse_vector.push_back(synapse);
+    }
+    size_t padded_size = Bit::pad(synapse_vector.size());
+    while (synapse_vector.size() != padded_size) {
+      synapse_vector.push_back(nullptr);
+    }
+  }
+  fire_table_updater_ = new FireTableUpdater<MType>();
+  if (!fire_table_updater_->init(fire_table_,
+                                 global_vector_injector_,
+                                 synapse_vector)) {
+    std::cerr << "Failed to initialize FireTableUpdater." << std::endl;
+    return false;
+  }
+  return true;
+}
 
 } // namespace sim
 

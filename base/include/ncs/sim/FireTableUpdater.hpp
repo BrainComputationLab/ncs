@@ -2,12 +2,14 @@ namespace ncs {
 
 namespace sim {
 
+template<DeviceType::Type MType>
 FireTableUpdater<MType>::FireTableUpdater()
   : fire_table_(nullptr),
     global_presynaptic_neuron_ids_(nullptr),
     synaptic_delays_(nullptr) {
 }
 
+template<DeviceType::Type MType>
 bool FireTableUpdater<MType>::
 init(FireTable<MType>* table,
      SpecificPublisher<GlobalNeuronStateBuffer<MType>>* publisher,
@@ -51,6 +53,7 @@ init(FireTable<MType>* table,
   return nullptr != subscription_;
 }
 
+template<DeviceType::Type MType>
 FireTableUpdater<MType>::~FireTableUpdater() {
   if (global_presynaptic_neuron_ids_) {
     Memory<MType>::free(global_presynaptic_neuron_ids_);

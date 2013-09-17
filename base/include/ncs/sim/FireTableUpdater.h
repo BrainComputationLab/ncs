@@ -22,11 +22,14 @@ private:
   unsigned int* global_presynaptic_neuron_ids_;
   unsigned int* synaptic_delays_;
   size_t device_synaptic_vector_size_;
-  SpecificPublisher<GlobalNeuronStateBuffer<MType>>* subscription_;
+  typedef SpecificPublisher<GlobalNeuronStateBuffer<MType>>
+    GlobalNeuronStatePublisher;
+  typename GlobalNeuronStatePublisher::Subscription* subscription_;
+  FireTable<MType>* fire_table_;
 };
 
 } // namespace sim
 
 } // namespace ncs
 
-#include <ncs/sim/FireTableUpdater.h>
+#include <ncs/sim/FireTableUpdater.hpp>

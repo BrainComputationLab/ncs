@@ -16,10 +16,11 @@ public:
   ~SynapticFireVectorBuffer();
 private:
   Bit::Word* data_row_;
+  size_t num_words_;
 };
 
 } // namespace sim
 
 } // namespace ncs
 
-#include <ncs/sim/SynapticFireVectorBuffer.h>
+#include <ncs/sim/SynapticFireVectorBuffer.hpp>

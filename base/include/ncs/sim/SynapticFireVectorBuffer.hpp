@@ -3,29 +3,29 @@ namespace ncs {
 namespace sim {
 
 template<DeviceType::Type MType>
-SynapticFireVectorBuffer::SynapticFireVectorBuffer(size_t num_words)
+SynapticFireVectorBuffer<MType>::SynapticFireVectorBuffer(size_t num_words)
   : num_words_(num_words) {
 }
 
 template<DeviceType::Type MType>
-bool SynapticFireVectorBuffer::setData(Bit::Word* data_row) {
+bool SynapticFireVectorBuffer<MType>::setData(Bit::Word* data_row) {
   data_row_ = data_row;
   setPin_("synapse_fire", data_row_, MType);
   return true;
 }
 
 template<DeviceType::Type MType>
-bool SynapticFireVectorBuffer::init() {
+bool SynapticFireVectorBuffer<MType>::init() {
   return true;
 }
 
 template<DeviceType::Type MType>
-size_t SynapticFireVectorBuffer::getNumberOfWords() const {
+size_t SynapticFireVectorBuffer<MType>::getNumberOfWords() const {
   return num_words_;
 }
 
 template<DeviceType::Type MType>
-SynapticFireVectorBuffer::~SynapticFireVectorBuffer() {
+SynapticFireVectorBuffer<MType>::~SynapticFireVectorBuffer() {
 }
 
 } // namespace sim

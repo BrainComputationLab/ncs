@@ -9,6 +9,8 @@ namespace sim {
 class CUDA
 {
 public:
+  static bool setDevice(int device_number);
+  static int getDevice();
   static bool initStream();
   static cudaStream_t& getStream();
   static bool synchronize();

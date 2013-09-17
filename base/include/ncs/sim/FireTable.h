@@ -29,4 +29,4 @@ private:
 
 } // namespace ncs
 
-#include <ncs/sim/FireTable.h>
+#include <ncs/sim/FireTable.hpp>

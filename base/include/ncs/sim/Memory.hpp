@@ -80,6 +80,10 @@ bool Memory<DeviceType::CPU>::To<DeviceType::CUDA>::copy(const T* src,
   if (cudaSuccess != result) {
     std::cerr << "cudaMemcpyAsync(cudaMemcpyHostToDevice) failed: " <<
       cudaGetErrorString(cudaGetLastError()) << std::endl;
+    std::cerr << "Dest: " << dest << std::endl;
+    std::cerr << "Source: " << src << std::endl;
+    std::cerr << "Size: " << count * sizeof(T) << std::endl;
+    std::cerr << "Device: " << CUDA::getDevice() << std::endl;
     return false;
   }
   return true;
@@ -99,6 +103,9 @@ bool Memory<DeviceType::CUDA>::To<DeviceType::CPU>::copy(const T* src,
   if (cudaSuccess != result) {
     std::cerr << "cudaMemcpyAsync(cudaMemcpyDeviceToHost) failed: " <<
       cudaGetErrorString(cudaGetLastError()) << std::endl;
+    std::cerr << "Dest: " << dest << std::endl;
+    std::cerr << "Source: " << src << std::endl;
+    std::cerr << "Size: " << count * sizeof(T) << std::endl;
     return false;
   }
   return true;
@@ -128,7 +135,7 @@ namespace mem {
 template<DeviceType::Type DestType, DeviceType::Type SourceType, typename T>
 bool copy(T* dst, T* src, size_t count) {
   return Memory<SourceType>::template
-    To<DestType>::copy(src, dst, sizeof(T) * count);
+    To<DestType>::copy(src, dst, count);
 }
 
 } // namespace mem

@@ -103,7 +103,10 @@ DeviceDescription::getDevicesOnThisMachine(unsigned int enabled_device_types) {
       else { // Each SP is 32 cores
         power *= 32;
       }
-      results.push_back(new DeviceDescription(true, power, DeviceType::CUDA));
+      results.push_back(new DeviceDescription(true,
+                                              power,
+                                              DeviceType::CUDA,
+                                              i));
     }
 #else // NCS_CUDA
     std::cerr << "This version of NCS was not compiled with CUDA support." <<
