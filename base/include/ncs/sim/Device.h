@@ -5,6 +5,7 @@
 #include <ncs/sim/DeviceType.h>
 #include <ncs/sim/FactoryMap.h>
 #include <ncs/sim/FireTable.h>
+#include <ncs/sim/FireTableUpdater.h>
 #include <ncs/sim/NeuronSimulator.h>
 #include <ncs/sim/NeuronSimulatorUpdater.h>
 #include <ncs/sim/PluginDescription.h>
