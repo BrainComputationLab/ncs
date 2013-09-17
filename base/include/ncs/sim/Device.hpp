@@ -24,7 +24,9 @@ template<DeviceType::Type MType>
 bool Device<MType>::
 initialize(DeviceDescription* description,
            FactoryMap<NeuronSimulator>* neuron_plugins,
-           FactoryMap<SynapseSimulator>* synapse_plugins) {
+           FactoryMap<SynapseSimulator>* synapse_plugins,
+           MachineVectorExchanger* machine_vector_exchanger,
+           size_t global_neuron_vector_size) {
   std::clog << "Initializing neurons..." << std::endl;
   if (!initializeNeurons_(description, neuron_plugins)) {
     std::cerr << "Failed to initialize neurons." << std::endl;
@@ -38,7 +40,8 @@ initialize(DeviceDescription* description,
   }
 
   std::clog << "Initializing vector exchangers..." << std::endl;
-  if (!initializeVectorExchangers_()) {
+  if (!initializeVectorExchangers_(machine_vector_exchanger,
+                                   global_neuron_vector_size)) {
     std::cerr << "Failed to initialize vector exchangers." << std::endl;
     return false;
   }
@@ -102,12 +105,23 @@ bool Device<MType>::initializeNeuronUpdater_() {
 }
 
 template<DeviceType::Type MType>
-bool Device<MType>::initializeVectorExchangers_() {
+bool Device<MType>::
+initializeVectorExchangers_(MachineVectorExchanger* machine_exchanger,
+                            size_t global_neuron_vector_size) {
   fire_vector_extractor_ = new DeviceVectorExtractor<MType>();
   if (!fire_vector_extractor_->init(neuron_simulator_updater_)) {
     std::cerr << "Failed to initialize DeviceVectorExtractor." << std::endl;
     return false;
   }
+
+  global_vector_injector_ =
+    new GlobalVectorInjector<MType>(global_neuron_vector_size,
+                                    Constants::num_buffers);
+  if (!global_vector_injector_->init(machine_exchanger)) {
+    std::cerr << "Failed to initialize GlobalVectorInjector." << std::endl;
+    return false;
+  }
+
   return true;
 }
 
@@ -115,6 +129,8 @@ template<DeviceType::Type MType>
 bool Device<MType>::
 initializeSynapses_(DeviceDescription* description,
                     FactoryMap<SynapseSimulator>* synapse_plugins) {
+  min_synaptic_delay_ = std::numeric_limits<unsigned int>::max();
+  max_synaptic_delay_ = std::numeric_limits<unsigned int>::min();
   for (auto plugin_description : description->getSynapsePlugins()) {
     const std::string& type = plugin_description->getType();
     auto generator = synapse_plugins->getProducer<MType>(type);
@@ -131,6 +147,18 @@ initializeSynapses_(DeviceDescription* description,
     }
     synapse_simulators_.push_back(simulator);
   }
+  if (description->getSynapsePlugins().empty()) {
+    min_synaptic_delay_ = 1;
+    max_synaptic_delay_ = 1;
+  }
+  if (0 == min_synaptic_delay_) {
+    std::cerr << "Synapses cannot have zero delay." << std::endl;
+    return false;
+  }
+  device_synaptic_vector_size_ = 0;
+  for (auto plugin_description : description->getSynapsePlugins()) {
+    device_synaptic_vector_size_ += plugin_description->getSynapses().size();
+  }
   return true;
 }
 
@@ -143,6 +171,8 @@ initializeSynapseSimulator_(SynapseSimulator<MType>* simulator,
       std::cerr << "Failed to add a synapse to the simulator." << std::endl;
       return false;
     }
+    min_synaptic_delay_ = std::min(min_synaptic_delay_, synapse->delay);
+    max_synaptic_delay_ = std::max(max_synaptic_delay_, synapse->delay);
   }
   if (!simulator->initialize()) {
     std::cerr << "Failed to initialize a synapse simulator." << std::endl;
@@ -150,6 +180,20 @@ initializeSynapseSimulator_(SynapseSimulator<MType>* simulator,
   }
   return true;
 }
+
+template<DeviceType::Type MType>
+bool Device<MType>::
+initializeFireTable_() {
+  fire_table_ = new FireTable<MType>(device_synaptic_vector_size_,
+                                     min_synaptic_delay_,
+                                     max_synaptic_delay_);
+  if (!fire_table_->init()) {
+    std::cerr << "Failed to initialize FireTable." << std::endl;
+    return false;
+  }
+  return true;
+}
+
 
 } // namespace sim
 

@@ -30,15 +30,16 @@ private:
 class MachineVectorExchanger 
   : public SpecificPublisher<GlobalNeuronStateBuffer<DeviceType::CPU>> {
 public:
-  MachineVectorExchanger(size_t global_neuron_vector_size,
-                         size_t num_buffers);
-  bool init(const std::vector<DeviceVectorExtractorBase*>& device_extractors,
-            const std::vector<size_t>& neuron_device_id_offsets);
+  MachineVectorExchanger();
+  bool init(size_t global_neuron_vector_size,
+            size_t num_buffers,
+            const std::vector<DeviceVectorExtractorBase*>& device_extractors,
+            const std::vector<size_t>& neuron_global_id_offsets);
 private:
   size_t global_neuron_vector_size_;
   size_t num_buffers_;
   std::vector<DeviceVectorExtractorBase*> device_extractors_;
-  std::vector<size_t> neuron_device_id_offsets_;
+  std::vector<size_t> neuron_global_id_offsets_;
 };
 
 template<DeviceType::Type MType>

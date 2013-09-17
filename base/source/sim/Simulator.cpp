@@ -21,7 +21,8 @@ namespace sim {
 Simulator::Simulator(spec::ModelSpecification* model_specification)
   : model_specification_(model_specification),
     communicator_(nullptr),
-    neurons_(nullptr) {
+    neurons_(nullptr),
+    vector_exchanger_(new MachineVectorExchanger()) {
 }
 
 bool Simulator::initialize(int argc, char** argv) {
@@ -107,6 +108,12 @@ bool Simulator::initialize(int argc, char** argv) {
   std::clog << "Initializing devices..." << std::endl;
   if (!initializeDevices_()) {
     std::cerr << "Failed to initialize devices." << std::endl;
+    return false;
+  }
+
+  std::clog << "Initializing MachineVectorExchanger..." << std::endl;
+  if (!initializeVectorExchanger_()) {
+    std::cerr << "Failed to initialize MachineVectorExchanger." << std::endl;
     return false;
   }
 
@@ -317,6 +324,7 @@ bool Simulator::assignNeuronIDs_() {
   for (unsigned int machine_index = 0;
        machine_index < cluster_->getMachines().size();
        ++machine_index) {
+    neuron_global_id_offsets_.push_back(global_id);
     unsigned int machine_id = 0;
     MachineDescription* machine = cluster_->getMachines()[machine_index];
     for (unsigned int device_index = 0;
@@ -345,6 +353,7 @@ bool Simulator::assignNeuronIDs_() {
       }
     }
   }
+  global_neuron_vector_size_ = global_id;
   return true;
 }
 
@@ -453,9 +462,23 @@ bool Simulator::distributeSynapses_() {
       synapse->id.plugin =
         synapse_plugins_by_device[device_location]->addSynapse(synapse);
     }
+
     delete [] synapse_plugins_by_device;
     delete [] synapse_plugin_index;
   }
+  unsigned int device_id = 0;
+  for (auto device : devices) {
+    for (auto plugin : device->getSynapsePlugins()) {
+      for (auto synapse : plugin->getSynapses()) {
+        synapse->id.device = device_id++;
+      }
+    }
+  }
+  return true;
+}
+
+bool Simulator::initializeVectorExchanger_() {
+  // TODO(rvhoang): initialize this after devices are ready
   return true;
 }
 
@@ -485,7 +508,9 @@ bool Simulator::initializeDevices_() {
     }
     if (!device->initialize(description,
                             neuron_simulator_generators_,
-                            synapse_simulator_generators_)) {
+                            synapse_simulator_generators_,
+                            vector_exchanger_,
+                            global_neuron_vector_size_)) {
       std::cerr << "Failed to initialize device." << std::endl;
       return false;
     }

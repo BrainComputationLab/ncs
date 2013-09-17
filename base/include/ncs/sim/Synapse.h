@@ -10,9 +10,10 @@ struct Synapse {
   void* instantiator;
   Neuron* presynaptic_neuron;
   Neuron* postsynaptic_neuron;
-  int delay;
+  unsigned int delay;
   struct {
     unsigned int plugin;
+    unsigned int device;
   } id;
   struct {
     unsigned int plugin;

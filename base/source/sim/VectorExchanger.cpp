@@ -7,17 +7,16 @@ namespace sim {
 DeviceVectorExtractorBase::~DeviceVectorExtractorBase() {
 }
 
-MachineVectorExchanger::
-MachineVectorExchanger(size_t global_neuron_vector_size,
-                       size_t num_buffers)
-  : global_neuron_vector_size_(global_neuron_vector_size),
-    num_buffers_(num_buffers) {
+MachineVectorExchanger::MachineVectorExchanger() {
 }
 
 bool MachineVectorExchanger::
-init(const std::vector<DeviceVectorExtractorBase*>& device_extractors,
-     const std::vector<size_t>& neuron_device_id_offsets) {
-  for (size_t i = 0; i < num_buffers_; ++i) {
+init(size_t global_neuron_vector_size,
+     size_t num_buffers,
+     const std::vector<DeviceVectorExtractorBase*>& device_extractors,
+     const std::vector<size_t>& neuron_global_id_offsets) {
+  global_neuron_vector_size_ = global_neuron_vector_size;
+  for (size_t i = 0; i < num_buffers; ++i) {
     auto buffer =
       new GlobalNeuronStateBuffer<DeviceType::CPU>(global_neuron_vector_size_);
     if (!buffer->isValid()) {
@@ -27,7 +26,7 @@ init(const std::vector<DeviceVectorExtractorBase*>& device_extractors,
     addBlank_(buffer);
   }
   device_extractors_ = device_extractors;
-  neuron_device_id_offsets_ = neuron_device_id_offsets;
+  neuron_global_id_offsets_ = neuron_global_id_offsets;
   return true;
 }
 
