@@ -69,6 +69,7 @@ private:
   unsigned int max_synaptic_delay_;
 
   std::vector<SynapseSimulator<MType>*> synapse_simulators_;
+  std::vector<size_t> synapse_device_id_offsets_;
   size_t device_synaptic_vector_size_;
 };
 

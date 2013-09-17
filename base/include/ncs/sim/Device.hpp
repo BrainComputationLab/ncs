@@ -156,9 +156,13 @@ initializeSynapses_(DeviceDescription* description,
     return false;
   }
   device_synaptic_vector_size_ = 0;
+  size_t synapse_device_id_offset = 0;
   for (auto plugin_description : description->getSynapsePlugins()) {
-    device_synaptic_vector_size_ += plugin_description->getSynapses().size();
+    synapse_device_id_offsets_.push_back(synapse_device_id_offset);
+    synapse_device_id_offset +=
+      Bit::pad(plugin_description->getSynapses().size());
   }
+  device_synaptic_vector_size_ = synapse_device_id_offset;
   return true;
 }
 

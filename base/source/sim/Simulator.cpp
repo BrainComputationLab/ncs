@@ -473,6 +473,7 @@ bool Simulator::distributeSynapses_() {
         synapse->id.device = device_id++;
       }
     }
+    device_id = Bit::pad(device_id);
   }
   return true;
 }
