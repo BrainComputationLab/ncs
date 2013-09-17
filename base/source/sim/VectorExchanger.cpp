@@ -19,7 +19,8 @@ init(size_t global_neuron_vector_size,
   for (size_t i = 0; i < num_buffers; ++i) {
     auto buffer =
       new GlobalNeuronStateBuffer<DeviceType::CPU>(global_neuron_vector_size_);
-    if (!buffer->isValid()) {
+    if (!buffer->init()) {
+      std::cerr << "Failed to initialize GlobalNeuronStateBuffer" << std::endl;
       delete buffer;
       return false;
     }

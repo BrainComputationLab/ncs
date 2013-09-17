@@ -8,6 +8,7 @@ template<DeviceType::Type MType>
 class GlobalNeuronStateBuffer : public DataBuffer {
 public:
   GlobalNeuronStateBuffer(size_t global_neuron_vector_size);
+  bool init();
   Bit::Word* getFireBits();
   size_t getVectorSize() const;
   size_t getNumberOfWords() const;
