@@ -8,9 +8,10 @@ namespace sim {
 class Simulation {
 public:
   Simulation(spec::ModelSpecification* model_specification);
-  bool run(const std::vector<std::string>& args);
+  bool init(const std::vector<std::string>& args);
 private:
   spec::ModelSpecification* model_specification_;
+  class Simulator* simulator_;
 };
 
 } // namespace sim

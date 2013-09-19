@@ -14,7 +14,7 @@ def Run(argv):
     return
   model_specification = model.model_specification
   simulation = pyncs.Simulation(model_specification)
-  simulation.run(pyncs.string_list(argv))
+  simulation.init(pyncs.string_list(argv))
 
 if __name__ == "__main__":
   Run(sys.argv)

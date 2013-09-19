@@ -123,6 +123,10 @@ bool Simulator::initialize(int argc, char** argv) {
   return true;
 }
 
+bool Simulator::step() {
+  return true;
+}
+
 bool Simulator::initializeSeeds_() {
   // TODO(rvhoang): get seeds from input
   neuron_seed_ = 0;

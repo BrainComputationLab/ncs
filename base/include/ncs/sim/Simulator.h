@@ -19,6 +19,7 @@ class Simulator {
 public:
   Simulator(spec::ModelSpecification* model_specification);
   bool initialize(int argc, char** argv);
+  bool step();
 private:
   bool initializeSeeds_();
   bool gatherClusterData_(unsigned int enabled_device_types);

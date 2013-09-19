@@ -17,6 +17,13 @@ bool InputUpdater<MType>::init(size_t num_buffers,
   return true;
 }
 
+template<DeviceType::Type MType>
+bool InputUpdater<MType>::step(SimulationProperties* properties) {
+  auto buffer = this->getBlank_();
+  this->publish(buffer);
+  return true;
+}
+
 } // namespace sim
 
 } // namespace ncs
