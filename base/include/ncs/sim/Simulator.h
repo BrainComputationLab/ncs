@@ -7,6 +7,7 @@
 #include <ncs/sim/MPI.h>
 #include <ncs/sim/NeuronSimulator.h>
 #include <ncs/sim/PluginLoader.h>
+#include <ncs/sim/SimulationController.h>
 #include <ncs/sim/SynapseSimulator.h>
 #include <ncs/sim/VectorExchanger.h>
 #include <ncs/spec/ModelSpecification.h>
@@ -20,6 +21,7 @@ public:
   Simulator(spec::ModelSpecification* model_specification);
   bool initialize(int argc, char** argv);
   bool step();
+  ~Simulator();
 private:
   bool initializeSeeds_();
   bool gatherClusterData_(unsigned int enabled_device_types);
@@ -56,6 +58,8 @@ private:
   std::map<spec::SynapseGroup*, std::vector<Synapse*>> synapses_by_group_;
 
   MachineVectorExchanger* vector_exchanger_;
+
+  SimulationController* simulation_controller_;
 
   int neuron_seed_;
   int synapse_seed_;

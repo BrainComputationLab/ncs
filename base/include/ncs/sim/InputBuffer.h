@@ -10,8 +10,14 @@ public:
   bool init();
   ~InputBuffer();
 private:
+  size_t device_neuron_vector_size_;
+  Bit::Word* voltage_clamp_bits_;
+  float* clamp_voltage_values_;
+  float* input_current_;
 };
 
 } // namespace sim
 
 } // namespace ncs
+
+#include <ncs/sim/InputBuffer.hpp>

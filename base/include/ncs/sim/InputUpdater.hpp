@@ -3,7 +3,13 @@ namespace ncs {
 namespace sim {
 
 template<DeviceType::Type MType>
-bool InputUpdater<MType>::init(size_t num_buffers,
+InputUpdater<MType>::InputUpdater()
+  : step_subscription_(nullptr) {
+}
+
+template<DeviceType::Type MType>
+bool InputUpdater<MType>::init(SpecificPublisher<StepSignal>* signal_publisher,
+                               size_t num_buffers,
                                size_t device_neuron_vector_size) {
   for (size_t i = 0; i < num_buffers; ++i) {
     auto buffer = new InputBuffer<MType>(device_neuron_vector_size);
@@ -14,14 +20,27 @@ bool InputUpdater<MType>::init(size_t num_buffers,
     }
     addBlank_(buffer);
   }
+  step_subscription_ = signal_publisher->subscribe();
   return true;
 }
 
 template<DeviceType::Type MType>
 bool InputUpdater<MType>::step(SimulationProperties* properties) {
+  auto step_signal = step_subscription_->pull();
+  if (nullptr == step_signal) {
+    return true;
+  }
   auto buffer = this->getBlank_();
   this->publish(buffer);
+  step_signal->release();
   return true;
+}
+
+template<DeviceType::Type MType>
+InputUpdater<MType>::~InputUpdater() {
+  if (step_subscription_) {
+    delete step_subscription_;
+  }
 }
 
 } // namespace sim

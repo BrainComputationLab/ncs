@@ -26,7 +26,8 @@ public:
                           FactoryMap<NeuronSimulator>* neuron_plugins,
                           FactoryMap<SynapseSimulator>* synapse_plugins,
                           MachineVectorExchanger* machine_vector_exchanger,
-                          size_t global_neuron_vector_size) = 0;
+                          size_t global_neuron_vector_size,
+                          SpecificPublisher<StepSignal>* signal_publisher) = 0;
   virtual bool threadInit() = 0;
   virtual bool threadDestroy() = 0;
 private:
@@ -41,7 +42,8 @@ public:
                           FactoryMap<NeuronSimulator>* neuron_plugins,
                           FactoryMap<SynapseSimulator>* synapse_plugins,
                           MachineVectorExchanger* machine_vector_exchanger,
-                          size_t global_neuron_vector_size);
+                          size_t global_neuron_vector_size,
+                          SpecificPublisher<StepSignal>* signal_publisher);
   virtual bool threadInit();
   virtual bool threadDestroy();
 private:
@@ -63,7 +65,7 @@ private:
   bool initializeFireTable_();
   bool initializeFireTableUpdater_(DeviceDescription* description);
 
-  bool initializeInputUpdater_();
+  bool initializeInputUpdater_(SpecificPublisher<StepSignal>* signal_publisher);
 
   std::map<std::string, int> neuron_type_map_;
   std::vector<NeuronSimulator<MType>*> neuron_simulators_;

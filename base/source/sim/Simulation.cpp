@@ -23,6 +23,22 @@ bool Simulation::init(const std::vector<std::string>& args) {
   return true;
 }
 
+bool Simulation::step() {
+  return simulator_->step();
+}
+
+bool Simulation::shutdown() {
+  if (simulator_) {
+    delete simulator_;
+    return true;
+  }
+  return false;
+}
+
+Simulation::~Simulation() {
+  shutdown();
+}
+
 } // namespace sim
 
 } // namespace ncs

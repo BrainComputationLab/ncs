@@ -23,7 +23,8 @@ Simulator::Simulator(spec::ModelSpecification* model_specification)
   : model_specification_(model_specification),
     communicator_(nullptr),
     neurons_(nullptr),
-    vector_exchanger_(new MachineVectorExchanger()) {
+    vector_exchanger_(new MachineVectorExchanger()),
+    simulation_controller_(new SimulationController()) {
 }
 
 bool Simulator::initialize(int argc, char** argv) {
@@ -124,7 +125,16 @@ bool Simulator::initialize(int argc, char** argv) {
 }
 
 bool Simulator::step() {
-  return true;
+  return simulation_controller_->step();
+}
+
+Simulator::~Simulator() {
+  std::clog << "Shutting down simulation." << std::endl;
+
+  std::clog << "Destroying simulation controller..." << std::endl;
+  delete simulation_controller_;
+
+  std::clog << "Shut down complete." << std::endl;
 }
 
 bool Simulator::initializeSeeds_() {
@@ -521,7 +531,8 @@ bool Simulator::initializeDevices_() {
                             neuron_simulator_generators_,
                             synapse_simulator_generators_,
                             vector_exchanger_,
-                            global_neuron_vector_size_)) {
+                            global_neuron_vector_size_,
+                            simulation_controller_)) {
       std::cerr << "Failed to initialize device." << std::endl;
       delete device;
       return false;

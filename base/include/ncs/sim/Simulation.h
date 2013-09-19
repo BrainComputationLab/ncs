@@ -9,6 +9,9 @@ class Simulation {
 public:
   Simulation(spec::ModelSpecification* model_specification);
   bool init(const std::vector<std::string>& args);
+  bool step();
+  bool shutdown();
+  ~Simulation();
 private:
   spec::ModelSpecification* model_specification_;
   class Simulator* simulator_;

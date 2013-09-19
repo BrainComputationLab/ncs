@@ -142,7 +142,7 @@ void SpecificPublisher<T>::publish(T* data) {
   // Make sure no one else is messing with the subscriber list
   std::unique_lock<std::mutex> lock(mutex_);
   // Increment the sub count by the number of specific subscriptions
-  data->subscriptionCount += subscriptions_.size();
+  data->subscription_count += subscriptions_.size();
   // Then publish to the generic subscribers first, which adds its own count
   // and pushes data out
   unsigned int subpubs = Publisher::publish(data);
@@ -152,8 +152,8 @@ void SpecificPublisher<T>::publish(T* data) {
   }
   // If no one is listening, just release the buffer
   if (subpubs == 0 && subscriptions_.empty()) {
-    if (data->prereleaseFunction) {
-      data->prereleaseFunction();
+    if (data->prerelease_function) {
+      data->prerelease_function();
     }
     blanks_.push(data);
     blank_available_.notify_all();
