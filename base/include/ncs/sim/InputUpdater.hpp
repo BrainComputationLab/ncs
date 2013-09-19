@@ -25,10 +25,10 @@ bool InputUpdater<MType>::init(SpecificPublisher<StepSignal>* signal_publisher,
 }
 
 template<DeviceType::Type MType>
-bool InputUpdater<MType>::step(SimulationProperties* properties) {
+bool InputUpdater<MType>::step() {
   auto step_signal = step_subscription_->pull();
   if (nullptr == step_signal) {
-    return true;
+    return false;
   }
   auto buffer = this->getBlank_();
   this->publish(buffer);

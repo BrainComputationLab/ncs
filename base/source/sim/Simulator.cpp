@@ -119,6 +119,12 @@ bool Simulator::initialize(int argc, char** argv) {
     return false;
   }
 
+  std::clog << "Starting device threads..." << std::endl;
+  if (!startDevices_()) {
+    std::cerr << "Failed to start device threads." << std::endl;
+    return false;
+  }
+
   std::clog << "Initialization complete..." << std::endl;
 
   return true;
@@ -545,6 +551,14 @@ bool Simulator::initializeDevices_() {
     devices_.push_back(device);
   }
   return true;
+}
+
+bool Simulator::startDevices_() {
+  bool result = true;
+  for (auto device : devices_) {
+    result &= device->start();
+  }
+  return result;
 }
 
 int Simulator::getNeuronSeed_() const {

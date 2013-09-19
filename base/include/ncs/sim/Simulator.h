@@ -36,6 +36,7 @@ private:
   bool distributeSynapses_();
   bool initializeDevices_();
   bool initializeVectorExchanger_();
+  bool startDevices_();
 
   int getNeuronSeed_() const;
   int getSynapseSeed_() const;

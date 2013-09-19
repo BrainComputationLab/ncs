@@ -14,7 +14,7 @@ public:
   bool init(SpecificPublisher<StepSignal>* signal_publisher,
             size_t num_buffers,
             size_t device_neuron_vector_size);
-  bool step(SimulationProperties* properties);
+  bool step();
   ~InputUpdater();
 private:
   typename SpecificPublisher<StepSignal>::Subscription* step_subscription_;

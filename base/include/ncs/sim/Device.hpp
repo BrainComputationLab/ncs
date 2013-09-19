@@ -85,6 +85,21 @@ bool Device<MType>::threadDestroy() {
 }
 
 template<DeviceType::Type MType>
+bool Device<MType>::start() {
+  std::clog << "Starting InputUpdater..." << std::endl;
+  auto input_updater_function = [=]() {
+    std::clog << "Stepping" << std::endl;
+    while (input_updater_->step()) {
+      std::clog << "step" << std::endl;
+    }
+    std::clog << "Shutting down InputUpdater..." << std::endl;
+    delete input_updater_;
+  };
+  input_updater_thread_ = std::thread(input_updater_function);
+  return true;
+}
+
+template<DeviceType::Type MType>
 bool Device<MType>::
 initializeNeurons_(DeviceDescription* description,
                    FactoryMap<NeuronSimulator>* neuron_plugins) {

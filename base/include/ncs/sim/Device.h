@@ -1,5 +1,7 @@
 #pragma once
 
+#include <thread>
+
 #include <ncs/sim/DataBuffer.h>
 #include <ncs/sim/DeviceDescription.h>
 #include <ncs/sim/DeviceType.h>
@@ -30,6 +32,7 @@ public:
                           SpecificPublisher<StepSignal>* signal_publisher) = 0;
   virtual bool threadInit() = 0;
   virtual bool threadDestroy() = 0;
+  virtual bool start() = 0;
 private:
 };
 
@@ -46,6 +49,7 @@ public:
                           SpecificPublisher<StepSignal>* signal_publisher);
   virtual bool threadInit();
   virtual bool threadDestroy();
+  virtual bool start();
 private:
   bool initializeNeurons_(DeviceDescription* description,
                           FactoryMap<NeuronSimulator>* neuron_plugins);
@@ -88,6 +92,8 @@ private:
   SynapseSimulatorUpdater<MType>* synapse_simulator_updater_;
 
   InputUpdater<MType>* input_updater_;
+
+  std::thread input_updater_thread_;
 };
 
 } // namespace sim
