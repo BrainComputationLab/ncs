@@ -6,10 +6,12 @@
 #include <ncs/sim/FactoryMap.h>
 #include <ncs/sim/FireTable.h>
 #include <ncs/sim/FireTableUpdater.h>
+#include <ncs/sim/InputUpdater.h>
 #include <ncs/sim/NeuronSimulator.h>
 #include <ncs/sim/NeuronSimulatorUpdater.h>
 #include <ncs/sim/PluginDescription.h>
 #include <ncs/sim/SynapseSimulator.h>
+#include <ncs/sim/SynapseSimulatorUpdater.h>
 #include <ncs/sim/VectorExchanger.h>
 
 namespace ncs {
@@ -61,6 +63,8 @@ private:
   bool initializeFireTable_();
   bool initializeFireTableUpdater_(DeviceDescription* description);
 
+  bool initializeInputUpdater_();
+
   std::map<std::string, int> neuron_type_map_;
   std::vector<NeuronSimulator<MType>*> neuron_simulators_;
   std::vector<size_t> neuron_device_id_offsets_;
@@ -79,6 +83,9 @@ private:
   std::vector<SynapseSimulator<MType>*> synapse_simulators_;
   std::vector<size_t> synapse_device_id_offsets_;
   size_t device_synaptic_vector_size_;
+  SynapseSimulatorUpdater<MType>* synapse_simulator_updater_;
+
+  InputUpdater<MType>* input_updater_;
 };
 
 } // namespace sim
