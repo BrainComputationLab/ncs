@@ -32,6 +32,17 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 SET(CMAKE_SWIG_FLAGS "")
 SET_SOURCE_FILES_PROPERTIES("pyncs.i" PROPERTIES CPLUSPLUS ON)
 SET_SOURCE_FILES_PROPERTIES("pyncs.i" PROPERTIES SWIG_FLAGS "-includeall")
+SET(SWIG_MODULE_pyncs_EXTRA_DEPS
+    "include/ncs/spec/InputGroup.h"
+    "include/ncs/sim/Simulation.h"
+    "include/ncs/spec/BoxGenerator.h"
+    "include/ncs/spec/ExactGenerator.h"
+    "include/ncs/spec/Generator.h"
+    "include/ncs/spec/InputGroup.h"
+    "include/ncs/spec/ModelSpecification.h"
+    "include/ncs/spec/NormalGenerator.h"
+    "include/ncs/spec/UniformGenerator.h"
+)
 SWIG_ADD_MODULE(pyncs python "pyncs.i")
 SWIG_LINK_LIBRARIES(pyncs ${PYTHON_LIBRARIES} ncs_spec ncs_sim)
 
