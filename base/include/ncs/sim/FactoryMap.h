@@ -30,6 +30,8 @@ public:
   template<DeviceType::Type MType>
   std::function<Product<MType>*()> getProducer(const std::string& type);
 
+  std::vector<std::string> getTypes() const;
+
   template<DeviceType::Type MType>
     friend class FactoryMapTypeExtractor;
 private:

@@ -1,0 +1,23 @@
+#pragma once
+
+#include <ncs/sim/DeviceType.h>
+#include <ncs/sim/Input.h>
+#include <ncs/spec/ModelParameters.h>
+
+namespace ncs {
+
+namespace sim {
+
+template<DeviceType::Type MemoryType>
+class InputSimulator {
+public:
+  virtual bool addInputs(const std::vector<Input*>& inputs,
+                         void* instantiator) = 0;
+  virtual bool initialize() = 0;
+private:
+};
+
+} // namespace sim
+
+} // namespace ncs
+

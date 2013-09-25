@@ -10,7 +10,8 @@ InputUpdater<MType>::InputUpdater()
 template<DeviceType::Type MType>
 bool InputUpdater<MType>::init(SpecificPublisher<StepSignal>* signal_publisher,
                                size_t num_buffers,
-                               size_t device_neuron_vector_size) {
+                               size_t device_neuron_vector_size,
+                               FactoryMap<InputSimulator>* input_plugins) {
   for (size_t i = 0; i < num_buffers; ++i) {
     auto buffer = new InputBuffer<MType>(device_neuron_vector_size);
     if (!buffer->init()) {
@@ -21,6 +22,28 @@ bool InputUpdater<MType>::init(SpecificPublisher<StepSignal>* signal_publisher,
     addBlank_(buffer);
   }
   step_subscription_ = signal_publisher->subscribe();
+  if (nullptr == step_subscription_) {
+    std::cerr << "Failed to subscribe to StepSignal generator." << std::endl;
+    return false;
+  }
+  std::vector<std::string> input_types = input_plugins->getTypes();
+  for (auto type : input_types) {
+    auto simulator_generator = input_plugins->getProducer<MType>(type);
+    if (!simulator_generator) {
+      std::cerr << "Failed to get simulator for input type " << type <<
+        std::endl;
+      return false;
+    }
+    InputSimulator<MType>* simulator = simulator_generator();
+    if (!simulator->initialize()) {
+      std::cerr << "Failed to initialize InputSimulator for type " << type <<
+        std::endl;
+      delete simulator;
+      return false;
+    }
+    simulator_type_indices_[type] = simulators_.size();
+    simulators_.push_back(simulator);
+  }
   return true;
 }
 

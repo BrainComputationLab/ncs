@@ -3,6 +3,7 @@
 #include <ncs/sim/ClusterDescription.h>
 #include <ncs/sim/Device.h>
 #include <ncs/sim/FactoryMap.h>
+#include <ncs/sim/InputSimulator.h>
 #include <ncs/sim/ModelStatistics.h>
 #include <ncs/sim/MPI.h>
 #include <ncs/sim/NeuronSimulator.h>
@@ -36,6 +37,7 @@ private:
   bool distributeSynapses_();
   bool initializeDevices_();
   bool initializeVectorExchanger_();
+  bool loadInputSimulatorPlugins_();
   bool startDevices_();
 
   int getNeuronSeed_() const;
@@ -57,6 +59,8 @@ private:
   FactoryMap<SynapseSimulator>* synapse_simulator_generators_;
   std::map<spec::SynapseGroup*, void*> synapse_instantiators_by_group_;
   std::map<spec::SynapseGroup*, std::vector<Synapse*>> synapses_by_group_;
+
+  FactoryMap<InputSimulator>* input_simulator_generators_;
 
   MachineVectorExchanger* vector_exchanger_;
 

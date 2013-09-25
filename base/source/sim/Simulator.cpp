@@ -71,6 +71,12 @@ bool Simulator::initialize(int argc, char** argv) {
     return false;
   }
 
+  std::clog << "Loading input simulator plugins..." << std::endl;
+  if (!loadInputSimulatorPlugins_()) {
+    std::cerr << "Failed to load input simulator plugins." << std::endl;
+    return false;
+  }
+
   std::clog << "Gathering cluster data..." << std::endl;
   if (!gatherClusterData_(DeviceType::CPU | DeviceType::CUDA)) {
     std::cerr << "Failed to gather cluster data." << std::endl;
@@ -504,6 +510,20 @@ bool Simulator::initializeVectorExchanger_() {
   return true;
 }
 
+bool Simulator::loadInputSimulatorPlugins_() {
+  auto plugin_path_ptr = std::getenv("NCS_PLUGIN_PATH");
+  if (!plugin_path_ptr) {
+    std::cerr << "NCS_PLUGIN_PATH was not set." << std::endl;
+    return false;
+  }
+  std::string plugin_path(plugin_path_ptr);
+  std::vector<std::string> paths = File::getContents(plugin_path + "/input");
+  input_simulator_generators_ =
+    PluginLoader<InputSimulator>::loadPaths(paths, "InputSimulator");
+  return nullptr != input_simulator_generators_;
+  return true;
+}
+
 bool Simulator::initializeDevices_() {
   bool result = true;
   for (auto description : cluster_->getThisMachine()->getDevices()) {
@@ -536,6 +556,7 @@ bool Simulator::initializeDevices_() {
     if (!device->initialize(description,
                             neuron_simulator_generators_,
                             synapse_simulator_generators_,
+                            input_simulator_generators_,
                             vector_exchanger_,
                             global_neuron_vector_size_,
                             simulation_controller_)) {

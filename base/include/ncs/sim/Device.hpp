@@ -25,6 +25,7 @@ bool Device<MType>::
 initialize(DeviceDescription* description,
            FactoryMap<NeuronSimulator>* neuron_plugins,
            FactoryMap<SynapseSimulator>* synapse_plugins,
+           FactoryMap<InputSimulator>* input_plugins,
            MachineVectorExchanger* machine_vector_exchanger,
            size_t global_neuron_vector_size,
            SpecificPublisher<StepSignal>* signal_publisher) {
@@ -66,7 +67,7 @@ initialize(DeviceDescription* description,
   }
 
   std::clog << "Initializing InputUpdater..." << std::endl;
-  if (!initializeInputUpdater_(signal_publisher)) {
+  if (!initializeInputUpdater_(signal_publisher, input_plugins)) {
     std::cerr << "Failed to initialize InputUpdater." << std::endl;
     return false;
   }
@@ -268,11 +269,13 @@ initializeFireTableUpdater_(DeviceDescription* description) {
 
 template<DeviceType::Type MType>
 bool Device<MType>::
-initializeInputUpdater_(SpecificPublisher<StepSignal>* signal_publisher) {
+initializeInputUpdater_(SpecificPublisher<StepSignal>* signal_publisher,
+                        FactoryMap<InputSimulator>* input_plugins) {
   input_updater_ = new InputUpdater<MType>();
   if (!input_updater_->init(signal_publisher,
                             Constants::num_buffers,
-                            device_synaptic_vector_size_)) {
+                            device_synaptic_vector_size_,
+                            input_plugins)) {
     std::cerr << "Failed to initialize InputUpdater." << std::endl;
     return false;
   }

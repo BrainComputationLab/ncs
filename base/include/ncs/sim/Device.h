@@ -27,6 +27,7 @@ public:
   virtual bool initialize(DeviceDescription* description,
                           FactoryMap<NeuronSimulator>* neuron_plugins,
                           FactoryMap<SynapseSimulator>* synapse_plugins,
+                          FactoryMap<InputSimulator>* input_plugins,
                           MachineVectorExchanger* machine_vector_exchanger,
                           size_t global_neuron_vector_size,
                           SpecificPublisher<StepSignal>* signal_publisher) = 0;
@@ -44,6 +45,7 @@ public:
   virtual bool initialize(DeviceDescription* description,
                           FactoryMap<NeuronSimulator>* neuron_plugins,
                           FactoryMap<SynapseSimulator>* synapse_plugins,
+                          FactoryMap<InputSimulator>* input_plugins,
                           MachineVectorExchanger* machine_vector_exchanger,
                           size_t global_neuron_vector_size,
                           SpecificPublisher<StepSignal>* signal_publisher);
@@ -69,7 +71,8 @@ private:
   bool initializeFireTable_();
   bool initializeFireTableUpdater_(DeviceDescription* description);
 
-  bool initializeInputUpdater_(SpecificPublisher<StepSignal>* signal_publisher);
+  bool initializeInputUpdater_(SpecificPublisher<StepSignal>* signal_publisher,
+                               FactoryMap<InputSimulator>* input_plugins);
 
   std::map<std::string, int> neuron_type_map_;
   std::vector<NeuronSimulator<MType>*> neuron_simulators_;

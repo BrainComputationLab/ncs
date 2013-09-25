@@ -89,6 +89,15 @@ FactoryMap<Product>::getInstantiator(const std::string& type) {
   return instantiators_[type];
 }
 
+template<template<DeviceType::Type> class Product>
+std::vector<std::string> FactoryMap<Product>::getTypes() const {
+  std::vector<std::string> types;
+  for (auto it : instantiators_) {
+    types.push_back(it.first);
+  }
+  return types;
+}
+
 template<>
 template<template<DeviceType::Type> class Product>
 std::map<std::string, std::function<Product<DeviceType::CUDA>*()>>&
