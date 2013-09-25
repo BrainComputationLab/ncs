@@ -133,9 +133,21 @@ bool Memory<DeviceType::CUDA>::To<DeviceType::CUDA>::copy(const T* src,
 namespace mem {
 
 template<DeviceType::Type DestType, DeviceType::Type SourceType, typename T>
-bool copy(T* dst, T* src, size_t count) {
+bool copy(T* dst, const T* src, size_t count) {
   return Memory<SourceType>::template
     To<DestType>::copy(src, dst, count);
+}
+
+template<DeviceType::Type DestType, typename T>
+bool clone(T*& dst, const std::vector<T>& src) {
+  if (!Memory<DestType>::malloc(dst, src.size())) {
+    return false;
+  }
+  if (!copy<DestType, DeviceType::CPU>(dst, src.data(), src.size())) {
+    Memory<DestType>::free(dst);
+    return false;
+  }
+  return true;
 }
 
 } // namespace mem

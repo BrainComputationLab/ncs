@@ -12,7 +12,9 @@ template<DeviceType::Type MemoryType>
 class InputSimulator {
 public:
   virtual bool addInputs(const std::vector<Input*>& inputs,
-                         void* instantiator) = 0;
+                         void* instantiator,
+                         float start_time,
+                         float end_time) = 0;
   virtual bool initialize() = 0;
 private:
 };

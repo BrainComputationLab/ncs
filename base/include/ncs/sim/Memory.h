@@ -24,7 +24,10 @@ private:
 namespace mem {
 
   template<DeviceType::Type DestType, DeviceType::Type SourceType, typename T>
-  bool copy(T* dst, T* src, size_t count);
+  bool copy(T* dst, const T* src, size_t count);
+
+  template<DeviceType::Type DestType, DeviceType::Type SourceType, typename T>
+  bool clone(T*& dst, const std::vector<T>& src);
 
 } // namespace mem
 
