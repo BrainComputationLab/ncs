@@ -4,6 +4,7 @@
 #include <include/ncs/spec/BoxGenerator.h>
 #include <include/ncs/spec/ExactGenerator.h>
 #include <include/ncs/spec/Generator.h>
+#include <include/ncs/spec/InputGroup.h>
 #include <include/ncs/spec/ModelSpecification.h>
 #include <include/ncs/spec/NormalGenerator.h>
 #include <include/ncs/spec/UniformGenerator.h>
@@ -17,6 +18,7 @@
 %include <include/ncs/spec/BoxGenerator.h>
 %include <include/ncs/spec/ExactGenerator.h>
 %include <include/ncs/spec/Generator.h>
+%include <include/ncs/spec/InputGroup.h>
 %include <include/ncs/spec/ModelSpecification.h>
 %include <include/ncs/spec/NormalGenerator.h>
 %include <include/ncs/spec/UniformGenerator.h>
