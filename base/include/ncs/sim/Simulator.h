@@ -11,6 +11,7 @@
 #include <ncs/sim/SimulationController.h>
 #include <ncs/sim/SynapseSimulator.h>
 #include <ncs/sim/VectorExchanger.h>
+#include <ncs/spec/InputGroup.h>
 #include <ncs/spec/ModelSpecification.h>
 
 namespace ncs {
@@ -22,6 +23,7 @@ public:
   Simulator(spec::ModelSpecification* model_specification);
   bool initialize(int argc, char** argv);
   bool step();
+  bool addInput(spec::InputGroup* input);
   ~Simulator();
 private:
   bool initializeSeeds_();

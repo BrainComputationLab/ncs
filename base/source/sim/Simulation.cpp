@@ -27,6 +27,10 @@ bool Simulation::step() {
   return simulator_->step();
 }
 
+bool Simulation::addInput(spec::InputGroup* input) {
+  return simulator_->addInput(input);
+}
+
 bool Simulation::shutdown() {
   if (simulator_) {
     delete simulator_;

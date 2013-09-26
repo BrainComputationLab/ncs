@@ -140,6 +140,11 @@ bool Simulator::step() {
   return simulation_controller_->step();
 }
 
+bool Simulator::addInput(spec::InputGroup* input) {
+  // TOOD(rvhoang): implement me
+  return true;
+}
+
 Simulator::~Simulator() {
   std::clog << "Shutting down simulation." << std::endl;
 
