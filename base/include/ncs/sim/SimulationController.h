@@ -9,8 +9,10 @@ class SimulationController : public SpecificPublisher<StepSignal> {
 public:
   SimulationController();
   bool step();
+  bool idle();
   virtual ~SimulationController();
 private:
+  StepSignal* queued_blank_;
 };
 
 } // namespace sim

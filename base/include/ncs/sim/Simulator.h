@@ -41,6 +41,8 @@ private:
   bool initializeVectorExchanger_();
   bool loadInputSimulatorPlugins_();
   bool startDevices_();
+  
+  spec::NeuronAlias* getNeuronAlias(const std::string& alias) const;
 
   int getNeuronSeed_() const;
   int getSynapseSeed_() const;

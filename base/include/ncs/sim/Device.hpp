@@ -89,15 +89,26 @@ template<DeviceType::Type MType>
 bool Device<MType>::start() {
   std::clog << "Starting InputUpdater..." << std::endl;
   auto input_updater_function = [=]() {
-    std::clog << "Stepping" << std::endl;
     while (input_updater_->step()) {
-      std::clog << "step" << std::endl;
     }
     std::clog << "Shutting down InputUpdater..." << std::endl;
     delete input_updater_;
   };
   input_updater_thread_ = std::thread(input_updater_function);
   return true;
+}
+
+template<DeviceType::Type MType>
+bool Device<MType>::addInput(const std::vector<Input*>& inputs,
+                             void* instantiator,
+                             const std::string& type,
+                             float start_time,
+                             float end_time) {
+  return input_updater_->addInputs(inputs,
+                                   instantiator,
+                                   type,
+                                   start_time,
+                                   end_time);
 }
 
 template<DeviceType::Type MType>

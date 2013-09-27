@@ -14,7 +14,15 @@ def Run(argv):
     return
   model_specification = model.model_specification
   simulation = pyncs.Simulation(model_specification)
-  simulation.init(pyncs.string_list(argv))
+  if not simulation.init(pyncs.string_list(argv)):
+    print "Failed to initialize simulator."
+    return
+  print "Injecting pre-specified inputs."
+  for name, group in model.input_groups.items():
+    simulation.addInput(group)
+  print "Injection complete."
+  for i in range(0,10):
+    simulation.step()
 
 if __name__ == "__main__":
   Run(sys.argv)

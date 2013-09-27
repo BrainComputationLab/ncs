@@ -19,5 +19,9 @@
       "#submodel_0:user_name_for_all_neurons",
       "#submodel_1:user_name_for_all_neurons"
     ]
+  },
+  "#inputs": {
+    "type": "model_import",
+    "location": "input.json"
   }
 }

@@ -14,6 +14,7 @@ class JSONModel:
     self.synapse_alias_definitions = {}
     self.model_parameters_definitions = {}
     self.geometry_generator_definitions = {}
+    self.input_group_definitions = {}
     self.Load(path, None)
     self.valid = self.BuildModel_()
 
@@ -42,6 +43,7 @@ class JSONModel:
         "synapse_alias": {},
         "geometry_generator": {},
         "model_import": {},
+        "input_group": {},
       }
 
       for name, definition in definitions.items():
@@ -64,6 +66,7 @@ class JSONModel:
         "synapse_group": self.synapse_group_definitions,
         "synapse_alias": self.synapse_alias_definitions,
         "geometry_generator": self.geometry_generator_definitions,
+        "input_group": self.input_group_definitions,
       }
       for source, destination in transfer_locations.items():
         for name, definition in definitions_by_type[source].items():
@@ -91,6 +94,8 @@ class JSONModel:
     if not self.BuildSpecification_():
       print "Failed to build ModelSpecification"
       return False
+    if not self.BuildInputGroups_():
+      print "Failed to build input_groups"
     return True
 
   def BuildModelParameters_(self):
@@ -157,6 +162,11 @@ class JSONModel:
           return False
       neuron_alias = (
         pyncs.NeuronAlias(pyncs.neuron_group_list(list(neuron_subgroups)))
+      )
+      self.neuron_aliases[str(name)] = neuron_alias
+    for name, group in self.neuron_groups.items():
+      neuron_alias = (
+        pyncs.NeuronAlias(pyncs.neuron_group_list([group]))
       )
       self.neuron_aliases[str(name)] = neuron_alias
     return True
@@ -232,6 +242,26 @@ class JSONModel:
       )
       self.synapse_aliases[str(name)] = synapse_alias
     return True
+
+  def BuildInputGroups_(self):
+    self.input_groups = {}
+    for name, spec in self.input_group_definitions.items():
+      probability = float(spec["probability"])
+      neuron_alias_name = str(spec["neurons"])
+      start_time = float(spec["start_time"])
+      end_time = float(spec["end_time"])
+      model_name = str(spec["specification"])
+      if model_name not in self.model_parameters:
+        print "In input_group %s" % name
+        print "  model_parameters %s not found" % model_name
+      model_params = self.model_parameters[model_name]
+      input_group = pyncs.InputGroup(neuron_alias_name,
+                                     model_params,
+                                     probability,
+                                     start_time,
+                                     end_time)
+      self.input_groups[str(name)] = input_group
+
 
   def BuildSpecification_(self):
     self.model_specification = pyncs.ModelSpecification()

@@ -22,7 +22,9 @@ public:
   bool step();
   bool addInputs(const std::vector<Input*>& inputs,
                  void* instantiator,
-                 const std::string& type);
+                 const std::string& type,
+                 float start_time,
+                 float end_time);
   ~InputUpdater();
 private:
   typename SpecificPublisher<StepSignal>::Subscription* step_subscription_;

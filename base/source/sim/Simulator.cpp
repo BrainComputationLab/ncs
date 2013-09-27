@@ -137,11 +137,84 @@ bool Simulator::initialize(int argc, char** argv) {
 }
 
 bool Simulator::step() {
+  // TODO(rvhoang): echo this step to the other machines
   return simulation_controller_->step();
 }
 
 bool Simulator::addInput(spec::InputGroup* input) {
-  // TOOD(rvhoang): implement me
+  // TODO(rvhoang): echo this spec to the other machines
+  spec::NeuronAlias* alias = getNeuronAlias(input->getNeuronAlias());
+  if (nullptr == alias) {
+    std::cerr << "Failed to find neuron alias " << input->getNeuronAlias() <<
+      std::endl;
+    return false;
+  }
+  std::vector<Neuron*> potential_neurons;
+  for (auto neuron_group : alias->getGroups()) {
+    auto search_result = neurons_by_group_.find(neuron_group);
+    if (neurons_by_group_.end() == search_result) {
+      std::cerr << "Failed to find neuron group in alias " <<
+        input->getNeuronAlias() << std::endl;
+      return false;
+    }
+    for (auto neuron : search_result->second) {
+      potential_neurons.push_back(neuron);
+    }
+  }
+
+  spec::ModelParameters* parameters = input->getModelParameters();
+  const std::string& type = input->getModelParameters()->getType();
+  auto instantiator = input_simulator_generators_->getInstantiator(type);
+  if (!instantiator) {
+    std::cerr << "Failed to get instantiator for input type " << type <<
+      std::endl;
+    return false;
+  }
+  void* instantiator_data = instantiator(input->getModelParameters());
+  if (nullptr == instantiator_data) {
+    std::cerr << "Failed to build instantiator data for input of type " <<
+      type << std::endl;
+    return false;
+  }
+
+  // TODO(rvhoang): seed this
+  ncs::spec::RNG rng(0);
+  auto gen = [&](unsigned int i) {
+    return std::uniform_int_distribution<unsigned int>(0, i - 1)(rng);
+  };
+  std::random_shuffle(potential_neurons.begin(), potential_neurons.end(), gen);
+  std::vector<std::vector<Input*>> inputs_per_device;
+  for (size_t i = 0; i < devices_.size(); ++i) {
+    inputs_per_device.push_back(std::vector<Input*>());
+  }
+  unsigned int num_inputs = input->getProbability() * potential_neurons.size();
+  num_inputs = std::min(num_inputs, (unsigned int)potential_neurons.size());
+  unsigned int this_machine_index = cluster_->getThisMachineIndex();
+  for (unsigned int i = 0; i < num_inputs; ++i) {
+    int seed = rng();
+    auto neuron = potential_neurons[i];
+    if (neuron->location.machine != this_machine_index) {
+      continue;
+    }
+    Input* in = new Input();
+    in->seed = seed;
+    in->neuron_device_id = neuron->id.device;
+    inputs_per_device[neuron->location.device].push_back(in);
+  }
+
+  // TODO(rvhoang): thread this
+  for (size_t i = 0; i < devices_.size(); ++i) {
+    auto device = devices_[i];
+    device->threadInit();
+    bool result = device->addInput(inputs_per_device[i],
+                                   instantiator_data,
+                                   type,
+                                   input->getStartTime(),
+                                   input->getEndTime());
+    device->threadDestroy();
+  }
+
+  
   return true;
 }
 
@@ -194,7 +267,6 @@ bool Simulator::loadNeuronInstantiators_() {
   for (auto key_value : model_specification_->neuron_groups) {
     spec::NeuronGroup* group = key_value.second;
     const std::string& type = group->getModelParameters()->getType();
-    auto gen = group->getModelParameters()->getGenerator("a");
     auto instantiator = neuron_simulator_generators_->getInstantiator(type);
     if (!instantiator) {
       std::cerr << "Failed to get instantiator for group " <<
@@ -585,6 +657,15 @@ bool Simulator::startDevices_() {
     result &= device->start();
   }
   return result;
+}
+
+spec::NeuronAlias* Simulator::getNeuronAlias(const std::string& alias) const {
+  const auto& alias_map = model_specification_->neuron_aliases;
+  auto search_result = alias_map.find(alias);
+  if (alias_map.end() == search_result) {
+    return nullptr;
+  }
+  return search_result->second;
 }
 
 int Simulator::getNeuronSeed_() const {

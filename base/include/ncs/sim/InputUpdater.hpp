@@ -60,6 +60,26 @@ bool InputUpdater<MType>::step() {
 }
 
 template<DeviceType::Type MType>
+bool InputUpdater<MType>::addInputs(const std::vector<Input*>& inputs,
+                                    void* instantiator,
+                                    const std::string& type,
+                                    float start_time,
+                                    float end_time) {
+  auto search_result = simulator_type_indices_.find(type);
+  if (simulator_type_indices_.end() == search_result) {
+    std::cerr << "Failed to find an InputSimulator for type " << type <<
+      std::endl;
+    return false;
+  }
+  auto simulator = simulators_[search_result->second];
+  return simulator->addInputs(inputs,
+                              instantiator,
+                              start_time,
+                              end_time);
+}
+
+
+template<DeviceType::Type MType>
 InputUpdater<MType>::~InputUpdater() {
   if (step_subscription_) {
     delete step_subscription_;

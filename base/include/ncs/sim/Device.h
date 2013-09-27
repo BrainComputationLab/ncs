@@ -34,6 +34,11 @@ public:
   virtual bool threadInit() = 0;
   virtual bool threadDestroy() = 0;
   virtual bool start() = 0;
+  virtual bool addInput(const std::vector<Input*>& inputs,
+                        void* instantiator,
+                        const std::string& type,
+                        float start_time,
+                        float end_time) = 0;
 private:
 };
 
@@ -52,6 +57,11 @@ public:
   virtual bool threadInit();
   virtual bool threadDestroy();
   virtual bool start();
+  virtual bool addInput(const std::vector<Input*>& inputs,
+                        void* instantiator,
+                        const std::string& type,
+                        float start_time,
+                        float end_time);
 private:
   bool initializeNeurons_(DeviceDescription* description,
                           FactoryMap<NeuronSimulator>* neuron_plugins);
