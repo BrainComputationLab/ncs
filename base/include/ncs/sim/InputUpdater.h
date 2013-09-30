@@ -1,5 +1,7 @@
 #pragma once
 #include <map>
+#include <thread>
+#include <vector>
 
 #include <ncs/sim/FactoryMap.h>
 #include <ncs/sim/InputBuffer.h>
@@ -25,11 +27,15 @@ public:
                  const std::string& type,
                  float start_time,
                  float end_time);
+  bool start();
   ~InputUpdater();
 private:
   typename SpecificPublisher<StepSignal>::Subscription* step_subscription_;
   std::vector<InputSimulator<MType>*> simulators_;
   std::map<std::string, unsigned int> simulator_type_indices_;
+  std::vector<std::thread> worker_threads_;
+  std::thread master_thread_;
+  size_t num_buffers_;
 };
 
 } // namespace sim

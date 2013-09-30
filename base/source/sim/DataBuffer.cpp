@@ -86,6 +86,20 @@ void DataBuffer::release() {
 	release_function();
 }
 
+bool DataBuffer::
+setPrereleaseFunction(std::function<void()> prerelease_function) {
+  prerelease_function_ = prerelease_function;
+  return true;
+}
+
+std::function<void()> DataBuffer::getPrereleaseFunction() const {
+  return prerelease_function_;
+}
+
+std::mutex* DataBuffer::getWriteLock() {
+  return &write_lock_;
+}
+
 bool DataBuffer::update() {
 	return 1 == std::atomic_fetch_sub(&updates_needed, 1u);
 }

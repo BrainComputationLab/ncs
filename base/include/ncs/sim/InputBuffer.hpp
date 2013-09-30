@@ -26,6 +26,36 @@ bool InputBuffer<MType>::init() {
 }
 
 template<DeviceType::Type MType>
+bool InputBuffer<MType>::clear() {
+  bool result = true;
+  result &= Memory<MType>::zero(voltage_clamp_bits_,
+                                Bit::num_words(device_neuron_vector_size_));
+  result &= Memory<MType>::zero(clamp_voltage_values_,
+                                device_neuron_vector_size_);
+  result &= Memory<MType>::zero(input_current_, device_neuron_vector_size_);
+  if (!result) {
+    std::cerr << "Failed to clear memory for InputBuffer." << std::endl;
+    return false;
+  }
+  return true;
+}
+
+template<DeviceType::Type MType>
+Bit::Word* InputBuffer<MType>::getVoltageClampBits() {
+  return voltage_clamp_bits_;
+}
+
+template<DeviceType::Type MType>
+float* InputBuffer<MType>::getVoltageClampValues() {
+  return clamp_voltage_values_;
+}
+
+template<DeviceType::Type MType>
+float* InputBuffer<MType>::getInputCurrent() {
+  return input_current_;
+}
+
+template<DeviceType::Type MType>
 InputBuffer<MType>::~InputBuffer() {
   if (voltage_clamp_bits_) {
     Memory<MType>::free(voltage_clamp_bits_);

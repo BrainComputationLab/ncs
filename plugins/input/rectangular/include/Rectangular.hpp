@@ -43,6 +43,12 @@ bool RectangularSimulator<MType, IType>::initialize() {
 }
 
 template<ncs::sim::DeviceType::Type MType, InputType IType>
+bool RectangularSimulator<MType, IType>::
+update(ncs::sim::InputUpdateParameters* parameters) {
+  return true;
+}
+
+template<ncs::sim::DeviceType::Type MType, InputType IType>
 RectangularSimulator<MType, IType>::Batch::~Batch() {
   if (amplitude) {
     ncs::sim::Memory<MType>::free(amplitude);

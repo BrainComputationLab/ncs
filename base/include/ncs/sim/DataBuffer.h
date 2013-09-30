@@ -267,10 +267,9 @@ public:
 	*/
 	void release();
 
-	/**
-		A specialized release function that can be set by the user.
-	*/
-	std::function<void()> prerelease_function;
+  bool setPrereleaseFunction(std::function<void()> prerelease_function);
+
+  std::function<void()> getPrereleaseFunction() const;
 
 	/**
 		The function to call when release is called
@@ -285,8 +284,7 @@ public:
 
 	bool update();
 
-	///Depending on the situation, multiple writers may use this lock
-	std::mutex write_lock;
+  std::mutex* getWriteLock();
 
 	///The simulation step this buffer was published from
 	unsigned int simulation_step;
@@ -310,6 +308,14 @@ private:
 
 	///An empty pin to return if a bad name is given
   Pin null_pin_;
+
+	/**
+		A specialized release function that can be set by the user.
+	*/
+	std::function<void()> prerelease_function_;
+
+	///Depending on the situation, multiple writers may use this lock
+	std::mutex write_lock_;
 };
 
 } //namespace sim

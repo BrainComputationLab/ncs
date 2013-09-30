@@ -2,6 +2,7 @@
 
 #include <ncs/sim/DeviceType.h>
 #include <ncs/sim/Input.h>
+#include <ncs/sim/InputUpdateParameters.h>
 #include <ncs/spec/ModelParameters.h>
 
 namespace ncs {
@@ -16,6 +17,8 @@ public:
                          float start_time,
                          float end_time) = 0;
   virtual bool initialize() = 0;
+
+  virtual bool update(InputUpdateParameters* parameters) = 0;
 private:
 };
 

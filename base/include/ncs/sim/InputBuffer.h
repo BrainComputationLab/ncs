@@ -8,6 +8,10 @@ class InputBuffer : public DataBuffer {
 public:
   InputBuffer(size_t device_neuron_vector_size);
   bool init();
+  Bit::Word* getVoltageClampBits();
+  float* getVoltageClampValues();
+  float* getInputCurrent();
+  bool clear();
   ~InputBuffer();
 private:
   size_t device_neuron_vector_size_;

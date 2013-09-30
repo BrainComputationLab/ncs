@@ -105,8 +105,6 @@ private:
   SynapseSimulatorUpdater<MType>* synapse_simulator_updater_;
 
   InputUpdater<MType>* input_updater_;
-
-  std::thread input_updater_thread_;
 };
 
 } // namespace sim

@@ -23,6 +23,7 @@ public:
                          float start_time,
                          float end_time);
   virtual bool initialize();
+  virtual bool update(ncs::sim::InputUpdateParameters* parameters);
 private:
   struct Batch {
     float* amplitude;

@@ -43,6 +43,21 @@ bool Memory<DeviceType::CUDA>::free(T* addr) {
 
 template<>
 template<typename T>
+bool Memory<DeviceType::CUDA>::zero(T* addr, size_t count) {
+  cudaError_t result = cudaMemsetAsync(addr,
+                                       0,
+                                       sizeof(T) * count,
+                                       CUDA::getStream());
+  if (cudaSuccess != result) {
+    std::cerr << "cudaMemsetAsync failed: " <<
+      cudaGetErrorString(cudaGetLastError()) << std::endl;
+    return false;
+  }
+  return true;
+}
+
+template<>
+template<typename T>
 T* Memory<DeviceType::CPU>::malloc(size_t count) {
   return new T[count];
 }
@@ -53,6 +68,13 @@ bool Memory<DeviceType::CPU>::free(T* addr) {
   if (addr) {
     delete [] addr;
   }
+  return true;
+}
+
+template<>
+template<typename T>
+bool Memory<DeviceType::CPU>::zero(T* addr, size_t count) {
+  memset(addr, 0, sizeof(T) * count);
   return true;
 }
 

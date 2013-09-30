@@ -1,3 +1,5 @@
+#include <ncs/sim/InputUpdateParameters.h>
+
 namespace ncs {
 
 namespace sim {
@@ -12,7 +14,8 @@ bool InputUpdater<MType>::init(SpecificPublisher<StepSignal>* signal_publisher,
                                size_t num_buffers,
                                size_t device_neuron_vector_size,
                                FactoryMap<InputSimulator>* input_plugins) {
-  for (size_t i = 0; i < num_buffers; ++i) {
+  num_buffers_ = num_buffers;
+  for (size_t i = 0; i < num_buffers_; ++i) {
     auto buffer = new InputBuffer<MType>(device_neuron_vector_size);
     if (!buffer->init()) {
       std::cerr << "Failed to initialize InputBuffer." << std::endl;
@@ -76,6 +79,63 @@ bool InputUpdater<MType>::addInputs(const std::vector<Input*>& inputs,
                               instantiator,
                               start_time,
                               end_time);
+}
+
+template<DeviceType::Type MType>
+bool InputUpdater<MType>::start() {
+  struct Synchronizer : public DataBuffer {
+    InputBuffer<MType>* input_buffer;
+  };
+  auto synchronizer_publisher = new SpecificPublisher<Synchronizer>();
+  for (size_t i = 0; i < num_buffers_; ++i) {
+    synchronizer_publisher->addBlank(new Synchronizer());
+  }
+  auto master_function = [this, synchronizer_publisher]() {
+    while(true) {
+      auto step_signal = this->step_subscription_->pull();
+      if (nullptr == step_signal) {
+        delete synchronizer_publisher;
+        return;
+      }
+      auto input_buffer = this->getBlank();
+      input_buffer->clear();
+      auto synchronizer = synchronizer_publisher->getBlank();
+      synchronizer->input_buffer = input_buffer;
+      auto prerelease_function = [this, input_buffer, step_signal]() {
+        this->publish(input_buffer);
+        step_signal->release();
+      };
+      synchronizer->setPrereleaseFunction(prerelease_function);
+      synchronizer_publisher->publish(synchronizer);
+    }
+  };
+  master_thread_ = std::thread(master_function);
+  
+  for (auto simulator : simulators_) {
+    auto subscription = synchronizer_publisher->subscribe();
+    auto worker_function = [subscription, simulator]() {
+      while(true) {
+        auto synchronizer = subscription->pull();
+        if (nullptr == synchronizer) {
+          delete subscription;
+          return;
+        }
+        InputUpdateParameters parameters;
+        auto buffer = synchronizer->input_buffer;
+        parameters.input_current = buffer->getInputCurrent();
+        parameters.clamp_voltage_values = buffer->getVoltageClampValues();
+        parameters.voltage_clamp_bits = buffer->getVoltageClampBits();
+        parameters.write_lock = buffer->getWriteLock();
+        if (!simulator->update(&parameters)) {
+          std::cerr << "An error occurred updating an InputSimulator." <<
+            std::endl;
+        }
+        synchronizer->release();
+      }
+    };
+    worker_threads_.push_back(std::thread(worker_function));
+  }
+  return true;
 }
 
 

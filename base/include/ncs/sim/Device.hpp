@@ -88,13 +88,10 @@ bool Device<MType>::threadDestroy() {
 template<DeviceType::Type MType>
 bool Device<MType>::start() {
   std::clog << "Starting InputUpdater..." << std::endl;
-  auto input_updater_function = [=]() {
-    while (input_updater_->step()) {
-    }
-    std::clog << "Shutting down InputUpdater..." << std::endl;
-    delete input_updater_;
-  };
-  input_updater_thread_ = std::thread(input_updater_function);
+  if (!input_updater_->start()) {
+    std::cerr << "Failed to start InputUpdater." << std::endl;
+    return false;
+  }
   return true;
 }
 

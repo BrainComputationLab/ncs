@@ -12,6 +12,7 @@ public:
   template<typename T> static T* malloc(size_t count);
   template<typename T> static bool malloc(T*& addr, size_t count);
   template<typename T> static bool free(T* addr);
+  template<typename T> static bool zero(T* addr, size_t count);
   
   template<DeviceType::Type DestType>
   struct To {

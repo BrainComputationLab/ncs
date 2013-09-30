@@ -152,8 +152,9 @@ void SpecificPublisher<T>::publish(T* data) {
   }
   // If no one is listening, just release the buffer
   if (subpubs == 0 && subscriptions_.empty()) {
-    if (data->prerelease_function) {
-      data->prerelease_function();
+    std::function<void()> prerelease_function = data->getPrereleaseFunction();
+    if (prerelease_function) {
+      prerelease_function();
     }
     blanks_.push(data);
     blank_available_.notify_all();
@@ -206,8 +207,10 @@ void SpecificPublisher<T>::addBlank(T* blank) {
     // If this call is the last one
     if (remaining == 1) {
       // Do any prerelease stuff
-      if (blank->prerelease_function) {
-        blank->prerelease_function();
+      std::function<void()> prerelease_function = 
+        blank->getPrereleaseFunction();
+      if (prerelease_function) {
+        prerelease_function();
       }
       // Add ourself back onto the blank stack of the publisher
       std::unique_lock<std::mutex> lock(mutex_);
