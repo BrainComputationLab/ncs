@@ -7,7 +7,7 @@ namespace sim {
 SimulationController::SimulationController()
   : queued_blank_(false) {
   auto blank = new StepSignal();
-  addBlank_(blank);
+  addBlank(blank);
 }
 
 bool SimulationController::step() {
@@ -16,7 +16,7 @@ bool SimulationController::step() {
     signal = queued_blank_;
     queued_blank_ = nullptr;
   } else {
-    signal = getBlank_();
+    signal = getBlank();
   }
   publish(signal);
 }
@@ -25,7 +25,7 @@ bool SimulationController::idle() {
   if (queued_blank_) {
     return true;
   }
-  queued_blank_ = getBlank_();
+  queued_blank_ = getBlank();
   return true;
 }
 

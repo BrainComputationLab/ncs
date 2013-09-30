@@ -51,7 +51,7 @@ bool GlobalVectorInjector<MType>::init(CPUGlobalPublisher* publisher) {
       delete buffer;
       return false;
     }
-    this->addBlank_(buffer);
+    this->addBlank(buffer);
   }
   subscription_ = publisher->subscribe();
   return nullptr != subscription_;

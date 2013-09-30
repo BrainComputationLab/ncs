@@ -24,7 +24,7 @@ init(size_t global_neuron_vector_size,
       delete buffer;
       return false;
     }
-    addBlank_(buffer);
+    addBlank(buffer);
   }
   device_extractors_ = device_extractors;
   neuron_global_id_offsets_ = neuron_global_id_offsets;

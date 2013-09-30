@@ -19,7 +19,7 @@ bool InputUpdater<MType>::init(SpecificPublisher<StepSignal>* signal_publisher,
       delete buffer;
       return false;
     }
-    addBlank_(buffer);
+    addBlank(buffer);
   }
   step_subscription_ = signal_publisher->subscribe();
   if (nullptr == step_subscription_) {
@@ -53,7 +53,7 @@ bool InputUpdater<MType>::step() {
   if (nullptr == step_signal) {
     return false;
   }
-  auto buffer = this->getBlank_();
+  auto buffer = this->getBlank();
   this->publish(buffer);
   step_signal->release();
   return true;

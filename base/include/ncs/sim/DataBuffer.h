@@ -179,20 +179,19 @@ public:
 	*/
 	void unsubscribe(Subscription* sub);
 
-    /**
-        Virtual destructor. Informs all specific subscribers that this
-        publisher is no more.
-    */
-    ~SpecificPublisher();
+  /**
+    Virtual destructor. Informs all specific subscribers that this
+    publisher is no more.
+   */
+  ~SpecificPublisher();
 
-protected:
 	/**
 		Registers a DataBuffer for use with the publisher. Publishers should
 		always request a blank, fill it with data, and then publish it.
 
 		@param blank A fully allocated publication ready to be written to
 	*/
-	void addBlank_(T* blank);
+	void addBlank(T* blank);
 
 	/**
 		Retrieves a blank that is not being consumed by any subscribers and
@@ -200,7 +199,7 @@ protected:
 
 		@return A fully allocated publication ready to be written to
 	*/
-	T* getBlank_();
+	T* getBlank();
 
 private:
 	///The mutex for the lock

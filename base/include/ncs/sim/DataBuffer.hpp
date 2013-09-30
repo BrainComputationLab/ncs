@@ -185,12 +185,12 @@ SpecificPublisher<T>::~SpecificPublisher() {
 
   // Destroy all blanks
   for (unsigned int i = 0; i < num_blanks_; ++i) {
-    delete getBlank_();
+    delete getBlank();
   }
 }
 
 template<typename T>
-void SpecificPublisher<T>::addBlank_(T* blank) {
+void SpecificPublisher<T>::addBlank(T* blank) {
   // Make sure the blank knows how to add itself back to the pile
   blank->release_function = [&, blank]() {
     if (blank->subscription_count == 0) {
@@ -226,7 +226,7 @@ void SpecificPublisher<T>::addBlank_(T* blank) {
 }
 
 template<typename T>
-T* SpecificPublisher<T>::getBlank_() {
+T* SpecificPublisher<T>::getBlank() {
   T* result = nullptr;
   std::unique_lock<std::mutex> lock(mutex_);
   // We must have a blank to return
