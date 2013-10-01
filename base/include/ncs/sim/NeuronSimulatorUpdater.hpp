@@ -102,9 +102,41 @@ bool NeuronSimulatorUpdater<MType>::start() {
   };
   master_thread_ = std::thread(master_function);
 
-
-
   // TODO(rvhoang): setup workers
+  for (size_t i = 0; i < neuron_simulators_.size(); ++i) {
+    auto simulator = neuron_simulators_[i];
+    auto unit_offset = device_id_offsets_[i];
+    auto subscription = synchronizer_publisher->subscribe();
+    auto worker_function = [subscription, simulator, unit_offset]() {
+      while(true) {
+        auto synchronizer = subscription->pull();
+        auto word_offset = Bit::num_words(unit_offset);
+        if (nullptr == synchronizer) {
+          delete subscription;
+          return;
+        }
+        NeuronUpdateParameters parameters;
+        auto input = synchronizer->input;
+        parameters.input_current = input->getInputCurrent();
+        parameters.clamp_voltage_values = input->getVoltageClampValues();
+        parameters.voltage_clamp_bits = input->getVoltageClampBits();
+        auto previous_neuron_state = synchronizer->previous_neuron_state;
+        parameters.previous_neuron_voltage = 
+          previous_neuron_state->getVoltages();
+        // TODO(rvhoang): add synaptic current as the cycle is completed
+        auto current_neuron_state = synchronizer->current_neuron_state;
+        parameters.neuron_voltage = current_neuron_state->getVoltages();
+        parameters.neuron_fire_bits = current_neuron_state->getFireBits();
+        parameters.write_lock = current_neuron_state->getWriteLock();
+        if (!simulator->update(&parameters)) {
+          std::cerr << "An error occurred updating a NeuronSimulator." <<
+            std::endl;
+        }
+        synchronizer->release();
+      }
+    };
+    worker_threads_.push_back(std::thread(worker_function));
+  }
   return true;
 }
 
