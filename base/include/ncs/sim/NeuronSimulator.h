@@ -4,6 +4,7 @@
 
 #include <ncs/sim/DeviceType.h>
 #include <ncs/sim/Neuron.h>
+#include <ncs/sim/NeuronUpdateParameters.h>
 #include <ncs/spec/ModelParameters.h>
 
 namespace ncs {
@@ -16,6 +17,7 @@ public:
   virtual bool addNeuron(Neuron* neuron) = 0;
   virtual bool initialize() = 0;
   virtual bool initializeVoltages(float* plugin_voltages) = 0;
+  virtual bool update(NeuronUpdateParameters* parameters) = 0;
 private:
 };
 

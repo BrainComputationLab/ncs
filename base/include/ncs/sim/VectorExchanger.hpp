@@ -10,8 +10,10 @@ DeviceVectorExtractor<MType>::DeviceVectorExtractor() {
 
 template<DeviceType::Type MType>
 bool DeviceVectorExtractor<MType>::init(StatePublisher* publisher) {
-  state_subscription_ = publisher->subscribe();
-  return nullptr != state_subscription_;
+  // TODO(rvhoang): uncomment this when implementing this part
+  //state_subscription_ = publisher->subscribe();
+  //return nullptr != state_subscription_;
+  return true;
 }
 
 template<DeviceType::Type MType>

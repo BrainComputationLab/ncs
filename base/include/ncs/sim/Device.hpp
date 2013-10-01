@@ -29,6 +29,12 @@ initialize(DeviceDescription* description,
            MachineVectorExchanger* machine_vector_exchanger,
            size_t global_neuron_vector_size,
            SpecificPublisher<StepSignal>* signal_publisher) {
+  std::clog << "Allocating updaters..." << std::endl;
+  if (!allocateUpdaters_()) {
+    std::cerr << "Failed to allocate updaters." << std::endl;
+    return false;
+  }
+
   std::clog << "Initializing neurons..." << std::endl;
   if (!initializeNeurons_(description, neuron_plugins)) {
     std::cerr << "Failed to initialize neurons." << std::endl;
@@ -92,6 +98,13 @@ bool Device<MType>::start() {
     std::cerr << "Failed to start InputUpdater." << std::endl;
     return false;
   }
+
+  std::clog << "Starting NeuronSimulatorUpdater..." << std::endl;
+  if (!neuron_simulator_updater_->start()) {
+    std::cerr << "Failed to start NeuronSimulatorUpdater." << std::endl;
+    return false;
+  }
+
   return true;
 }
 
@@ -106,6 +119,15 @@ bool Device<MType>::addInput(const std::vector<Input*>& inputs,
                                    type,
                                    start_time,
                                    end_time);
+}
+
+template<DeviceType::Type MType>
+bool Device<MType>::allocateUpdaters_() {
+  input_updater_ = new InputUpdater<MType>();
+  neuron_simulator_updater_ = new NeuronSimulatorUpdater<MType>();
+  fire_table_updater_ = new FireTableUpdater<MType>();
+  synapse_simulator_updater_ = new SynapseSimulatorUpdater<MType>();
+  return true;
 }
 
 template<DeviceType::Type MType>
@@ -129,7 +151,8 @@ initializeNeurons_(DeviceDescription* description,
     }
     neuron_simulators_.push_back(simulator);
     neuron_device_id_offsets_.push_back(neuron_device_id_offset);
-    neuron_device_id_offset += Bit::pad(neuron_device_id_offset);
+    neuron_device_id_offset += 
+      Bit::pad(plugin_description->getNeurons().size());
   }
   neuron_device_vector_size_ = neuron_device_id_offset;
   return true;
@@ -154,8 +177,12 @@ initializeNeuronSimulator_(NeuronSimulator<MType>* simulator,
 
 template<DeviceType::Type MType>
 bool Device<MType>::initializeNeuronUpdater_() {
-  neuron_simulator_updater_ = new NeuronSimulatorUpdater<MType>();
-  return true;
+  return neuron_simulator_updater_->init(input_updater_,
+                                         synapse_simulator_updater_,
+                                         neuron_simulators_,
+                                         neuron_device_id_offsets_,
+                                         neuron_device_vector_size_,
+                                         Constants::num_buffers);
 }
 
 template<DeviceType::Type MType>
@@ -265,7 +292,6 @@ initializeFireTableUpdater_(DeviceDescription* description) {
       synapse_vector.push_back(nullptr);
     }
   }
-  fire_table_updater_ = new FireTableUpdater<MType>();
   if (!fire_table_updater_->init(fire_table_,
                                  global_vector_injector_,
                                  synapse_vector)) {
@@ -279,7 +305,6 @@ template<DeviceType::Type MType>
 bool Device<MType>::
 initializeInputUpdater_(SpecificPublisher<StepSignal>* signal_publisher,
                         FactoryMap<InputSimulator>* input_plugins) {
-  input_updater_ = new InputUpdater<MType>();
   if (!input_updater_->init(signal_publisher,
                             Constants::num_buffers,
                             device_synaptic_vector_size_,

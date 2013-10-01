@@ -8,9 +8,8 @@ template<DeviceType::Type MType>
 DeviceNeuronStateBuffer<MType>::
 DeviceNeuronStateBuffer(size_t device_neuron_vector_size)
   : device_neuron_vector_size_(device_neuron_vector_size) {
-  voltages_ = Memory<MType>::malloc(device_neuron_vector_size_);
-  fire_bits_ =
-    Memory<MType>::malloc(Bit::num_words(device_neuron_vector_size_));
+  Memory<MType>::malloc(voltages_, device_neuron_vector_size_);
+  Memory<MType>::malloc(fire_bits_, Bit::num_words(device_neuron_vector_size_));
   setPin_("neuron_voltage", voltages_, MType);
 }
 

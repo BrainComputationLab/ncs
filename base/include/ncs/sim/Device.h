@@ -63,11 +63,12 @@ public:
                         float start_time,
                         float end_time);
 private:
+  bool allocateUpdaters_();
+
   bool initializeNeurons_(DeviceDescription* description,
                           FactoryMap<NeuronSimulator>* neuron_plugins);
   bool initializeNeuronSimulator_(NeuronSimulator<MType>* simulator,
                                   NeuronPluginDescription* description);
-  bool initializeNeuronVoltages_();
   bool initializeNeuronUpdater_();
 
   bool initializeVectorExchangers_(MachineVectorExchanger* machine_exchanger,

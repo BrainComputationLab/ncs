@@ -68,6 +68,14 @@ bool IzhikevichSimulator<MType>::initializeVoltages(float* plugin_voltages) {
 }
 
 template<ncs::sim::DeviceType::Type MType>
+bool IzhikevichSimulator<MType>::
+update(ncs::sim::NeuronUpdateParameters* parameters) {
+  // TODO(rvhoang): Implement me
+  std::clog << "STUB: IzhikevichSimulator::update" << std::endl;
+  return true;
+}
+
+template<ncs::sim::DeviceType::Type MType>
 IzhikevichSimulator<MType>::~IzhikevichSimulator() {
   if (buffers_) {
     delete buffers_;

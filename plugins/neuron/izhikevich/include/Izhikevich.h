@@ -20,6 +20,7 @@ public:
   virtual bool addNeuron(ncs::sim::Neuron* neuron);
   virtual bool initialize();
   virtual bool initializeVoltages(float* plugin_voltages);
+  virtual bool update(ncs::sim::NeuronUpdateParameters* parameters);
   virtual ~IzhikevichSimulator();
 private:
   struct Buffers {
