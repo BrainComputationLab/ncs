@@ -45,6 +45,7 @@ bool RectangularSimulator<MType, IType>::initialize() {
 template<ncs::sim::DeviceType::Type MType, InputType IType>
 bool RectangularSimulator<MType, IType>::
 update(ncs::sim::InputUpdateParameters* parameters) {
+  // TODO(rvhoang): do update
   return true;
 }
 
