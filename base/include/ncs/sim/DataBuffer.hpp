@@ -2,6 +2,34 @@ namespace ncs {
 
 namespace sim {
 
+template<typename... Pointers>
+bool Mailbox::wait(Pointers... pointers) {
+  std::unique_lock<std::mutex> lock(mutex);
+  while (any_null_(pointers...) && !failed) {
+    arrival.wait(lock);
+  }
+  return !failed;
+}
+
+template<typename T, typename... OtherArgs>
+bool Mailbox::any_null_(T t, OtherArgs... o) {
+  return any_null_(t) || any_null_(o...); 
+}
+
+template<typename T>
+bool Mailbox::any_null_(T** t) {
+  return *t == nullptr;
+}
+
+template<typename T>
+bool Mailbox::any_null_(std::vector<T*>* pointers) {
+  for (auto p : *pointers) {
+    if (nullptr == p)
+      return true;
+  }
+  return false;
+}
+
 template<class PublicationType, class PublisherType>
 Subscription<PublicationType, PublisherType>::
 Subscription(PublisherType* publisher)

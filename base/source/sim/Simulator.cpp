@@ -23,7 +23,7 @@ Simulator::Simulator(spec::ModelSpecification* model_specification)
   : model_specification_(model_specification),
     communicator_(nullptr),
     neurons_(nullptr),
-    vector_exchanger_(new MachineVectorExchanger()),
+    vector_exchanger_(new VectorExchanger()),
     simulation_controller_(new SimulationController()) {
 }
 
@@ -128,6 +128,12 @@ bool Simulator::initialize(int argc, char** argv) {
   std::clog << "Starting device threads..." << std::endl;
   if (!startDevices_()) {
     std::cerr << "Failed to start device threads." << std::endl;
+    return false;
+  }
+  
+  std::clog << "Starting global exchangers..." << std::endl;
+  if (!vector_exchanger_->start()) {
+    std::cerr << "Failed to start global exchangers." << std::endl;
     return false;
   }
 
@@ -428,12 +434,15 @@ bool Simulator::assignNeuronIDs_() {
   for (unsigned int machine_index = 0;
        machine_index < cluster_->getMachines().size();
        ++machine_index) {
-    neuron_global_id_offsets_.push_back(global_id);
+    neuron_global_id_offsets_per_machine_.push_back(global_id);
     unsigned int machine_id = 0;
     MachineDescription* machine = cluster_->getMachines()[machine_index];
     for (unsigned int device_index = 0;
          device_index < machine->getDevices().size();
          ++device_index) {
+      if (machine_index == cluster_->getThisMachineIndex()) {
+        neuron_global_id_offsets_per_my_devices_.push_back(global_id);
+      }
       unsigned int device_id = 0;
       DeviceDescription* device = machine->getDevices()[device_index];
       for (unsigned int plugin_index = 0;
@@ -583,8 +592,9 @@ bool Simulator::distributeSynapses_() {
 }
 
 bool Simulator::initializeVectorExchanger_() {
-  // TODO(rvhoang): initialize this after devices are ready
-  return true;
+  return vector_exchanger_->init(simulation_controller_,
+                                 global_neuron_vector_size_,
+                                 Constants::num_buffers);
 }
 
 bool Simulator::loadInputSimulatorPlugins_() {
@@ -603,7 +613,9 @@ bool Simulator::loadInputSimulatorPlugins_() {
 
 bool Simulator::initializeDevices_() {
   bool result = true;
-  for (auto description : cluster_->getThisMachine()->getDevices()) {
+  auto& my_devices = cluster_->getThisMachine()->getDevices();
+  for (size_t i = 0; i < my_devices.size(); ++i) {
+    DeviceDescription* description = my_devices[i];
     DeviceBase* device = nullptr;
     switch(description->getDeviceType()) {
     case DeviceType::CUDA:
@@ -636,8 +648,17 @@ bool Simulator::initializeDevices_() {
                             input_simulator_generators_,
                             vector_exchanger_,
                             global_neuron_vector_size_,
+                            neuron_global_id_offsets_per_my_devices_[i],
                             simulation_controller_)) {
       std::cerr << "Failed to initialize device." << std::endl;
+      delete device;
+      return false;
+    }
+    ExchangePublisherList machine_extractors;
+    if (!device->initializeInjector(machine_extractors,
+                                    vector_exchanger_,
+                                    global_neuron_vector_size_)) {
+      std::cerr << "Failed to initialize Injector." << std::endl;
       delete device;
       return false;
     }

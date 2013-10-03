@@ -4,30 +4,42 @@ namespace ncs {
 
 namespace sim {
 
-DeviceVectorExtractorBase::~DeviceVectorExtractorBase() {
+VectorExchanger::VectorExchanger() {
 }
 
-MachineVectorExchanger::MachineVectorExchanger() {
-}
-
-bool MachineVectorExchanger::
-init(size_t global_neuron_vector_size,
-     size_t num_buffers,
-     const std::vector<DeviceVectorExtractorBase*>& device_extractors,
-     const std::vector<size_t>& neuron_global_id_offsets) {
+bool VectorExchanger::init(SpecificPublisher<StepSignal>* signal_publisher,
+                           size_t global_neuron_vector_size,
+                           size_t num_buffers) {
   global_neuron_vector_size_ = global_neuron_vector_size;
+  num_buffers_ = num_buffers;
   for (size_t i = 0; i < num_buffers; ++i) {
-    auto buffer =
+    auto buffer = 
       new GlobalNeuronStateBuffer<DeviceType::CPU>(global_neuron_vector_size_);
     if (!buffer->init()) {
-      std::cerr << "Failed to initialize GlobalNeuronStateBuffer" << std::endl;
+      std::cerr << "Failed to initialize GlobalNeuronStateBuffer<CPU>" <<
+        std::endl;
       delete buffer;
       return false;
     }
     addBlank(buffer);
   }
-  device_extractors_ = device_extractors;
-  neuron_global_id_offsets_ = neuron_global_id_offsets;
+  step_subscription_ = signal_publisher->subscribe();
+  return nullptr != step_subscription_;
+}
+
+bool VectorExchanger::start() {
+  auto thread_function = [this]() {
+    while(true) {
+      auto step_signal = step_subscription_->pull();
+      if (nullptr == step_signal) {
+        return;
+      }
+      auto blank = this->getBlank();
+      this->publish(blank);
+      step_signal->release();
+    }
+  };
+  thread_ = std::thread(thread_function);
   return true;
 }
 

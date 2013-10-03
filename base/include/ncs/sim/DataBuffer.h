@@ -28,6 +28,12 @@ public:
 	std::condition_variable arrival;
 	std::mutex mutex;
 	bool failed;
+  template<typename... Pointers> bool wait(Pointers... pointers);
+private:
+  template<typename T, typename... OtherArgs>
+  bool any_null_(T t, OtherArgs... o);
+  template<typename T> bool any_null_(T** t);
+  template<typename T> bool any_null_(std::vector<T*>* pointers);
 };
 
 /**

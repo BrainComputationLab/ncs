@@ -55,7 +55,8 @@ private:
   FactoryMap<NeuronSimulator>* neuron_simulator_generators_;
   std::map<spec::NeuronGroup*, std::vector<Neuron*>> neurons_by_group_;
   std::map<spec::NeuronGroup*, void*> neuron_instantiators_by_group_;
-  std::vector<size_t> neuron_global_id_offsets_;
+  std::vector<size_t> neuron_global_id_offsets_per_machine_;
+  std::vector<size_t> neuron_global_id_offsets_per_my_devices_;
   size_t global_neuron_vector_size_;
   Neuron* neurons_;
   unsigned int num_neurons_;
@@ -66,7 +67,7 @@ private:
 
   FactoryMap<InputSimulator>* input_simulator_generators_;
 
-  MachineVectorExchanger* vector_exchanger_;
+  VectorExchanger* vector_exchanger_;
 
   SimulationController* simulation_controller_;
 

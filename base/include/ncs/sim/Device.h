@@ -28,9 +28,13 @@ public:
                           FactoryMap<NeuronSimulator>* neuron_plugins,
                           FactoryMap<SynapseSimulator>* synapse_plugins,
                           FactoryMap<InputSimulator>* input_plugins,
-                          MachineVectorExchanger* machine_vector_exchanger,
+                          VectorExchanger* vector_exchanger,
                           size_t global_neuron_vector_size,
+                          size_t global_neuron_vector_offset,
                           SpecificPublisher<StepSignal>* signal_publisher) = 0;
+  virtual bool initializeInjector(const ExchangePublisherList& dependents,
+                                  VectorExchanger* vector_exchanger,
+                                  size_t global_neuron_vector_size) = 0;
   virtual bool threadInit() = 0;
   virtual bool threadDestroy() = 0;
   virtual bool start() = 0;
@@ -51,9 +55,13 @@ public:
                           FactoryMap<NeuronSimulator>* neuron_plugins,
                           FactoryMap<SynapseSimulator>* synapse_plugins,
                           FactoryMap<InputSimulator>* input_plugins,
-                          MachineVectorExchanger* machine_vector_exchanger,
+                          VectorExchanger* vector_exchanger,
                           size_t global_neuron_vector_size,
+                          size_t global_neuron_vector_offset,
                           SpecificPublisher<StepSignal>* signal_publisher);
+  virtual bool initializeInjector(const ExchangePublisherList& dependents,
+                                  VectorExchanger* vector_exchanger,
+                                  size_t global_neuron_vector_size);
   virtual bool threadInit();
   virtual bool threadDestroy();
   virtual bool start();
@@ -71,8 +79,8 @@ private:
                                   NeuronPluginDescription* description);
   bool initializeNeuronUpdater_();
 
-  bool initializeVectorExchangers_(MachineVectorExchanger* machine_exchanger,
-                                   size_t global_neuron_vector_size);
+  bool initializeVectorExchangers_(VectorExchanger* vector_exchanger,
+                                   size_t global_neuron_vector_offset);
 
   bool initializeSynapses_(DeviceDescription* description,
                            FactoryMap<SynapseSimulator>* synapse_plugins);

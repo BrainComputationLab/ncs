@@ -26,8 +26,9 @@ initialize(DeviceDescription* description,
            FactoryMap<NeuronSimulator>* neuron_plugins,
            FactoryMap<SynapseSimulator>* synapse_plugins,
            FactoryMap<InputSimulator>* input_plugins,
-           MachineVectorExchanger* machine_vector_exchanger,
+           VectorExchanger* vector_exchanger,
            size_t global_neuron_vector_size,
+           size_t global_neuron_vector_offset,
            SpecificPublisher<StepSignal>* signal_publisher) {
   std::clog << "Allocating updaters..." << std::endl;
   if (!allocateUpdaters_()) {
@@ -48,8 +49,8 @@ initialize(DeviceDescription* description,
   }
 
   std::clog << "Initializing vector exchangers..." << std::endl;
-  if (!initializeVectorExchangers_(machine_vector_exchanger,
-                                   global_neuron_vector_size)) {
+  if (!initializeVectorExchangers_(vector_exchanger,
+                                   global_neuron_vector_offset)) {
     std::cerr << "Failed to initialize vector exchangers." << std::endl;
     return false;
   }
@@ -82,6 +83,17 @@ initialize(DeviceDescription* description,
 }
 
 template<DeviceType::Type MType>
+bool Device<MType>::initializeInjector(const ExchangePublisherList& dependents,
+                                       VectorExchanger* vector_exchanger,
+                                       size_t global_neuron_vector_size) {
+  return global_vector_injector_->init(dependents,
+                                       vector_exchanger,
+                                       global_neuron_vector_size,
+                                       Constants::num_buffers);
+}
+
+
+template<DeviceType::Type MType>
 bool Device<MType>::threadInit() {
   return true;
 }
@@ -102,6 +114,18 @@ bool Device<MType>::start() {
   std::clog << "Starting NeuronSimulatorUpdater..." << std::endl;
   if (!neuron_simulator_updater_->start()) {
     std::cerr << "Failed to start NeuronSimulatorUpdater." << std::endl;
+    return false;
+  }
+
+  std::clog << "Starting DeviceVectorExtractor..." << std::endl;
+  if (!fire_vector_extractor_->start()) {
+    std::cerr << "Failed to start DeviceVectorExtractor." << std::endl;
+    return false;
+  }
+
+  std::clog << "Starting GlobalVectorInjector..." << std::endl;
+  if (!global_vector_injector_->start()) {
+    std::cerr << "Failed to start GlobalVectorInjector." << std::endl;
     return false;
   }
 
@@ -127,6 +151,8 @@ bool Device<MType>::allocateUpdaters_() {
   neuron_simulator_updater_ = new NeuronSimulatorUpdater<MType>();
   fire_table_updater_ = new FireTableUpdater<MType>();
   synapse_simulator_updater_ = new SynapseSimulatorUpdater<MType>();
+  fire_vector_extractor_ = new DeviceVectorExtractor<MType>();
+  global_vector_injector_ = new GlobalVectorInjector<MType>();
   return true;
 }
 
@@ -187,14 +213,25 @@ bool Device<MType>::initializeNeuronUpdater_() {
 
 template<DeviceType::Type MType>
 bool Device<MType>::
-initializeVectorExchangers_(MachineVectorExchanger* machine_exchanger,
-                            size_t global_neuron_vector_size) {
-  fire_vector_extractor_ = new DeviceVectorExtractor<MType>();
-  if (!fire_vector_extractor_->init(neuron_simulator_updater_)) {
+initializeVectorExchangers_(VectorExchanger* vector_exchanger,
+                            size_t global_neuron_vector_offset) {
+  if (!fire_vector_extractor_->setSourcePublisher(neuron_simulator_updater_)) {
+    std::cerr << "Failed to set source publisher for DeviceVectorExtractor." <<
+      std::endl;
+    return false;
+  }
+  if (!fire_vector_extractor_->setDestinationPublisher(vector_exchanger)) {
+    std::cerr << "Failed to set destination publisher for " <<
+      "DeviceVectorExtractor." << std::endl;
+    return false;
+  }
+  if (!fire_vector_extractor_->init(global_neuron_vector_offset,
+                                    Constants::num_buffers)) {
     std::cerr << "Failed to initialize DeviceVectorExtractor." << std::endl;
     return false;
   }
 
+#if 0
   global_vector_injector_ =
     new GlobalVectorInjector<MType>(global_neuron_vector_size,
                                     Constants::num_buffers);
@@ -202,6 +239,7 @@ initializeVectorExchangers_(MachineVectorExchanger* machine_exchanger,
     std::cerr << "Failed to initialize GlobalVectorInjector." << std::endl;
     return false;
   }
+#endif
 
   return true;
 }
@@ -292,12 +330,14 @@ initializeFireTableUpdater_(DeviceDescription* description) {
       synapse_vector.push_back(nullptr);
     }
   }
+#if 0
   if (!fire_table_updater_->init(fire_table_,
                                  global_vector_injector_,
                                  synapse_vector)) {
     std::cerr << "Failed to initialize FireTableUpdater." << std::endl;
     return false;
   }
+#endif
   return true;
 }
 

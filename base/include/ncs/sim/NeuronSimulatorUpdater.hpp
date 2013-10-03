@@ -67,17 +67,11 @@ bool NeuronSimulatorUpdater<MType>::start() {
     Mailbox mailbox;
     while(true) {
       auto synchronizer = synchronizer_publisher->getBlank();
-      std::unique_lock<std::mutex> lock(mailbox.mutex);
       input_subscription_->pull(&(synchronizer->input), &mailbox);
       neuron_state_subscription_->pull(&(synchronizer->previous_neuron_state),
                                        &mailbox);
-      while((!synchronizer->input ||
-             !synchronizer->previous_neuron_state) &&
-            !mailbox.failed) {
-        mailbox.arrival.wait(lock);
-      }
-      lock.unlock();
-      if (mailbox.failed) {
+      if (!mailbox.wait(&(synchronizer->input),
+                        &(synchronizer->previous_neuron_state))) {
         input_subscription_->cancel();
         neuron_state_subscription_->cancel();
         if (synchronizer->input) {
