@@ -16,6 +16,8 @@ public:
   Bit::Word* getRow(unsigned int index);
   size_t getNumberOfRows() const;
   size_t getWordsPerVector() const;
+  bool lockRow(unsigned int index);
+  bool releaseRow(unsigned int index);
   ~FireTable();
 private:
   Bit::Word* table_;
@@ -23,6 +25,9 @@ private:
   unsigned int min_delay_;
   unsigned int max_delay_;
   size_t num_rows_;
+  std::mutex row_lock_;
+  std::vector<bool> row_free_;
+  std::condition_variable row_freed_;
 };
 
 } // namespace sim

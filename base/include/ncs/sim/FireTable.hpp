@@ -18,7 +18,11 @@ bool FireTable<MType>::init() {
     std::cerr << "Min delay is greater than max delay." << std::endl;
     return false;
   }
-  num_rows_ = max_delay_ - min_delay_ + 1;
+  num_rows_ = max_delay_ + 1;
+  row_free_.resize(num_rows_);
+  for (size_t i = 0; i < num_rows_; ++i) {
+    row_free_[i] = true;
+  }
   size_t words_per_vector = getWordsPerVector();
   size_t total_words = words_per_vector * num_rows_;
   return Memory<MType>::malloc(table_, total_words);
@@ -43,6 +47,24 @@ size_t FireTable<MType>::getNumberOfRows() const {
 template<DeviceType::Type MType>
 size_t FireTable<MType>::getWordsPerVector() const {
   return Bit::num_words(device_synaptic_vector_size_);
+}
+
+template<DeviceType::Type MType>
+bool FireTable<MType>::lockRow(unsigned int index) {
+  std::unique_lock<std::mutex> lock(row_lock_);
+  while (!row_free_[index]) {
+    row_freed_.wait(lock);
+  }
+  row_free_[index] = false;
+  return true;
+}
+
+template<DeviceType::Type MType>
+bool FireTable<MType>::releaseRow(unsigned int index) {
+  std::unique_lock<std::mutex> lock(row_lock_);
+  row_free_[index] = true;
+  row_freed_.notify_all();
+  return true;
 }
 
 template<DeviceType::Type MType>
