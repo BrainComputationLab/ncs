@@ -18,6 +18,8 @@ public:
   size_t getWordsPerVector() const;
   bool lockRow(unsigned int index);
   bool releaseRow(unsigned int index);
+  unsigned int getMinDelay() const;
+  unsigned int getMaxDelay() const;
   ~FireTable();
 private:
   Bit::Word* table_;

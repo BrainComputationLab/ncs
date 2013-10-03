@@ -28,6 +28,17 @@ init(FireTable<MType>* table,
       synaptic_delays.push_back(synapse->delay);
     }
   }
+  auto num_words_per_vector = fire_table_->getWordsPerVector();
+  for (size_t i = 0; i < fire_table_->getNumberOfRows(); ++i) {
+    auto blank = new SynapticFireVectorBuffer<MType>(num_words_per_vector);
+    if (!blank->init()) {
+      std::cerr << "Failed to initialize SynapticFireVectorBuffer" <<
+        std::endl;
+      delete blank;
+      return false;
+    }
+    addBlank(blank);
+  }
   bool result = true;
   result &= Memory<MType>::malloc(global_presynaptic_neuron_ids_,
                                   global_presynaptic_neuron_ids.size());
@@ -51,6 +62,45 @@ init(FireTable<MType>* table,
   device_synaptic_vector_size_ = synapse_vector.size();
   subscription_ = publisher->subscribe();
   return nullptr != subscription_;
+}
+
+template<DeviceType::Type MType>
+bool FireTableUpdater<MType>::start() {
+  auto thread_function = [this]() {
+    unsigned int min_delay = fire_table_->getMinDelay();
+    unsigned int max_delay = fire_table_->getMaxDelay();
+    for (unsigned int i = 0; i < max_delay; ++i) {
+      fire_table_->lockRow(i);
+    }
+    for (unsigned int i = 0; i < min_delay; ++i) {
+      auto blank = this->getBlank();
+      blank->setData(fire_table_->getRow(i));
+      auto prerelease_function = [fire_table_, i]() {
+        fire_table_->release(i);
+      };
+      blank->setPrereleaseFunction(prerelease_function);
+      this->publish(blank);
+    }
+    unsigned int step = 0;
+    while (true) {
+      auto neuron_fire_buffer = subscription_->pull();
+      unsigned int max_row = step + max_delay;
+      fire_table_->lockRow(max_row);
+      // TODO(rvhoang): update the table here
+      unsigned int publishable_row = step + min_delay;
+      auto blank = this->getBlank();
+      blank->setData(fire_table_->getRow(publishable_row));
+      auto prerelease_function = [fire_table_, publishable_row]() {
+        fire_table_->release(publishable_row);
+      };
+      blank->setPrereleaseFunction(prerelease_function);
+      this->publish(blank);
+      neuron_fire_buffer->release();
+      ++step;
+    }
+  };
+  thread_ = std::thread(thread_function);
+  return true;
 }
 
 template<DeviceType::Type MType>

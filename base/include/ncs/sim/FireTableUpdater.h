@@ -17,6 +17,7 @@ public:
   bool init(FireTable<MType>* table,
             SpecificPublisher<GlobalNeuronStateBuffer<MType>>* publisher,
             const std::vector<Synapse*> synapse_vector);
+  bool start();
   ~FireTableUpdater();
 private:
   unsigned int* global_presynaptic_neuron_ids_;
@@ -26,6 +27,7 @@ private:
     GlobalNeuronStatePublisher;
   typename GlobalNeuronStatePublisher::Subscription* subscription_;
   FireTable<MType>* fire_table_;
+  std::thread thread_;
 };
 
 } // namespace sim
