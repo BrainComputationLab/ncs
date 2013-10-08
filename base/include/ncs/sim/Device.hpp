@@ -55,6 +55,7 @@ initialize(DeviceDescription* description,
     return false;
   }
 
+#if 0
   std::clog << "Initializing synapses..." << std::endl;
   if (!initializeSynapses_(description, synapse_plugins)) {
     std::cerr << "Failed to initialize synapses." << std::endl;
@@ -72,6 +73,7 @@ initialize(DeviceDescription* description,
     std::cerr << "Failed to initialize FireTableUpdater." << std::endl;
     return false;
   }
+#endif
 
   std::clog << "Initializing InputUpdater..." << std::endl;
   if (!initializeInputUpdater_(signal_publisher, input_plugins)) {
@@ -123,11 +125,13 @@ bool Device<MType>::start() {
     return false;
   }
 
+#if 0
   std::clog << "Starting GlobalVectorInjector..." << std::endl;
   if (!global_vector_injector_->start()) {
     std::cerr << "Failed to start GlobalVectorInjector." << std::endl;
     return false;
   }
+#endif
 
   return true;
 }
@@ -143,6 +147,24 @@ bool Device<MType>::addInput(const std::vector<Input*>& inputs,
                                    type,
                                    start_time,
                                    end_time);
+}
+
+template<DeviceType::Type MType>
+Device<MType>::~Device() {
+  std::clog << "Destroying InputUpdater..." << std::endl;
+  if (input_updater_) {
+    delete input_updater_;
+  }
+  
+  std::clog << "Destroying NeuronSimulatorUpdater..." << std::endl;
+  if (neuron_simulator_updater_) {
+    delete neuron_simulator_updater_;
+  }
+
+  std::clog << "Destroying DeviceVectorExtractor..." << std::endl;
+  if (fire_vector_extractor_) {
+    delete fire_vector_extractor_;
+  }
 }
 
 template<DeviceType::Type MType>

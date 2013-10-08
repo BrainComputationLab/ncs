@@ -230,6 +230,14 @@ Simulator::~Simulator() {
   std::clog << "Destroying simulation controller..." << std::endl;
   delete simulation_controller_;
 
+  std::clog << "Destroying vector exchanger..." << std::endl;
+  delete vector_exchanger_;
+
+  std::clog << "Destroying devices..." << std::endl;
+  for (auto device : devices_) {
+    delete device;
+  }
+
   std::clog << "Shut down complete." << std::endl;
 }
 
@@ -614,6 +622,8 @@ bool Simulator::loadInputSimulatorPlugins_() {
 bool Simulator::initializeDevices_() {
   bool result = true;
   auto& my_devices = cluster_->getThisMachine()->getDevices();
+  std::clog << "Initializing " << my_devices.size() << " devices." <<
+    std::endl;
   for (size_t i = 0; i < my_devices.size(); ++i) {
     DeviceDescription* description = my_devices[i];
     DeviceBase* device = nullptr;
@@ -655,6 +665,7 @@ bool Simulator::initializeDevices_() {
       return false;
     }
     ExchangePublisherList machine_extractors;
+#if 0
     if (!device->initializeInjector(machine_extractors,
                                     vector_exchanger_,
                                     global_neuron_vector_size_)) {
@@ -662,6 +673,7 @@ bool Simulator::initializeDevices_() {
       delete device;
       return false;
     }
+#endif
     if (!device->threadDestroy()) {
       std::cerr << "Failed to destroy device thread." << std::endl;
       delete device;

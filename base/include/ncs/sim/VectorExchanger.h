@@ -26,6 +26,7 @@ public:
             size_t global_neuron_vector_size,
             size_t num_buffers);
   bool start();
+  virtual ~VectorExchanger();
 private:
   size_t global_neuron_vector_size_;
   size_t num_buffers_;

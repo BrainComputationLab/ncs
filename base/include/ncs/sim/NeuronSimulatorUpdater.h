@@ -26,7 +26,7 @@ public:
             size_t neuron_device_vector_size,
             size_t num_buffers);
   bool start();
-  ~NeuronSimulatorUpdater();
+  virtual ~NeuronSimulatorUpdater();
 private:
   typename NeuronStatePublisher::Subscription* neuron_state_subscription_;
   typename InputPublisher::Subscription* input_subscription_;

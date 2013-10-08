@@ -43,6 +43,7 @@ public:
                         const std::string& type,
                         float start_time,
                         float end_time) = 0;
+  virtual ~DeviceBase() = 0;
 private:
 };
 
@@ -70,6 +71,7 @@ public:
                         const std::string& type,
                         float start_time,
                         float end_time);
+  virtual ~Device();
 private:
   bool allocateUpdaters_();
 

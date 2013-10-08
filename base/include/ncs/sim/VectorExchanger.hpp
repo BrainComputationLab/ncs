@@ -68,7 +68,8 @@ bool DeviceVectorExtractor<MType>::start() {
         return;
       }
       auto status = this->getBlank();
-      Bit::Word* dst = destination->getFireBits() + global_word_offset_;
+      Bit::Word* dst = 
+        destination->getFireBits() + Bit::num_words(global_word_offset_);
       Bit::Word* src = source->getFireBits();
       size_t size = Bit::num_words(source->getVectorSize());
       bool result = mem::copy<DeviceType::CPU, MType>(dst, src, size);
@@ -87,6 +88,9 @@ bool DeviceVectorExtractor<MType>::start() {
 
 template<DeviceType::Type MType>
 DeviceVectorExtractor<MType>::~DeviceVectorExtractor() {
+  if (thread_.joinable()) {
+    thread_.join();
+  }
   if (source_subscription_) {
     delete source_subscription_;
   }

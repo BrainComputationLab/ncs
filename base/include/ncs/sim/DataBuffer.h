@@ -138,7 +138,7 @@ public:
     /**
         Virtual destructor. Informs all subs that this Publisher is no more.
     */
-    virtual ~Publisher();
+  virtual ~Publisher();
 	bool clearSubscriptions();
 private:
 	///Lock around the subscriber list.
@@ -189,7 +189,7 @@ public:
     Virtual destructor. Informs all specific subscribers that this
     publisher is no more.
    */
-  ~SpecificPublisher();
+  virtual ~SpecificPublisher();
 
 	/**
 		Registers a DataBuffer for use with the publisher. Publishers should

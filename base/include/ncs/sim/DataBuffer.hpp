@@ -221,10 +221,10 @@ SpecificPublisher<T>::~SpecificPublisher() {
 template<typename T>
 void SpecificPublisher<T>::addBlank(T* blank) {
   // Make sure the blank knows how to add itself back to the pile
-  blank->release_function = [&, blank]() {
+  blank->release_function = [this, blank]() {
     if (blank->subscription_count == 0) {
-      std::unique_lock<std::mutex> lock(mutex_);
-      blanks_.push(blank);
+      std::unique_lock<std::mutex> lock(this->mutex_);
+      this->blanks_.push(blank);
       this->blank_available_.notify_all();
       return;
     }
@@ -241,8 +241,8 @@ void SpecificPublisher<T>::addBlank(T* blank) {
         prerelease_function();
       }
       // Add ourself back onto the blank stack of the publisher
-      std::unique_lock<std::mutex> lock(mutex_);
-      blanks_.push(blank);
+      std::unique_lock<std::mutex> lock(this->mutex_);
+      this->blanks_.push(blank);
       this->blank_available_.notify_all();
     }
   };
@@ -251,9 +251,9 @@ void SpecificPublisher<T>::addBlank(T* blank) {
   blank->subscription_count = 0;
 
   // Add the blank to the stack
-  std::unique_lock<std::mutex> lock(mutex_);
-  blanks_.push(blank);
-  ++num_blanks_;
+  std::unique_lock<std::mutex> lock(this->mutex_);
+  this->blanks_.push(blank);
+  ++this->num_blanks_;
 }
 
 template<typename T>

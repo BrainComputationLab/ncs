@@ -66,25 +66,27 @@ bool NeuronSimulatorUpdater<MType>::start() {
   auto master_function = [this, synchronizer_publisher]() {
     Mailbox mailbox;
     while(true) {
-      auto synchronizer = synchronizer_publisher->getBlank();
-      input_subscription_->pull(&(synchronizer->input), &mailbox);
-      neuron_state_subscription_->pull(&(synchronizer->previous_neuron_state),
-                                       &mailbox);
-      if (!mailbox.wait(&(synchronizer->input),
-                        &(synchronizer->previous_neuron_state))) {
+      InputBuffer<MType>* input_buffer = nullptr;
+      input_subscription_->pull(&input_buffer, &mailbox);
+      DeviceNeuronStateBuffer<MType>* previous_state_buffer = nullptr;
+      neuron_state_subscription_->pull(&previous_state_buffer, &mailbox);
+      if (!mailbox.wait(&input_buffer, &previous_state_buffer)) {
         input_subscription_->cancel();
         neuron_state_subscription_->cancel();
-        if (synchronizer->input) {
-          synchronizer->input->release();
+        if (input_buffer) {
+          input_buffer->release();
         }
-        if (synchronizer->previous_neuron_state) {
-          synchronizer->previous_neuron_state->release();
+        if (previous_state_buffer) {
+          previous_state_buffer->release();
         }
-        delete synchronizer;
+        delete synchronizer_publisher;
         return;
       }
+      auto synchronizer = synchronizer_publisher->getBlank();
       auto current_neuron_state = this->getBlank();
       synchronizer->current_neuron_state = current_neuron_state;
+      synchronizer->input = input_buffer;
+      synchronizer->previous_neuron_state = previous_state_buffer;
       auto prerelease_function = [this, synchronizer]() {
         this->publish(synchronizer->current_neuron_state);
         synchronizer->input->release();
@@ -137,6 +139,17 @@ bool NeuronSimulatorUpdater<MType>::start() {
 
 template<DeviceType::Type MType>
 NeuronSimulatorUpdater<MType>::~NeuronSimulatorUpdater() {
+  std::clog << "Waiting for master thread..." << std::endl;
+  if (master_thread_.joinable()) {
+    master_thread_.join();
+  }
+
+  std::clog << "Waiting for worker threads..." << std::endl;
+  for (auto& thread : worker_threads_) {
+    thread.join();
+  }
+
+  std::clog << "Cleaning up state..." << std::endl;
   if (neuron_state_subscription_) {
     delete neuron_state_subscription_;
   }
@@ -146,6 +159,8 @@ NeuronSimulatorUpdater<MType>::~NeuronSimulatorUpdater() {
   if (synaptic_current_subscription_) {
     delete synaptic_current_subscription_;
   }
+  
+  std::clog << "NeuronSimulatorUpdater destroyed." << std::endl;
 }
 
 } // namespace sim

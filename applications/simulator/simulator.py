@@ -23,6 +23,7 @@ def Run(argv):
   print "Injection complete."
   for i in range(0,10):
     simulation.step()
+  del simulation
 
 if __name__ == "__main__":
   Run(sys.argv)

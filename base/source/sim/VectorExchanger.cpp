@@ -43,6 +43,15 @@ bool VectorExchanger::start() {
   return true;
 }
 
+VectorExchanger::~VectorExchanger() {
+  if (thread_.joinable()) {
+    thread_.join();
+  }
+  if (step_subscription_) {
+    delete step_subscription_;
+  }
+}
+
 } // namespace sim
 
 } // namespace ncs

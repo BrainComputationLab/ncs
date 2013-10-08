@@ -96,6 +96,7 @@ class JSONModel:
       return False
     if not self.BuildInputGroups_():
       print "Failed to build input_groups"
+      return False
     return True
 
   def BuildModelParameters_(self):
@@ -261,7 +262,7 @@ class JSONModel:
                                      start_time,
                                      end_time)
       self.input_groups[str(name)] = input_group
-
+    return True
 
   def BuildSpecification_(self):
     self.model_specification = pyncs.ModelSpecification()

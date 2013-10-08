@@ -88,7 +88,8 @@ bool InputUpdater<MType>::start() {
   };
   auto synchronizer_publisher = new SpecificPublisher<Synchronizer>();
   for (size_t i = 0; i < num_buffers_; ++i) {
-    synchronizer_publisher->addBlank(new Synchronizer());
+    auto blank = new Synchronizer();
+    synchronizer_publisher->addBlank(blank);
   }
   auto master_function = [this, synchronizer_publisher]() {
     while(true) {
@@ -141,6 +142,12 @@ bool InputUpdater<MType>::start() {
 
 template<DeviceType::Type MType>
 InputUpdater<MType>::~InputUpdater() {
+  if (master_thread_.joinable()) {
+    master_thread_.join();
+  }
+  for (auto& thread : worker_threads_) {
+    thread.join();
+  }
   if (step_subscription_) {
     delete step_subscription_;
   }

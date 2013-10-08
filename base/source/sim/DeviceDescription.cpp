@@ -86,6 +86,9 @@ DeviceDescription::getDevicesOnThisMachine(unsigned int enabled_device_types) {
     // For now, use 2MHz per core
     double power = num_cores * 2000000.0;
     results.push_back(new DeviceDescription(true, power, DeviceType::CPU));
+    std::clog << "YO DAWG, I HEARD YOU LIKE DEBUGGING MULTIPLE CORES" <<
+      std::endl;
+    results.push_back(new DeviceDescription(true, power, DeviceType::CPU));
   }
 
   // Get CUDA devices
