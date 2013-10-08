@@ -665,7 +665,6 @@ bool Simulator::initializeDevices_() {
       return false;
     }
     ExchangePublisherList machine_extractors;
-#if 0
     if (!device->initializeInjector(machine_extractors,
                                     vector_exchanger_,
                                     global_neuron_vector_size_)) {
@@ -673,7 +672,6 @@ bool Simulator::initializeDevices_() {
       delete device;
       return false;
     }
-#endif
     if (!device->threadDestroy()) {
       std::cerr << "Failed to destroy device thread." << std::endl;
       delete device;

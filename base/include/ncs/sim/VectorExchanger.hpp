@@ -176,6 +176,9 @@ bool GlobalVectorInjector<MType>::start() {
 
 template<DeviceType::Type MType>
 GlobalVectorInjector<MType>::~GlobalVectorInjector() {
+  if (thread_.joinable()) {
+    thread_.join();
+  }
   if (source_subscription_) {
     delete source_subscription_;
   }

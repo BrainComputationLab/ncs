@@ -125,13 +125,11 @@ bool Device<MType>::start() {
     return false;
   }
 
-#if 0
   std::clog << "Starting GlobalVectorInjector..." << std::endl;
   if (!global_vector_injector_->start()) {
     std::cerr << "Failed to start GlobalVectorInjector." << std::endl;
     return false;
   }
-#endif
 
   return true;
 }
@@ -164,6 +162,11 @@ Device<MType>::~Device() {
   std::clog << "Destroying DeviceVectorExtractor..." << std::endl;
   if (fire_vector_extractor_) {
     delete fire_vector_extractor_;
+  }
+
+  std::clog << "Destroying GlobalVectorInjector..." << std::endl;
+  if (global_vector_injector_) {
+    delete global_vector_injector_;
   }
 }
 
@@ -252,17 +255,6 @@ initializeVectorExchangers_(VectorExchanger* vector_exchanger,
     std::cerr << "Failed to initialize DeviceVectorExtractor." << std::endl;
     return false;
   }
-
-#if 0
-  global_vector_injector_ =
-    new GlobalVectorInjector<MType>(global_neuron_vector_size,
-                                    Constants::num_buffers);
-  if (!global_vector_injector_->init(machine_exchanger)) {
-    std::cerr << "Failed to initialize GlobalVectorInjector." << std::endl;
-    return false;
-  }
-#endif
-
   return true;
 }
 
