@@ -76,7 +76,7 @@ bool FireTableUpdater<MType>::start() {
       auto blank = this->getBlank();
       blank->setData(fire_table_->getRow(i));
       auto prerelease_function = [fire_table_, i]() {
-        fire_table_->release(i);
+        fire_table_->releaseRow(i);
       };
       blank->setPrereleaseFunction(prerelease_function);
       this->publish(blank);
@@ -84,6 +84,9 @@ bool FireTableUpdater<MType>::start() {
     unsigned int step = 0;
     while (true) {
       auto neuron_fire_buffer = subscription_->pull();
+      if (nullptr == neuron_fire_buffer) {
+        return;
+      }
       unsigned int max_row = step + max_delay;
       fire_table_->lockRow(max_row);
       // TODO(rvhoang): update the table here
@@ -91,7 +94,7 @@ bool FireTableUpdater<MType>::start() {
       auto blank = this->getBlank();
       blank->setData(fire_table_->getRow(publishable_row));
       auto prerelease_function = [fire_table_, publishable_row]() {
-        fire_table_->release(publishable_row);
+        fire_table_->releaseRow(publishable_row);
       };
       blank->setPrereleaseFunction(prerelease_function);
       this->publish(blank);
@@ -105,6 +108,9 @@ bool FireTableUpdater<MType>::start() {
 
 template<DeviceType::Type MType>
 FireTableUpdater<MType>::~FireTableUpdater() {
+  if (thread_.joinable()) {
+    thread_.join();
+  }
   if (global_presynaptic_neuron_ids_) {
     Memory<MType>::free(global_presynaptic_neuron_ids_);
   }

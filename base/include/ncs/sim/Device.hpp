@@ -62,6 +62,7 @@ initialize(DeviceDescription* description,
     return false;
   }
 
+#endif
   std::clog << "Initializing FireTable..." << std::endl;
   if (!initializeFireTable_()) {
     std::cerr << "Failed to initialize fire table." << std::endl;
@@ -73,7 +74,6 @@ initialize(DeviceDescription* description,
     std::cerr << "Failed to initialize FireTableUpdater." << std::endl;
     return false;
   }
-#endif
 
   std::clog << "Initializing InputUpdater..." << std::endl;
   if (!initializeInputUpdater_(signal_publisher, input_plugins)) {
@@ -131,6 +131,12 @@ bool Device<MType>::start() {
     return false;
   }
 
+  std::clog << "Starting FireTableUpdater..." << std::endl;
+  if (!fire_table_updater_->start()) {
+    std::cerr << "Failed to start FireTableUpdater." << std::endl;
+    return false;
+  }
+
   return true;
 }
 
@@ -167,6 +173,11 @@ Device<MType>::~Device() {
   std::clog << "Destroying GlobalVectorInjector..." << std::endl;
   if (global_vector_injector_) {
     delete global_vector_injector_;
+  }
+
+  std::clog << "Destroying FireTableUpdater..." << std::endl;
+  if (fire_table_updater_) {
+    delete fire_table_updater_;
   }
 }
 
@@ -344,14 +355,12 @@ initializeFireTableUpdater_(DeviceDescription* description) {
       synapse_vector.push_back(nullptr);
     }
   }
-#if 0
   if (!fire_table_updater_->init(fire_table_,
                                  global_vector_injector_,
                                  synapse_vector)) {
     std::cerr << "Failed to initialize FireTableUpdater." << std::endl;
     return false;
   }
-#endif
   return true;
 }
 
