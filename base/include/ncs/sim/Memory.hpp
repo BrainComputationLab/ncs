@@ -1,3 +1,5 @@
+#include <iostream>
+
 #ifdef NCS_CUDA
 #include <cuda.h>
 #include <cuda_runtime.h>
