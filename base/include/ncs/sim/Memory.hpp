@@ -16,6 +16,7 @@ bool Memory<MType>::malloc(T*& addr, size_t count) {
   return addr != nullptr;
 }
 
+#ifdef NCS_CUDA
 template<>
 template<typename T>
 T* Memory<DeviceType::CUDA>::malloc(size_t count) {
@@ -55,6 +56,7 @@ bool Memory<DeviceType::CUDA>::zero(T* addr, size_t count) {
   }
   return true;
 }
+#endif
 
 template<>
 template<typename T>
@@ -88,6 +90,7 @@ bool Memory<DeviceType::CPU>::To<DeviceType::CPU>::copy(const T* src,
   return true;
 }
 
+#ifdef NCS_CUDA
 template<>
 template<>
 template<typename T>
@@ -151,6 +154,7 @@ bool Memory<DeviceType::CUDA>::To<DeviceType::CUDA>::copy(const T* src,
   }
   return true;
 }
+#endif // NCS_CUDA
 
 namespace mem {
 
