@@ -155,17 +155,12 @@ bool NeuronSimulatorUpdater<MType>::start() {
 
 template<DeviceType::Type MType>
 NeuronSimulatorUpdater<MType>::~NeuronSimulatorUpdater() {
-  std::clog << "Waiting for master thread..." << std::endl;
   if (master_thread_.joinable()) {
     master_thread_.join();
   }
-
-  std::clog << "Waiting for worker threads..." << std::endl;
   for (auto& thread : worker_threads_) {
     thread.join();
   }
-
-  std::clog << "Cleaning up state..." << std::endl;
   if (neuron_state_subscription_) {
     delete neuron_state_subscription_;
   }
@@ -175,8 +170,6 @@ NeuronSimulatorUpdater<MType>::~NeuronSimulatorUpdater() {
   if (synaptic_current_subscription_) {
     delete synaptic_current_subscription_;
   }
-  
-  std::clog << "NeuronSimulatorUpdater destroyed." << std::endl;
 }
 
 } // namespace sim
