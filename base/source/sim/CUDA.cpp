@@ -1,3 +1,4 @@
+#ifdef NCS_CUDA
 #include <iostream>
 
 #include <ncs/sim/CUDA.h>
@@ -62,3 +63,4 @@ bool CUDA::endStream() {
 } // namespace sim
 
 } // namespace ncs
+#endif

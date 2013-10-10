@@ -1,3 +1,4 @@
+#ifdef NCS_CUDA
 #include <ncs/sim/CUDADevice.h>
 
 namespace ncs {
@@ -19,3 +20,4 @@ bool CUDADevice::threadDestroy() {
 } // namespace sim
 
 } // namespace ncs
+#endif
