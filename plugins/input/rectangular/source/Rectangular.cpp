@@ -38,27 +38,28 @@ bool load(ncs::sim::FactoryMap<ncs::sim::InputSimulator>* plugin_map) {
   bool result = true;
   result &= plugin_map->registerInstantiator("rectangular_current",
                                              createInstantiator);
+  result &= plugin_map->registerInstantiator("rectangular_voltage",
+                                             createInstantiator);
   using ncs::sim::DeviceType;
   result &= 
     plugin_map->registerCPUProducer("rectangular_current",
                                     createSimulator<DeviceType::CPU,
                                                     InputType::Current>);
   result &= 
-    plugin_map->registerCUDAProducer("rectangular_current",
-                                     createSimulator<DeviceType::CUDA,
-                                                     InputType::Current>);
-
-  result &= plugin_map->registerInstantiator("rectangular_voltage",
-                                             createInstantiator);
-  using ncs::sim::DeviceType;
-  result &= 
     plugin_map->registerCPUProducer("rectangular_voltage",
                                     createSimulator<DeviceType::CPU,
                                                     InputType::Voltage>);
+
+#ifdef NCS_CUDA
+  result &= 
+    plugin_map->registerCUDAProducer("rectangular_current",
+                                     createSimulator<DeviceType::CUDA,
+                                                     InputType::Current>);
   result &= 
     plugin_map->registerCUDAProducer("rectangular_voltage",
                                      createSimulator<DeviceType::CUDA,
                                                      InputType::Voltage>);
+#endif
   return result;
 }
 

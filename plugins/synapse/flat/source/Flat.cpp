@@ -42,8 +42,10 @@ bool load(ncs::sim::FactoryMap<ncs::sim::SynapseSimulator>* plugin_map) {
   const auto CPU = ncs::sim::DeviceType::CPU;
   result &= plugin_map->registerCPUProducer("flat", createSimulator<CPU>);
 
+#ifdef NCS_CUDA
   const auto CUDA = ncs::sim::DeviceType::CUDA;
   result &= plugin_map->registerCUDAProducer("flat", createSimulator<CUDA>);
+#endif
   
   return result;
 }

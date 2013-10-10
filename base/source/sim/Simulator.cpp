@@ -628,9 +628,11 @@ bool Simulator::initializeDevices_() {
     DeviceDescription* description = my_devices[i];
     DeviceBase* device = nullptr;
     switch(description->getDeviceType()) {
+#ifdef NCS_CUDA
     case DeviceType::CUDA:
       device = new CUDADevice(description->getDeviceIndex());
       break;
+#endif // NCS_CUDA
     case DeviceType::CPU:
       device = new Device<DeviceType::CPU>();
       break;
