@@ -90,7 +90,10 @@ bool FireTableUpdater<MType>::start() {
       }
       unsigned int max_row = step + max_delay;
       fire_table_->lockRow(max_row);
-      // TODO(rvhoang): update the table here
+      if (!this->update_(neuron_fire_buffer, step)) {
+        std::cerr << "Failed to update FireTable on step " << step <<
+          std::endl;
+      }
       unsigned int publishable_row = step + min_delay;
       auto blank = this->getBlank();
       blank->setData(fire_table_->getRow(publishable_row));

@@ -1,4 +1,7 @@
 #pragma once
+
+#include <thread>
+
 #include <ncs/sim/DataBuffer.h>
 #include <ncs/sim/FireTable.h>
 #include <ncs/sim/GlobalNeuronStateBuffer.h>
@@ -20,6 +23,9 @@ public:
   bool start();
   ~FireTableUpdater();
 private:
+  bool update_(GlobalNeuronStateBuffer<MType>* neuron_state,
+               unsigned int step);
+
   unsigned int* global_presynaptic_neuron_ids_;
   unsigned int* synaptic_delays_;
   size_t device_synaptic_vector_size_;
@@ -29,6 +35,16 @@ private:
   FireTable<MType>* fire_table_;
   std::thread thread_;
 };
+
+template<>
+bool FireTableUpdater<DeviceType::CPU>::
+update_(GlobalNeuronStateBuffer<DeviceType::CPU>* neuron_state,
+        unsigned int step);
+
+template<>
+bool FireTableUpdater<DeviceType::CUDA>::
+update_(GlobalNeuronStateBuffer<DeviceType::CUDA>* neuron_state,
+        unsigned int step);
 
 } // namespace sim
 
