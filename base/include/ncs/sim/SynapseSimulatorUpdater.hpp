@@ -62,7 +62,6 @@ init(const std::vector<SynapseSimulator<MType>*>& simulators,
 
 template<DeviceType::Type MType>
 bool SynapseSimulatorUpdater<MType>::start() {
-  // TODO(rvhoang): implement me
   struct Synchronizer : public DataBuffer {
     DeviceNeuronStateBuffer<MType>* neuron_state;
     SynapticFireVectorBuffer<MType>* synaptic_fire;
@@ -112,15 +111,26 @@ bool SynapseSimulatorUpdater<MType>::start() {
     auto unit_offset = device_synaptic_vector_offsets_[i];
     auto subscription = synchronizer_publisher->subscribe();
     auto worker_function = [subscription, simulator, unit_offset]() {
+      auto word_offset = Bit::num_words(unit_offset);
       while (true) {
         auto synchronizer = subscription->pull();
-        auto word_offset = Bit::num_words(unit_offset);
         if (nullptr == synchronizer) {
           delete subscription;
           return;
         }
-        // TODO(rvhoang): Implement parameters and update here
-        std::cout << "STUB: Synaptic update" << std::endl;
+        SynapseUpdateParameters parameters;
+        parameters.synaptic_fire =
+          synchronizer->synaptic_fire->getFireBits() + word_offset;
+        parameters.neuron_voltage =
+          synchronizer->neuron_state->getVoltages();
+        parameters.synaptic_current =
+          synchronizer->synaptic_current->getCurrents();
+        parameters.write_lock =
+          synchronizer->synaptic_current->getWriteLock();
+        if (!simulator->update(&parameters)) {
+          std::cerr << "An error occurred updating a SynapseSimulator." <<
+            std::endl;
+        }
         synchronizer->release();
       }
     };

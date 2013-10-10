@@ -15,6 +15,11 @@ bool SynapticFireVectorBuffer<MType>::setData(Bit::Word* data_row) {
 }
 
 template<DeviceType::Type MType>
+Bit::Word* SynapticFireVectorBuffer<MType>::getFireBits() {
+  return data_row_;
+}
+
+template<DeviceType::Type MType>
 bool SynapticFireVectorBuffer<MType>::init() {
   return true;
 }

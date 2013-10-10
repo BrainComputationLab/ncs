@@ -31,3 +31,10 @@ bool FlatSimulator<MType>::initialize() {
                                          num_synapses);
   return result;
 }
+
+template<ncs::sim::DeviceType::Type MType>
+bool FlatSimulator<MType>::
+update(ncs::sim::SynapseUpdateParameters* parameters) {
+  std::clog << "STUB: FlatSimulator::update()" << std::endl;
+  return true;
+}

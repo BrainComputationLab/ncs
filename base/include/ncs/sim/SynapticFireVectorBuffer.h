@@ -11,6 +11,7 @@ class SynapticFireVectorBuffer : public DataBuffer {
 public:
   SynapticFireVectorBuffer(size_t num_words);
   bool setData(Bit::Word* data_row);
+  Bit::Word* getFireBits();
   bool init();
   size_t getNumberOfWords() const;
   ~SynapticFireVectorBuffer();

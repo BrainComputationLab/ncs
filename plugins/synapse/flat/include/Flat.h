@@ -12,6 +12,7 @@ public:
   FlatSimulator();
   virtual bool addSynapse(ncs::sim::Synapse* synapse);
   virtual bool initialize();
+  virtual bool update(ncs::sim::SynapseUpdateParameters* parameters);
 private:
   std::vector<float> cpu_current_;
   float* device_current_;
