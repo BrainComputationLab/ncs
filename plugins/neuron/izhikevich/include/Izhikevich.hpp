@@ -9,6 +9,8 @@ IzhikevichSimulator<MType>::IzhikevichSimulator() {
   d_ = nullptr;
   u_ = nullptr;
   v_ = nullptr;
+  threshold_ = nullptr;
+  step_dt_ = 0.5f;
 }
 
 template<ncs::sim::DeviceType::Type MType>
@@ -22,6 +24,7 @@ addNeuron(ncs::sim::Neuron* neuron) {
   buffers_->d.push_back(i->d->generateDouble(&rng));
   buffers_->u.push_back(i->u->generateDouble(&rng));
   buffers_->v.push_back(i->v->generateDouble(&rng));
+  buffers_->threshold.push_back(i->threshold->generateDouble(&rng));
   return true;
 }
 
@@ -36,6 +39,7 @@ bool IzhikevichSimulator<MType>::initialize() {
   result &= Memory<MType>::malloc(d_, num_neurons_);
   result &= Memory<MType>::malloc(u_, num_neurons_);
   result &= Memory<MType>::malloc(v_, num_neurons_);
+  result &= Memory<MType>::malloc(threshold_, num_neurons_);
   if (!result) {
     std::cerr << "Memory allocation failed." << std::endl;
     return false;
@@ -47,6 +51,9 @@ bool IzhikevichSimulator<MType>::initialize() {
   result &= Memory<CPU>::To<MType>::copy(buffers_->d.data(), d_, num_neurons_);
   result &= Memory<CPU>::To<MType>::copy(buffers_->u.data(), u_, num_neurons_);
   result &= Memory<CPU>::To<MType>::copy(buffers_->v.data(), v_, num_neurons_);
+  result &= Memory<CPU>::To<MType>::copy(buffers_->threshold.data(),
+                                         threshold_,
+                                         num_neurons_);
   if (!result) {
     std::cerr << "Failed to copy data to device." << std::endl;
     return false;
@@ -70,8 +77,7 @@ bool IzhikevichSimulator<MType>::initializeVoltages(float* plugin_voltages) {
 template<ncs::sim::DeviceType::Type MType>
 bool IzhikevichSimulator<MType>::
 update(ncs::sim::NeuronUpdateParameters* parameters) {
-  // TODO(rvhoang): Implement me
-  std::clog << "STUB: IzhikevichSimulator::update" << std::endl;
+  std::clog << "STUB: IzhikevichSimulator<MType>::update" << std::endl;
   return true;
 }
 

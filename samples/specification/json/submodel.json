@@ -2,12 +2,13 @@
   "#izh_parameters": {
     "type": "model_parameters",
     "model_type": "izhikevich",
-    "a": { "type": "exact", "value": 1.0},
-    "b": { "type": "normal", "mean": 1.0, "std_dev": 0.1},
-    "c": { "type": "exact", "value": 1.0},
-    "d": { "type": "exact", "value": 1.0},
-    "u": { "type": "exact", "value": 1.0},
-    "v": { "type": "exact", "value": 1.0}
+    "a": { "type": "exact", "value": 0.2},
+    "b": { "type": "exact", "value": 0.2},
+    "c": { "type": "exact", "value": -65.0},
+    "d": { "type": "exact", "value": 8.0},
+    "u": { "type": "uniform", "min_value": -15.0, "max_value": -11.0},
+    "v": { "type": "uniform", "min_value": -75.0, "max_value": -55.0},
+    "threshold": { "type": "exact", "value": 30.0}
   },
   "#box_generator": {
     "type": "geometry_generator",

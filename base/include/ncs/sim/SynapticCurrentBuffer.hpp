@@ -10,6 +10,13 @@ SynapticCurrentBuffer(size_t device_neuron_vector_size)
 }
 
 template<DeviceType::Type MType>
+bool SynapticCurrentBuffer<MType>::clear() {
+  return Memory<MType>::zero(current_per_neuron_,
+                             device_neuron_vector_size_);
+  return true;
+}
+
+template<DeviceType::Type MType>
 bool SynapticCurrentBuffer<MType>::init() {
   if (device_neuron_vector_size_ > 0) {
     return Memory<MType>::malloc(current_per_neuron_,

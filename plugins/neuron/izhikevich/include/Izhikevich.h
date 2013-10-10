@@ -11,6 +11,7 @@ struct Instantiator {
   ncs::spec::Generator* d;
   ncs::spec::Generator* u;
   ncs::spec::Generator* v;
+  ncs::spec::Generator* threshold;
 };
 
 template<ncs::sim::DeviceType::Type MType>
@@ -30,6 +31,7 @@ private:
     std::vector<float> d;
     std::vector<float> u;
     std::vector<float> v;
+    std::vector<float> threshold;
   };
   Buffers* buffers_;
   float* a_;
@@ -38,7 +40,18 @@ private:
   float* d_;
   float* u_;
   float* v_;
+  float* threshold_;
   unsigned int num_neurons_;
+  float step_dt_;
 };
+
+template<>
+bool IzhikevichSimulator<ncs::sim::DeviceType::CPU>::
+update(ncs::sim::NeuronUpdateParameters* parameters);
+
+template<>
+bool IzhikevichSimulator<ncs::sim::DeviceType::CUDA>::
+update(ncs::sim::NeuronUpdateParameters* parameters);
+
 
 #include "Izhikevich.hpp"

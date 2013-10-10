@@ -92,6 +92,10 @@ bool SynapseSimulatorUpdater<MType>::start() {
       }
       auto synchronizer = synchronizer_publisher->getBlank();
       auto synaptic_current = this->getBlank();
+      if (!synaptic_current->clear()) {
+        std::cerr << "Failed to clear SynapticCurrentBuffer." <<
+          std::endl;
+      }
       synchronizer->neuron_state = neuron_state;
       synchronizer->synaptic_fire = synaptic_fire;
       synchronizer->synaptic_current = synaptic_current;

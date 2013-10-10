@@ -21,7 +21,7 @@ def Run(argv):
   for name, group in model.input_groups.items():
     simulation.addInput(group)
   print "Injection complete."
-  for i in range(0,10):
+  for i in range(0,100):
     simulation.step()
   del simulation
 
