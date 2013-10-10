@@ -1,4 +1,5 @@
 // namespace ncs::sim
+#include <iostream>
 
 template<typename T>
 bool Communicator::send(const T& v, int rank) {
