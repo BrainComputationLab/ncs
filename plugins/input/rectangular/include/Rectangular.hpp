@@ -1,3 +1,4 @@
+#include <ncs/sim/AtomicWriter.h>
 #include <ncs/sim/Memory.h>
 
 template<ncs::sim::DeviceType::Type MType, InputType IType>
