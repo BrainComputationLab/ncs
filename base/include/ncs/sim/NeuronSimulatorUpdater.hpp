@@ -43,6 +43,13 @@ template<DeviceType::Type MType>
 bool NeuronSimulatorUpdater<MType>::start() {
   // Initialize the first voltage vector
   auto buffer = this->getBlank();
+  if (!Memory<MType>::zero(buffer->getFireBits(),
+                           Bit::num_words(buffer->getVectorSize()))) {
+    std::cerr << "Failed to zero initial DeviceNeuronStateBuffer." <<
+      std::endl;
+    return false;
+  }
+
   for (size_t i = 0; i < neuron_simulators_.size(); ++i) {
     auto simulator = neuron_simulators_[i];
     auto offset = device_id_offsets_[i];
