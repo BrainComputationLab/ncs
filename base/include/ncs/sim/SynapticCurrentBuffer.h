@@ -11,6 +11,7 @@ class SynapticCurrentBuffer : public DataBuffer {
 public:
   SynapticCurrentBuffer(size_t device_neuron_vector_size);
   bool init();
+  float* getCurrents();
   ~SynapticCurrentBuffer();
 private:
   size_t device_neuron_vector_size_;

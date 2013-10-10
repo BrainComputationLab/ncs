@@ -88,6 +88,7 @@ private:
                            FactoryMap<SynapseSimulator>* synapse_plugins);
   bool initializeSynapseSimulator_(SynapseSimulator<MType>* simulator,
                                   SynapsePluginDescription* description);
+  bool initializeSynapseUpdater_();
 
   bool initializeFireTable_();
   bool initializeFireTableUpdater_(DeviceDescription* description);

@@ -36,6 +36,11 @@ init(InputPublisher* input_publisher,
   synaptic_current_subscription_ = synaptic_current_publisher->subscribe();
   neuron_state_subscription_ = this->subscribe();
 
+  return true;
+}
+
+template<DeviceType::Type MType>
+bool NeuronSimulatorUpdater<MType>::start() {
   // Initialize the first voltage vector
   auto buffer = this->getBlank();
   for (size_t i = 0; i < neuron_simulators_.size(); ++i) {
@@ -48,11 +53,7 @@ init(InputPublisher* input_publisher,
     }
   }
   this->publish(buffer);
-  return true;
-}
 
-template<DeviceType::Type MType>
-bool NeuronSimulatorUpdater<MType>::start() {
   struct Synchronizer : public DataBuffer {
     DeviceNeuronStateBuffer<MType>* previous_neuron_state;
     SynapticCurrentBuffer<MType>* synaptic_current;
@@ -63,34 +64,46 @@ bool NeuronSimulatorUpdater<MType>::start() {
   for (size_t i = 0; i < num_buffers_; ++i) {
     synchronizer_publisher->addBlank(new Synchronizer());
   }
-  auto master_function = [this, synchronizer_publisher]() {
+  NeuronSimulatorUpdater<MType>* self = this;
+  auto master_function = [self, synchronizer_publisher]() {
     Mailbox mailbox;
     while(true) {
       InputBuffer<MType>* input_buffer = nullptr;
-      input_subscription_->pull(&input_buffer, &mailbox);
+      self->input_subscription_->pull(&input_buffer, &mailbox);
       DeviceNeuronStateBuffer<MType>* previous_state_buffer = nullptr;
-      neuron_state_subscription_->pull(&previous_state_buffer, &mailbox);
-      if (!mailbox.wait(&input_buffer, &previous_state_buffer)) {
-        input_subscription_->cancel();
-        neuron_state_subscription_->cancel();
+      self->neuron_state_subscription_->pull(&previous_state_buffer, &mailbox);
+      SynapticCurrentBuffer<MType>* synaptic_current_buffer = nullptr;
+      self->synaptic_current_subscription_->pull(&synaptic_current_buffer,
+                                                 &mailbox);
+      if (!mailbox.wait(&input_buffer, 
+                        &previous_state_buffer, 
+                        &synaptic_current_buffer)) {
+        self->input_subscription_->cancel();
+        self->neuron_state_subscription_->cancel();
+        self->synaptic_current_subscription_->cancel();
         if (input_buffer) {
           input_buffer->release();
         }
         if (previous_state_buffer) {
           previous_state_buffer->release();
         }
+        if (synaptic_current_buffer) {
+          synaptic_current_buffer->release();
+        }
         delete synchronizer_publisher;
         return;
       }
       auto synchronizer = synchronizer_publisher->getBlank();
-      auto current_neuron_state = this->getBlank();
+      auto current_neuron_state = self->getBlank();
       synchronizer->current_neuron_state = current_neuron_state;
       synchronizer->input = input_buffer;
       synchronizer->previous_neuron_state = previous_state_buffer;
-      auto prerelease_function = [this, synchronizer]() {
-        this->publish(synchronizer->current_neuron_state);
+      synchronizer->synaptic_current = synaptic_current_buffer;
+      auto prerelease_function = [self, synchronizer]() {
+        self->publish(synchronizer->current_neuron_state);
         synchronizer->input->release();
         synchronizer->previous_neuron_state->release();
+        synchronizer->synaptic_current->release();
       };
       synchronizer->setPrereleaseFunction(prerelease_function);
       synchronizer_publisher->publish(synchronizer);
@@ -98,7 +111,6 @@ bool NeuronSimulatorUpdater<MType>::start() {
   };
   master_thread_ = std::thread(master_function);
 
-  // TODO(rvhoang): setup workers
   for (size_t i = 0; i < neuron_simulators_.size(); ++i) {
     auto simulator = neuron_simulators_[i];
     auto unit_offset = device_id_offsets_[i];
@@ -112,18 +124,22 @@ bool NeuronSimulatorUpdater<MType>::start() {
           return;
         }
         NeuronUpdateParameters parameters;
-        auto input = synchronizer->input;
-        parameters.input_current = input->getInputCurrent();
-        parameters.clamp_voltage_values = input->getVoltageClampValues();
-        parameters.voltage_clamp_bits = input->getVoltageClampBits();
-        auto previous_neuron_state = synchronizer->previous_neuron_state;
+        parameters.input_current = 
+          synchronizer->input->getInputCurrent() + unit_offset;
+        parameters.clamp_voltage_values = 
+          synchronizer->input->getVoltageClampValues() + unit_offset;
+        parameters.voltage_clamp_bits = 
+          synchronizer->input->getVoltageClampBits() + word_offset;
         parameters.previous_neuron_voltage = 
-          previous_neuron_state->getVoltages();
-        // TODO(rvhoang): add synaptic current as the cycle is completed
-        auto current_neuron_state = synchronizer->current_neuron_state;
-        parameters.neuron_voltage = current_neuron_state->getVoltages();
-        parameters.neuron_fire_bits = current_neuron_state->getFireBits();
-        parameters.write_lock = current_neuron_state->getWriteLock();
+          synchronizer->previous_neuron_state->getVoltages() + unit_offset;
+        parameters.synaptic_current = 
+          synchronizer->synaptic_current->getCurrents() + unit_offset;
+        parameters.neuron_voltage = 
+          synchronizer->current_neuron_state->getVoltages() + unit_offset;
+        parameters.neuron_fire_bits = 
+          synchronizer->current_neuron_state->getFireBits() + word_offset;
+        parameters.write_lock = 
+          synchronizer->current_neuron_state->getWriteLock();
         if (!simulator->update(&parameters)) {
           std::cerr << "An error occurred updating a NeuronSimulator." <<
             std::endl;

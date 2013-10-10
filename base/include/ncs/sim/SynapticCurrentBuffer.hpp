@@ -19,6 +19,11 @@ bool SynapticCurrentBuffer<MType>::init() {
 }
 
 template<DeviceType::Type MType>
+float* SynapticCurrentBuffer<MType>::getCurrents() {
+  return current_per_neuron_;
+}
+
+template<DeviceType::Type MType>
 SynapticCurrentBuffer<MType>::~SynapticCurrentBuffer() {
   if (current_per_neuron_) {
     Memory<MType>::free(current_per_neuron_);

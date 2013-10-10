@@ -6,7 +6,8 @@ template<DeviceType::Type MType>
 FireTableUpdater<MType>::FireTableUpdater()
   : fire_table_(nullptr),
     global_presynaptic_neuron_ids_(nullptr),
-    synaptic_delays_(nullptr) {
+    synaptic_delays_(nullptr),
+    subscription_(nullptr) {
 }
 
 template<DeviceType::Type MType>

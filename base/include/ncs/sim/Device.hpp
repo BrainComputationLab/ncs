@@ -55,14 +55,18 @@ initialize(DeviceDescription* description,
     return false;
   }
 
-#if 0
   std::clog << "Initializing synapses..." << std::endl;
   if (!initializeSynapses_(description, synapse_plugins)) {
     std::cerr << "Failed to initialize synapses." << std::endl;
     return false;
   }
 
-#endif
+  std::clog << "Initializing SynapseSimulatorUpdater..." << std::endl;
+  if (!initializeSynapseUpdater_()) {
+    std::cerr << "Failed to initialize SynapseSimulatorUpdater." << std::endl;
+    return false;
+  }
+
   std::clog << "Initializing FireTable..." << std::endl;
   if (!initializeFireTable_()) {
     std::cerr << "Failed to initialize fire table." << std::endl;
@@ -137,6 +141,11 @@ bool Device<MType>::start() {
     return false;
   }
 
+  std::clog << "Starting SynapseSimulatorUpdater..." << std::endl;
+  if (!synapse_simulator_updater_->start()) {
+    std::cerr << "Failed to start SynapseSimulatorUpdater." << std::endl;
+    return false;
+  }
   return true;
 }
 
@@ -155,29 +164,63 @@ bool Device<MType>::addInput(const std::vector<Input*>& inputs,
 
 template<DeviceType::Type MType>
 Device<MType>::~Device() {
-  std::clog << "Destroying InputUpdater..." << std::endl;
+  std::vector<std::thread> kill_threads;
   if (input_updater_) {
-    delete input_updater_;
+    auto deleter = [input_updater_]() {
+      std::clog << "Destroying InputUpdater..." << std::endl;
+      delete input_updater_;
+      std::clog << "Destroyed InputUpdater." << std::endl;
+    };
+    kill_threads.push_back(std::thread(deleter));
   }
   
-  std::clog << "Destroying NeuronSimulatorUpdater..." << std::endl;
   if (neuron_simulator_updater_) {
-    delete neuron_simulator_updater_;
+    auto deleter = [neuron_simulator_updater_]() {
+      std::clog << "Destroying NeuronSimulatorUpdater..." << std::endl;
+      delete neuron_simulator_updater_;
+      std::clog << "Destroyed NeuronSimulatorUpdater." << std::endl;
+    };
+    kill_threads.push_back(std::thread(deleter));
   }
 
   std::clog << "Destroying DeviceVectorExtractor..." << std::endl;
   if (fire_vector_extractor_) {
-    delete fire_vector_extractor_;
+    auto deleter = [fire_vector_extractor_]() {
+      std::clog << "Destroying DeviceVectorExtractor..." << std::endl;
+      delete fire_vector_extractor_;
+      std::clog << "Destroyed DeviceVectorExtractor." << std::endl;
+    };
+    kill_threads.push_back(std::thread(deleter));
   }
 
-  std::clog << "Destroying GlobalVectorInjector..." << std::endl;
   if (global_vector_injector_) {
-    delete global_vector_injector_;
+    auto deleter = [global_vector_injector_]() {
+      std::clog << "Destroying GlobalVectorInjector..." << std::endl;
+      delete global_vector_injector_;
+      std::clog << "Destroyed GlobalVectorInjector." << std::endl;
+    };
+    kill_threads.push_back(std::thread(deleter));
   }
 
-  std::clog << "Destroying FireTableUpdater..." << std::endl;
   if (fire_table_updater_) {
-    delete fire_table_updater_;
+    auto deleter = [fire_table_updater_]() {
+      std::clog << "Destroying FireTableUpdater..." << std::endl;
+      delete fire_table_updater_;
+      std::clog << "Destroyed FireTableUpdater" << std::endl;
+    };
+    kill_threads.push_back(std::thread(deleter));
+  }
+
+  if (synapse_simulator_updater_) {
+    auto deleter = [synapse_simulator_updater_]() {
+      std::clog << "Destroying SynapseSimulatorUpdater..." << std::endl;
+      delete synapse_simulator_updater_;
+      std::clog << "Destroyed SynapseSimulatorUpdater." << std::endl;
+    };
+    kill_threads.push_back(std::thread(deleter));
+  }
+  for (auto& thread : kill_threads) {
+    thread.join();
   }
 }
 
@@ -328,6 +371,25 @@ initializeSynapseSimulator_(SynapseSimulator<MType>* simulator,
   }
   return true;
 }
+
+template<DeviceType::Type MType>
+bool Device<MType>::
+initializeSynapseUpdater_() {
+  auto updater = synapse_simulator_updater_;
+  if (!updater->setFireVectorPublisher(fire_table_updater_)) {
+    std::cerr << "Failed to set FireVectorPublisher." << std::endl;
+    return false;
+  }
+  if (!updater->setNeuronStatePublisher(neuron_simulator_updater_)) {
+    std::cerr << "Failed to set NeuronStatePublisher." << std::endl;
+    return false;
+  }
+  return synapse_simulator_updater_->init(synapse_simulators_,
+                                          synapse_device_id_offsets_,
+                                          neuron_device_vector_size_,
+                                          Constants::num_buffers);
+}
+
 
 template<DeviceType::Type MType>
 bool Device<MType>::
