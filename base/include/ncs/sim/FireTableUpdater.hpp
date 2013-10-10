@@ -72,6 +72,10 @@ bool FireTableUpdater<MType>::start() {
     unsigned int max_delay = fire_table_->getMaxDelay();
     for (unsigned int i = 0; i < max_delay; ++i) {
       fire_table_->lockRow(i);
+      if (!Memory<MType>::zero(fire_table_->getRow(i), 
+                               fire_table_->getWordsPerVector())) {
+        std::cerr << "Failed to zero FireTable row " << i << std::endl;
+      }
     }
     for (unsigned int i = 0; i < min_delay; ++i) {
       auto blank = this->getBlank();
@@ -90,6 +94,11 @@ bool FireTableUpdater<MType>::start() {
       }
       unsigned int max_row = step + max_delay;
       fire_table_->lockRow(max_row);
+      if (!Memory<MType>::zero(fire_table_->getRow(max_row),
+                               fire_table_->getWordsPerVector())) {
+        std::cerr << "Failed to zero FireTable row " << max_row << 
+          std::endl;
+      }
       if (!this->update_(neuron_fire_buffer, step)) {
         std::cerr << "Failed to update FireTable on step " << step <<
           std::endl;
