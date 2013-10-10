@@ -1,5 +1,8 @@
-// namespace ncs::sim
 #include <iostream>
+
+namespace ncs {
+
+namespace sim {
 
 template<typename T>
 bool Communicator::send(const T& v, int rank) {
@@ -69,3 +72,7 @@ bool Communicator::bcast(T* v, int count, int origin_rank) {
 }
 
 template<> bool Communicator::bcast(std::string& v, int origin_rank);
+
+} // namespace sim
+
+} // namespace ncs

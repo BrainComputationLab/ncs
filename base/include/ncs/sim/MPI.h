@@ -33,8 +33,9 @@ public:
 private:
 };
 
-#include <ncs/sim/MPI.hpp>
-
 } // namespace sim
 
 } // namespace ncs
+
+#include <ncs/sim/MPI.hpp>
+
