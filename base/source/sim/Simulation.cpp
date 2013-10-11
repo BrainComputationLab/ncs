@@ -10,7 +10,8 @@ Simulation::Simulation(spec::ModelSpecification* model_specification)
   simulator_ = new Simulator(model_specification_);
 }
 
-bool Simulation::init(const std::vector<std::string>& args) {
+bool Simulation::init(const std::vector<std::string>& args,
+                      spec::SimulationParameters* simulation_parameters) {
   int argc = args.size();
   char** argv = new char*[argc + 1];
   for (int i = 0; i < argc; ++i) {
