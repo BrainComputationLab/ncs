@@ -12,6 +12,7 @@ public:
   AtomicWriter();
   void write(T* location, const T& value);
   void commit(std::function<void(T*, const T&)> op);
+  static void add(T* location, const T& value);
 private:
   std::vector<T*> locations_;
   std::vector<T> values_;
