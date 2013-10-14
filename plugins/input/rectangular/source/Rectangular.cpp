@@ -30,8 +30,28 @@ void* createInstantiator(ncs::spec::ModelParameters* parameters) {
 template<>
 bool RectangularSimulator<ncs::sim::DeviceType::CPU, InputType::Voltage>::
 update_(ncs::sim::InputUpdateParameters* parameters) {
-  std::cout << "STUB: RectangularSimulator<CPU, Voltage>::update_()" <<
-    std::endl;
+  using ncs::sim::Bit;
+  float* clamp_voltage_values = parameters->clamp_voltage_values;
+  Bit::Word* voltage_clamp_bits = parameters->voltage_clamp_bits;
+  std::mutex* write_lock = parameters->write_lock;
+  ncs::sim::AtomicWriter<Bit::Word> clamp_bit_or;
+  ncs::sim::AtomicWriter<float> clamp_voltage_set;
+  for (auto batch : active_batches_) {
+    const unsigned int* device_neuron_id = batch->device_neuron_id;
+    const float* amplitude = batch->amplitude;
+    size_t count = batch->count;
+    for (size_t i = 0; i < count; ++i) {
+      unsigned int id = device_neuron_id[i];
+      unsigned int word_index = Bit::word(id);
+      Bit::Word mask = Bit::mask(id);
+      clamp_bit_or.write(voltage_clamp_bits + word_index, mask);
+      clamp_voltage_set.write(clamp_voltage_values + id, amplitude[i]);
+    }
+  }
+  std::unique_lock<std::mutex> lock(*write_lock);
+  clamp_bit_or.commit(ncs::sim::AtomicWriter<Bit::Word>::Or);
+  clamp_voltage_set.commit(ncs::sim::AtomicWriter<float>::Set);
+  lock.unlock();
   return true;
 }
 
