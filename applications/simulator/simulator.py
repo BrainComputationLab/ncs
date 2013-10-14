@@ -13,10 +13,10 @@ def Run(argv):
     print "Failed to load model"
     return
   model_specification = model.model_specification
-  simulation = pyncs.Simulation(model_specification)
   simulation_parameters = pyncs.SimulationParameters()
-  if not simulation.init(pyncs.string_list(argv),
-                         simulation_parameters):
+  simulation = pyncs.Simulation(model_specification,
+                                simulation_parameters)
+  if not simulation.init(pyncs.string_list(argv)):
     print "Failed to initialize simulator."
     return
   print "Injecting pre-specified inputs."

@@ -13,6 +13,7 @@
 #include <ncs/sim/VectorExchanger.h>
 #include <ncs/spec/InputGroup.h>
 #include <ncs/spec/ModelSpecification.h>
+#include <ncs/spec/SimulationParameters.h>
 
 namespace ncs {
 
@@ -20,7 +21,8 @@ namespace sim {
 
 class Simulator {
 public:
-  Simulator(spec::ModelSpecification* model_specification);
+  Simulator(spec::ModelSpecification* model_specification,
+            spec::SimulationParameters* simulation_parameters);
   bool initialize(int argc, char** argv);
   bool step();
   bool addInput(spec::InputGroup* input);
@@ -48,6 +50,7 @@ private:
   int getSynapseSeed_() const;
 
   spec::ModelSpecification* model_specification_;
+  spec::SimulationParameters* simulation_parameters_;
   ModelStatistics* model_statistics_;
   Communicator* communicator_;
   ClusterDescription* cluster_;

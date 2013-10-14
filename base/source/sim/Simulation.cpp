@@ -5,13 +5,14 @@ namespace ncs {
 
 namespace sim {
 
-Simulation::Simulation(spec::ModelSpecification* model_specification)
-  : model_specification_(model_specification) {
-  simulator_ = new Simulator(model_specification_);
+Simulation::Simulation(spec::ModelSpecification* model_specification,
+                       spec::SimulationParameters* simulation_parameters)
+  : model_specification_(model_specification),
+    simulation_parameters_(simulation_parameters) {
+  simulator_ = new Simulator(model_specification_, simulation_parameters_);
 }
 
-bool Simulation::init(const std::vector<std::string>& args,
-                      spec::SimulationParameters* simulation_parameters) {
+bool Simulation::init(const std::vector<std::string>& args) {
   int argc = args.size();
   char** argv = new char*[argc + 1];
   for (int i = 0; i < argc; ++i) {

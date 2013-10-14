@@ -9,15 +9,16 @@ namespace sim {
 
 class Simulation {
 public:
-  Simulation(spec::ModelSpecification* model_specification);
-  bool init(const std::vector<std::string>& args,
-            spec::SimulationParameters* simulation_parameters);
+  Simulation(spec::ModelSpecification* model_specification,
+             spec::SimulationParameters* simulation_parameters);
+  bool init(const std::vector<std::string>& args);
   bool step();
   bool addInput(spec::InputGroup* input);
   bool shutdown();
   ~Simulation();
 private:
   spec::ModelSpecification* model_specification_;
+  spec::SimulationParameters* simulation_parameters_;
   class Simulator* simulator_;
 };
 

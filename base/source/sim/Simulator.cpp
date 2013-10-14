@@ -19,8 +19,10 @@ namespace ncs {
 
 namespace sim {
 
-Simulator::Simulator(spec::ModelSpecification* model_specification)
+Simulator::Simulator(spec::ModelSpecification* model_specification,
+                     spec::SimulationParameters* simulation_parameters)
   : model_specification_(model_specification),
+    simulation_parameters_(simulation_parameters),
     communicator_(nullptr),
     neurons_(nullptr),
     vector_exchanger_(new VectorExchanger()),
@@ -28,6 +30,14 @@ Simulator::Simulator(spec::ModelSpecification* model_specification)
 }
 
 bool Simulator::initialize(int argc, char** argv) {
+  if (nullptr == model_specification_) {
+    std::cerr << "No ModelSpecification was given." << std::endl;
+    return false;
+  }
+  if (nullptr == simulation_parameters_) {
+    std::cerr << "Invalid SimulationParameters." << std::endl;
+    return false;
+  }
   std::clog << "Initializing seeds..." << std::endl;
   if (!initializeSeeds_()) {
     std::cerr << "Failed to initialize seeds." << std::endl;
