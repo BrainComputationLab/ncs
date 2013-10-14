@@ -20,7 +20,8 @@ public:
   bool init(SpecificPublisher<StepSignal>* signal_publisher,
             size_t num_buffers,
             size_t device_neuron_vector_size,
-            FactoryMap<InputSimulator>* input_plugins);
+            FactoryMap<InputSimulator>* input_plugins,
+            const spec::SimulationParameters* simulation_parameters);
   bool step();
   bool addInputs(const std::vector<Input*>& inputs,
                  void* instantiator,
@@ -36,6 +37,7 @@ private:
   std::vector<std::thread> worker_threads_;
   std::thread master_thread_;
   size_t num_buffers_;
+  const spec::SimulationParameters* simulation_parameters_;
 };
 
 } // namespace sim

@@ -20,8 +20,18 @@ void AtomicWriter<T>::commit(std::function<void(T*, const T&)> op) {
 }
 
 template<typename T>
-void AtomicWriter<T>::add(T* location, const T& value) {
+void AtomicWriter<T>::Add(T* location, const T& value) {
   *location += value;
+}
+
+template<typename T>
+void AtomicWriter<T>::Or(T* location, const T& value) {
+  *location |= value;
+}
+
+template<typename T>
+void AtomicWriter<T>::Set(T* location, const T& value) {
+  *location = value;
 }
 
 } // namespace sim

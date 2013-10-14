@@ -671,7 +671,8 @@ bool Simulator::initializeDevices_() {
                             vector_exchanger_,
                             global_neuron_vector_size_,
                             neuron_global_id_offsets_per_my_devices_[i],
-                            simulation_controller_)) {
+                            simulation_controller_,
+                            simulation_parameters_)) {
       std::cerr << "Failed to initialize device." << std::endl;
       delete device;
       return false;

@@ -46,7 +46,7 @@ update(ncs::sim::SynapseUpdateParameters* parameters) {
     }
   }
   std::unique_lock<std::mutex> lock(*write_lock);
-  current_adder.commit(ncs::sim::AtomicWriter<float>::add);
+  current_adder.commit(ncs::sim::AtomicWriter<float>::Add);
   lock.unlock();
   return true;
 }

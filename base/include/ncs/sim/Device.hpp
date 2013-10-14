@@ -29,7 +29,9 @@ initialize(DeviceDescription* description,
            VectorExchanger* vector_exchanger,
            size_t global_neuron_vector_size,
            size_t global_neuron_vector_offset,
-           SpecificPublisher<StepSignal>* signal_publisher) {
+           SpecificPublisher<StepSignal>* signal_publisher,
+           const spec::SimulationParameters* simulation_parameters) {
+  simulation_parameters_ = simulation_parameters;
   std::clog << "Allocating updaters..." << std::endl;
   if (!allocateUpdaters_()) {
     std::cerr << "Failed to allocate updaters." << std::endl;
@@ -433,7 +435,8 @@ initializeInputUpdater_(SpecificPublisher<StepSignal>* signal_publisher,
   if (!input_updater_->init(signal_publisher,
                             Constants::num_buffers,
                             device_synaptic_vector_size_,
-                            input_plugins)) {
+                            input_plugins,
+                            simulation_parameters_)) {
     std::cerr << "Failed to initialize InputUpdater." << std::endl;
     return false;
   }

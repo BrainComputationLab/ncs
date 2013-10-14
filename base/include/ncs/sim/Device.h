@@ -15,6 +15,7 @@
 #include <ncs/sim/SynapseSimulator.h>
 #include <ncs/sim/SynapseSimulatorUpdater.h>
 #include <ncs/sim/VectorExchanger.h>
+#include <ncs/spec/SimulationParameters.h>
 
 namespace ncs {
 
@@ -24,14 +25,16 @@ class DeviceBase {
 public:
   virtual DeviceType::Type getDeviceType() const = 0;
   virtual int getNeuronTypeIndex(const std::string& type) const = 0;
-  virtual bool initialize(DeviceDescription* description,
-                          FactoryMap<NeuronSimulator>* neuron_plugins,
-                          FactoryMap<SynapseSimulator>* synapse_plugins,
-                          FactoryMap<InputSimulator>* input_plugins,
-                          VectorExchanger* vector_exchanger,
-                          size_t global_neuron_vector_size,
-                          size_t global_neuron_vector_offset,
-                          SpecificPublisher<StepSignal>* signal_publisher) = 0;
+  virtual bool 
+    initialize(DeviceDescription* description,
+               FactoryMap<NeuronSimulator>* neuron_plugins,
+               FactoryMap<SynapseSimulator>* synapse_plugins,
+               FactoryMap<InputSimulator>* input_plugins,
+               VectorExchanger* vector_exchanger,
+               size_t global_neuron_vector_size,
+               size_t global_neuron_vector_offset,
+               SpecificPublisher<StepSignal>* signal_publisher,
+               const spec::SimulationParameters* simulation_parameters) = 0;
   virtual bool initializeInjector(const ExchangePublisherList& dependents,
                                   VectorExchanger* vector_exchanger,
                                   size_t global_neuron_vector_size) = 0;
@@ -52,14 +55,16 @@ class Device : public DeviceBase {
 public:
   virtual DeviceType::Type getDeviceType() const;
   virtual int getNeuronTypeIndex(const std::string& type) const;
-  virtual bool initialize(DeviceDescription* description,
-                          FactoryMap<NeuronSimulator>* neuron_plugins,
-                          FactoryMap<SynapseSimulator>* synapse_plugins,
-                          FactoryMap<InputSimulator>* input_plugins,
-                          VectorExchanger* vector_exchanger,
-                          size_t global_neuron_vector_size,
-                          size_t global_neuron_vector_offset,
-                          SpecificPublisher<StepSignal>* signal_publisher);
+  virtual bool 
+    initialize(DeviceDescription* description,
+               FactoryMap<NeuronSimulator>* neuron_plugins,
+               FactoryMap<SynapseSimulator>* synapse_plugins,
+               FactoryMap<InputSimulator>* input_plugins,
+               VectorExchanger* vector_exchanger,
+               size_t global_neuron_vector_size,
+               size_t global_neuron_vector_offset,
+               SpecificPublisher<StepSignal>* signal_publisher,
+               const spec::SimulationParameters* simulation_parameters);
   virtual bool initializeInjector(const ExchangePublisherList& dependents,
                                   VectorExchanger* vector_exchanger,
                                   size_t global_neuron_vector_size);
@@ -117,6 +122,8 @@ private:
   SynapseSimulatorUpdater<MType>* synapse_simulator_updater_;
 
   InputUpdater<MType>* input_updater_;
+
+  const spec::SimulationParameters* simulation_parameters_;
 };
 
 } // namespace sim

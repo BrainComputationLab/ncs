@@ -4,6 +4,7 @@
 #include <ncs/sim/Input.h>
 #include <ncs/sim/InputUpdateParameters.h>
 #include <ncs/spec/ModelParameters.h>
+#include <ncs/spec/SimulationParameters.h>
 
 namespace ncs {
 
@@ -16,7 +17,7 @@ public:
                          void* instantiator,
                          float start_time,
                          float end_time) = 0;
-  virtual bool initialize() = 0;
+  virtual bool initialize(const spec::SimulationParameters* parameters) = 0;
 
   virtual bool update(InputUpdateParameters* parameters) = 0;
 private:

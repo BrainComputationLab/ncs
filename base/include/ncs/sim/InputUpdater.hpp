@@ -10,10 +10,13 @@ InputUpdater<MType>::InputUpdater()
 }
 
 template<DeviceType::Type MType>
-bool InputUpdater<MType>::init(SpecificPublisher<StepSignal>* signal_publisher,
-                               size_t num_buffers,
-                               size_t device_neuron_vector_size,
-                               FactoryMap<InputSimulator>* input_plugins) {
+bool InputUpdater<MType>::
+init(SpecificPublisher<StepSignal>* signal_publisher,
+     size_t num_buffers,
+     size_t device_neuron_vector_size,
+     FactoryMap<InputSimulator>* input_plugins,
+     const spec::SimulationParameters* simulation_parameters) {
+  simulation_parameters_ = simulation_parameters;
   num_buffers_ = num_buffers;
   for (size_t i = 0; i < num_buffers_; ++i) {
     auto buffer = new InputBuffer<MType>(device_neuron_vector_size);
@@ -38,7 +41,7 @@ bool InputUpdater<MType>::init(SpecificPublisher<StepSignal>* signal_publisher,
       return false;
     }
     InputSimulator<MType>* simulator = simulator_generator();
-    if (!simulator->initialize()) {
+    if (!simulator->initialize(simulation_parameters_)) {
       std::cerr << "Failed to initialize InputSimulator for type " << type <<
         std::endl;
       delete simulator;
@@ -85,6 +88,8 @@ template<DeviceType::Type MType>
 bool InputUpdater<MType>::start() {
   struct Synchronizer : public DataBuffer {
     InputBuffer<MType>* input_buffer;
+    float simulation_time;
+    float time_step;
   };
   auto synchronizer_publisher = new SpecificPublisher<Synchronizer>();
   for (size_t i = 0; i < num_buffers_; ++i) {
@@ -92,6 +97,8 @@ bool InputUpdater<MType>::start() {
     synchronizer_publisher->addBlank(blank);
   }
   auto master_function = [this, synchronizer_publisher]() {
+    float simulation_time = 0.0f;
+    float time_step = simulation_parameters_->getTimeStep();
     while(true) {
       auto step_signal = this->step_subscription_->pull();
       if (nullptr == step_signal) {
@@ -102,12 +109,15 @@ bool InputUpdater<MType>::start() {
       input_buffer->clear();
       auto synchronizer = synchronizer_publisher->getBlank();
       synchronizer->input_buffer = input_buffer;
+      synchronizer->time_step = time_step;
+      synchronizer->simulation_time = simulation_time;
       auto prerelease_function = [this, input_buffer, step_signal]() {
         this->publish(input_buffer);
         step_signal->release();
       };
       synchronizer->setPrereleaseFunction(prerelease_function);
       synchronizer_publisher->publish(synchronizer);
+      simulation_time += time_step;
     }
   };
   master_thread_ = std::thread(master_function);
@@ -127,6 +137,8 @@ bool InputUpdater<MType>::start() {
         parameters.clamp_voltage_values = buffer->getVoltageClampValues();
         parameters.voltage_clamp_bits = buffer->getVoltageClampBits();
         parameters.write_lock = buffer->getWriteLock();
+        parameters.simulation_time = synchronizer->simulation_time;
+        parameters.time_step = synchronizer->time_step;
         if (!simulator->update(&parameters)) {
           std::cerr << "An error occurred updating an InputSimulator." <<
             std::endl;
@@ -138,7 +150,6 @@ bool InputUpdater<MType>::start() {
   }
   return true;
 }
-
 
 template<DeviceType::Type MType>
 InputUpdater<MType>::~InputUpdater() {

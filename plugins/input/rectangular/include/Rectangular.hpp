@@ -23,6 +23,7 @@ addInputs(const std::vector<ncs::sim::Input*>& inputs,
     amplitudes.push_back(amplitude_generator->generateDouble(&rng));
   }
   Batch* batch = new Batch();
+  batch->count = amplitudes.size();
   batch->start_time = start_time;
   batch->end_time = end_time;
   bool result = true;
@@ -39,16 +40,35 @@ addInputs(const std::vector<ncs::sim::Input*>& inputs,
 }
 
 template<ncs::sim::DeviceType::Type MType, InputType IType>
-bool RectangularSimulator<MType, IType>::initialize() {
+bool RectangularSimulator<MType, IType>::
+initialize(const ncs::spec::SimulationParameters* simulation_parameters) {
   return true;
 }
 
 template<ncs::sim::DeviceType::Type MType, InputType IType>
 bool RectangularSimulator<MType, IType>::
 update(ncs::sim::InputUpdateParameters* parameters) {
-  std::clog << "STUB: RectangularSimulator<MType, IType>::update()" <<
-    std::endl;
-  return true;
+  const auto simulation_time = parameters->simulation_time;
+  auto BatchIsDone = [simulation_time](Batch* b) {
+    return b->end_time > simulation_time;
+  };
+  for (auto batch : active_batches_) {
+    if (BatchIsDone(batch)) {
+      std::cout << "Destroying batch" << std::endl;
+      delete batch;
+    }
+  }
+  active_batches_.remove_if(BatchIsDone);
+
+  while (!future_batches_.empty() &&
+         future_batches_.top()->start_time <= simulation_time) {
+    Batch* batch = future_batches_.top();
+    future_batches_.pop();
+    active_batches_.push_back(batch);
+    std::cout << "Adding batch" << std::endl;
+  }
+
+  return update_(parameters);
 }
 
 template<ncs::sim::DeviceType::Type MType, InputType IType>

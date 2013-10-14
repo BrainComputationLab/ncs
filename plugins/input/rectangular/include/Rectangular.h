@@ -22,12 +22,15 @@ public:
                          void* instantiator,
                          float start_time,
                          float end_time);
-  virtual bool initialize();
+  virtual bool 
+    initialize(const ncs::spec::SimulationParameters* simulation_parameters);
   virtual bool update(ncs::sim::InputUpdateParameters* parameters);
 private:
+  virtual bool update_(ncs::sim::InputUpdateParameters* parameters);
   struct Batch {
     float* amplitude;
     unsigned int* device_neuron_id;
+    size_t count;
     float start_time;
     float end_time;
     ~Batch();
@@ -38,6 +41,23 @@ private:
   std::priority_queue<Batch*,
                       std::vector<Batch*>,
                       BatchStartsLater> future_batches_;
+  std::list<Batch*> active_batches_;
 };
+
+template<>
+bool RectangularSimulator<ncs::sim::DeviceType::CPU, InputType::Voltage>::
+update_(ncs::sim::InputUpdateParameters* parameters);
+
+template<>
+bool RectangularSimulator<ncs::sim::DeviceType::CUDA, InputType::Voltage>::
+update_(ncs::sim::InputUpdateParameters* parameters);
+
+template<>
+bool RectangularSimulator<ncs::sim::DeviceType::CPU, InputType::Current>::
+update_(ncs::sim::InputUpdateParameters* parameters);
+
+template<>
+bool RectangularSimulator<ncs::sim::DeviceType::CUDA, InputType::Current>::
+update_(ncs::sim::InputUpdateParameters* parameters);
 
 #include "Rectangular.hpp"

@@ -14,6 +14,7 @@ def Run(argv):
     return
   model_specification = model.model_specification
   simulation_parameters = pyncs.SimulationParameters()
+  simulation_parameters.thisown = False;
   simulation = pyncs.Simulation(model_specification,
                                 simulation_parameters)
   if not simulation.init(pyncs.string_list(argv)):

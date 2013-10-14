@@ -27,6 +27,54 @@ void* createInstantiator(ncs::spec::ModelParameters* parameters) {
   return instantiator;
 }
 
+template<>
+bool RectangularSimulator<ncs::sim::DeviceType::CPU, InputType::Voltage>::
+update_(ncs::sim::InputUpdateParameters* parameters) {
+  std::cout << "STUB: RectangularSimulator<CPU, Voltage>::update_()" <<
+    std::endl;
+  return true;
+}
+
+
+template<>
+bool RectangularSimulator<ncs::sim::DeviceType::CUDA, InputType::Voltage>::
+update_(ncs::sim::InputUpdateParameters* parameters) {
+  std::cout << "STUB: RectangularSimulator<CUDA, Voltage>::update_()" <<
+    std::endl;
+  return true;
+}
+
+
+template<>
+bool RectangularSimulator<ncs::sim::DeviceType::CPU, InputType::Current>::
+update_(ncs::sim::InputUpdateParameters* parameters) {
+  ncs::sim::AtomicWriter<float> current_adder;
+  float* input_current = parameters->input_current;
+  std::mutex* write_lock = parameters->write_lock;
+  for (auto batch : active_batches_) {
+    const unsigned int* device_neuron_id = batch->device_neuron_id;
+    const float* amplitude = batch->amplitude;
+    size_t count = batch->count;
+    for (size_t i = 0; i < count; ++i) {
+      current_adder.write(input_current + device_neuron_id[i], amplitude[i]);
+    }
+  }
+  std::unique_lock<std::mutex> lock(*write_lock);
+  current_adder.commit(ncs::sim::AtomicWriter<float>::Add);
+  lock.unlock();
+  return true;
+}
+
+
+template<>
+bool RectangularSimulator<ncs::sim::DeviceType::CUDA, InputType::Current>::
+update_(ncs::sim::InputUpdateParameters* parameters) {
+  std::cout << "STUB: RectangularSimulator<CUDA, Current>::update_()" <<
+    std::endl;
+  return true;
+}
+
+
 template<ncs::sim::DeviceType::Type MType, InputType IType>
 ncs::sim::InputSimulator<MType>* createSimulator() {
   return new RectangularSimulator<MType, IType>();
