@@ -7,10 +7,11 @@ namespace sim {
 class Dataspace {
 public:
   enum Space {
-    Global = 0,
-    Machine = 1,
-    Device = 2,
-    Plugin = 3
+    Unknown = 0,
+    Global = 1,
+    Machine = 2,
+    Device = 3,
+    Plugin = 4
   };
 };
 

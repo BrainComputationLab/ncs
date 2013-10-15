@@ -15,8 +15,8 @@ class ReportManager {
 public:
   ReportManager();
   bool addReportDataspace(const std::string& report_name,
-                          Dataspace dataspace);
-  Dataspace getReportDataspace(const std::string& report_name) const;
+                          Dataspace::Space dataspace);
+  Dataspace::Space getReportDataspace(const std::string& report_name) const;
   bool addReportSource(const std::string& report_name,
                        int machine_location,
                        int device_location,
@@ -28,7 +28,7 @@ public:
                              int plugin_location) const;
   ~ReportManager();
 private:
-  std::map<std::string, Dataspace> report_name_to_dataspace_;
+  std::map<std::string, Dataspace::Space> dataspace_by_report_name_;
   struct Location {
     Location(int m, int d, int p);
     bool operator==(const Location& r) const;
@@ -37,7 +37,8 @@ private:
     int device;
     int plugin;
   };
-  std::map<Location, Publisher*> location_to_publisher_;
+  typedef std::map<std::string, Publisher*> PublisherByReportName;
+  std::map<Location, PublisherByReportName> publisher_by_name_by_location_; 
 };
 
 class ReportManagers {
