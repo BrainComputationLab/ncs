@@ -54,7 +54,6 @@ update(ncs::sim::InputUpdateParameters* parameters) {
   };
   for (auto batch : active_batches_) {
     if (BatchIsDone(batch)) {
-      std::cout << "Destroying batch" << std::endl;
       delete batch;
     }
   }
@@ -65,7 +64,6 @@ update(ncs::sim::InputUpdateParameters* parameters) {
     Batch* batch = future_batches_.top();
     future_batches_.pop();
     active_batches_.push_back(batch);
-    std::cout << "Adding batch" << std::endl;
   }
 
   return update_(parameters);
