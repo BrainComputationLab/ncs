@@ -12,6 +12,7 @@
 #include <ncs/sim/NeuronSimulator.h>
 #include <ncs/sim/NeuronSimulatorUpdater.h>
 #include <ncs/sim/PluginDescription.h>
+#include <ncs/sim/ReportManager.h>
 #include <ncs/sim/SynapseSimulator.h>
 #include <ncs/sim/SynapseSimulatorUpdater.h>
 #include <ncs/sim/VectorExchanger.h>
@@ -38,6 +39,9 @@ public:
   virtual bool initializeInjector(const ExchangePublisherList& dependents,
                                   VectorExchanger* vector_exchanger,
                                   size_t global_neuron_vector_size) = 0;
+  virtual bool initializeReporters(int machine_location,
+                                   int device_location,
+                                   ReportManagers* report_managers) = 0;
   virtual bool threadInit() = 0;
   virtual bool threadDestroy() = 0;
   virtual bool start() = 0;
@@ -65,6 +69,9 @@ public:
                size_t global_neuron_vector_offset,
                SpecificPublisher<StepSignal>* signal_publisher,
                const spec::SimulationParameters* simulation_parameters);
+  virtual bool initializeReporters(int machine_location,
+                                   int device_location,
+                                   ReportManagers* report_managers);
   virtual bool initializeInjector(const ExchangePublisherList& dependents,
                                   VectorExchanger* vector_exchanger,
                                   size_t global_neuron_vector_size);

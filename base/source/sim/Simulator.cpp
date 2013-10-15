@@ -26,7 +26,8 @@ Simulator::Simulator(spec::ModelSpecification* model_specification,
     communicator_(nullptr),
     neurons_(nullptr),
     vector_exchanger_(new VectorExchanger()),
-    simulation_controller_(new SimulationController()) {
+    simulation_controller_(new SimulationController()),
+    report_managers_(new ReportManagers()) {
 }
 
 bool Simulator::initialize(int argc, char** argv) {
@@ -133,6 +134,11 @@ bool Simulator::initialize(int argc, char** argv) {
   if (!initializeVectorExchanger_()) {
     std::cerr << "Failed to initialize MachineVectorExchanger." << std::endl;
     return false;
+  }
+
+  std::clog << "Initializing reportables..." << std::endl;
+  if (!initializeReporters_()) {
+    std::cerr << "Failed to initialize reports." << std::endl;
   }
 
   std::clog << "Starting device threads..." << std::endl;
@@ -613,6 +619,19 @@ bool Simulator::initializeVectorExchanger_() {
   return vector_exchanger_->init(simulation_controller_,
                                  global_neuron_vector_size_,
                                  Constants::num_buffers);
+}
+
+bool Simulator::initializeReporters_() {
+  int machine_index = cluster_->getThisMachineIndex();
+  for (int i = 0; i < devices_.size(); ++i) {
+    if (!devices_[i]->initializeReporters(machine_index,
+                                          i,
+                                          report_managers_)) {
+      std::cerr << "Failed to initialize device reports." << std::endl;
+      return false;
+    }
+  }
+  return true;
 }
 
 bool Simulator::loadInputSimulatorPlugins_() {

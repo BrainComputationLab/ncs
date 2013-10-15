@@ -8,6 +8,7 @@
 #include <ncs/sim/MPI.h>
 #include <ncs/sim/NeuronSimulator.h>
 #include <ncs/sim/PluginLoader.h>
+#include <ncs/sim/ReportManager.h>
 #include <ncs/sim/SimulationController.h>
 #include <ncs/sim/SynapseSimulator.h>
 #include <ncs/sim/VectorExchanger.h>
@@ -41,6 +42,7 @@ private:
   bool distributeSynapses_();
   bool initializeDevices_();
   bool initializeVectorExchanger_();
+  bool initializeReporters_();
   bool loadInputSimulatorPlugins_();
   bool startDevices_();
   
@@ -73,6 +75,8 @@ private:
   VectorExchanger* vector_exchanger_;
 
   SimulationController* simulation_controller_;
+
+  ReportManagers* report_managers_;
 
   int neuron_seed_;
   int synapse_seed_;

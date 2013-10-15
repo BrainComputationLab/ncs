@@ -1,34 +1,44 @@
 #pragma once
 #include <ncs/sim/DataBuffer.h>
+#include <ncs/sim/DataType.h>
 #include <ncs/sim/Dataspace.h>
 
 namespace ncs {
 
 namespace sim {
 
-enum class ReportTarget {
-  Neuron,
-  Synapse
+class DataDescription {
+public:
+  DataDescription(Dataspace::Space dataspace,
+                  DataType::Type datatype);
+  DataDescription(const DataDescription& source);
+  Dataspace::Space getDataspace() const;
+  DataType::Type getDataType() const;
+  bool operator==(const DataDescription& rhs) const;
+  bool operator!=(const DataDescription& rhs) const;
+private:
+  Dataspace::Space dataspace_;
+  DataType::Type datatype_;
 };
 
 class ReportManager {
 public:
   ReportManager();
-  bool addReportDataspace(const std::string& report_name,
-                          Dataspace::Space dataspace);
-  Dataspace::Space getReportDataspace(const std::string& report_name) const;
-  bool addReportSource(const std::string& report_name,
+  bool addDescription(const std::string& report_name,
+                      const DataDescription& description);
+  DataDescription* getDescription(const std::string& report_name) const;
+  bool addSource(const std::string& report_name,
+                 int machine_location,
+                 int device_location,
+                 int plugin_location,
+                 Publisher* source_publisher);
+  Publisher* getSource(const std::string& report_name,
                        int machine_location,
                        int device_location,
-                       int plugin_location,
-                       Publisher* source_publisher);
-  Publisher* getReportSource(const std::string& report_name,
-                             int machine_location,
-                             int device_location,
-                             int plugin_location) const;
+                       int plugin_location) const;
   ~ReportManager();
 private:
-  std::map<std::string, Dataspace::Space> dataspace_by_report_name_;
+  std::map<std::string, DataDescription*> description_by_report_name_;
   struct Location {
     Location(int m, int d, int p);
     bool operator==(const Location& r) const;

@@ -91,6 +91,55 @@ initialize(DeviceDescription* description,
 }
 
 template<DeviceType::Type MType>
+bool Device<MType>::initializeReporters(int machine_location,
+                                        int device_location,
+                                        ReportManagers* report_managers) {
+  auto neuron_manager = report_managers->getNeuronManager();
+  bool result = true;
+  result &= neuron_manager->addDescription("neuron_voltage",
+                                           DataDescription(Dataspace::Device,
+                                                           DataType::Float));
+  result &= neuron_manager->addSource("neuron_voltage",
+                                      machine_location,
+                                      device_location,
+                                      -1,
+                                      neuron_simulator_updater_);
+  result &= neuron_manager->addDescription("input_current",
+                                           DataDescription(Dataspace::Device,
+                                                           DataType::Float));
+  result &= neuron_manager->addSource("input_current",
+                                      machine_location,
+                                      device_location,
+                                      -1,
+                                      input_updater_);
+  result &= neuron_manager->addDescription("clamp_voltage",
+                                           DataDescription(Dataspace::Device,
+                                                           DataType::Float));
+  result &= neuron_manager->addSource("clamp_voltage",
+                                      machine_location,
+                                      device_location,
+                                      -1,
+                                      input_updater_);
+  result &= neuron_manager->addDescription("clamp_voltage_bit",
+                                           DataDescription(Dataspace::Device,
+                                                           DataType::Bit));
+  result &= neuron_manager->addSource("clamp_voltage_bit",
+                                      machine_location,
+                                      device_location,
+                                      -1,
+                                      input_updater_);
+  result &= neuron_manager->addDescription("synaptic_current",
+                                           DataDescription(Dataspace::Device,
+                                                           DataType::Float));
+  result &= neuron_manager->addSource("synaptic_current",
+                                      machine_location,
+                                      device_location,
+                                      -1,
+                                      synapse_simulator_updater_);
+  return result;
+}
+
+template<DeviceType::Type MType>
 bool Device<MType>::initializeInjector(const ExchangePublisherList& dependents,
                                        VectorExchanger* vector_exchanger,
                                        size_t global_neuron_vector_size) {
