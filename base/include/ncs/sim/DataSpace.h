@@ -4,7 +4,7 @@ namespace ncs {
 
 namespace sim {
 
-class Dataspace {
+class DataSpace {
 public:
   enum Space {
     Unknown = 0,

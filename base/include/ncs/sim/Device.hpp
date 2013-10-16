@@ -97,7 +97,7 @@ bool Device<MType>::initializeReporters(int machine_location,
   auto neuron_manager = report_managers->getNeuronManager();
   bool result = true;
   result &= neuron_manager->addDescription("neuron_voltage",
-                                           DataDescription(Dataspace::Device,
+                                           DataDescription(DataSpace::Device,
                                                            DataType::Float));
   result &= neuron_manager->addSource("neuron_voltage",
                                       machine_location,
@@ -105,7 +105,7 @@ bool Device<MType>::initializeReporters(int machine_location,
                                       -1,
                                       neuron_simulator_updater_);
   result &= neuron_manager->addDescription("input_current",
-                                           DataDescription(Dataspace::Device,
+                                           DataDescription(DataSpace::Device,
                                                            DataType::Float));
   result &= neuron_manager->addSource("input_current",
                                       machine_location,
@@ -113,7 +113,7 @@ bool Device<MType>::initializeReporters(int machine_location,
                                       -1,
                                       input_updater_);
   result &= neuron_manager->addDescription("clamp_voltage",
-                                           DataDescription(Dataspace::Device,
+                                           DataDescription(DataSpace::Device,
                                                            DataType::Float));
   result &= neuron_manager->addSource("clamp_voltage",
                                       machine_location,
@@ -121,7 +121,7 @@ bool Device<MType>::initializeReporters(int machine_location,
                                       -1,
                                       input_updater_);
   result &= neuron_manager->addDescription("clamp_voltage_bit",
-                                           DataDescription(Dataspace::Device,
+                                           DataDescription(DataSpace::Device,
                                                            DataType::Bit));
   result &= neuron_manager->addSource("clamp_voltage_bit",
                                       machine_location,
@@ -129,7 +129,7 @@ bool Device<MType>::initializeReporters(int machine_location,
                                       -1,
                                       input_updater_);
   result &= neuron_manager->addDescription("synaptic_current",
-                                           DataDescription(Dataspace::Device,
+                                           DataDescription(DataSpace::Device,
                                                            DataType::Float));
   result &= neuron_manager->addSource("synaptic_current",
                                       machine_location,

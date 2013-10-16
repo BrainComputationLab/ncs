@@ -1,7 +1,7 @@
 #pragma once
 #include <ncs/sim/DataBuffer.h>
 #include <ncs/sim/DataType.h>
-#include <ncs/sim/Dataspace.h>
+#include <ncs/sim/DataSpace.h>
 
 namespace ncs {
 
@@ -9,15 +9,15 @@ namespace sim {
 
 class DataDescription {
 public:
-  DataDescription(Dataspace::Space dataspace,
+  DataDescription(DataSpace::Space dataspace,
                   DataType::Type datatype);
   DataDescription(const DataDescription& source);
-  Dataspace::Space getDataspace() const;
+  DataSpace::Space getDataSpace() const;
   DataType::Type getDataType() const;
   bool operator==(const DataDescription& rhs) const;
   bool operator!=(const DataDescription& rhs) const;
 private:
-  Dataspace::Space dataspace_;
+  DataSpace::Space dataspace_;
   DataType::Type datatype_;
 };
 

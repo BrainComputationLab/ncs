@@ -4,7 +4,7 @@ namespace ncs {
 
 namespace sim {
 
-DataDescription::DataDescription(Dataspace::Space dataspace,
+DataDescription::DataDescription(DataSpace::Space dataspace,
                                  DataType::Type datatype)
   : dataspace_(dataspace),
     datatype_(datatype) {
@@ -15,7 +15,7 @@ DataDescription::DataDescription(const DataDescription& source)
     datatype_(source.datatype_) {
 }
 
-Dataspace::Space DataDescription::getDataspace() const {
+DataSpace::Space DataDescription::getDataSpace() const {
   return dataspace_;
 }
 
