@@ -43,6 +43,7 @@ SET(SWIG_MODULE_pyncs_EXTRA_DEPS
     "include/ncs/spec/InputGroup.h"
     "include/ncs/spec/ModelSpecification.h"
     "include/ncs/spec/NormalGenerator.h"
+    "include/ncs/spec/Report.h"
     "include/ncs/spec/UniformGenerator.h"
 )
 SWIG_ADD_MODULE(pyncs python "pyncs.i")

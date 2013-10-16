@@ -17,15 +17,18 @@ public:
   };
   Report(const std::vector<std::string>& aliases,
          Target target,
-         const std::string& report_name);
+         const std::string& report_name,
+         float percentage);
   const std::vector<std::string>& getAliases() const;
   Target getTarget() const;
   const std::string& getReportName() const;
+  float getPercentage() const;
   ~Report();
 private:
   std::vector<std::string> aliases_;
   Target target_;
   std::string report_name_;
+  float percentage_;
 };
 
 } // namespace spec
