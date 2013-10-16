@@ -23,5 +23,9 @@
   "#inputs": {
     "type": "model_import",
     "location": "input.json"
+  },
+  "#reports": {
+    "type": "model_import",
+    "location": "report.json"
   }
 }

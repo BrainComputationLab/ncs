@@ -15,6 +15,7 @@ class JSONModel:
     self.model_parameters_definitions = {}
     self.geometry_generator_definitions = {}
     self.input_group_definitions = {}
+    self.report_definitions = {}
     self.Load(path, None)
     self.valid = self.BuildModel_()
 
@@ -44,6 +45,7 @@ class JSONModel:
         "geometry_generator": {},
         "model_import": {},
         "input_group": {},
+        "report": {},
       }
 
       for name, definition in definitions.items():
@@ -67,6 +69,7 @@ class JSONModel:
         "synapse_alias": self.synapse_alias_definitions,
         "geometry_generator": self.geometry_generator_definitions,
         "input_group": self.input_group_definitions,
+        "report": self.report_definitions,
       }
       for source, destination in transfer_locations.items():
         for name, definition in definitions_by_type[source].items():
@@ -96,6 +99,9 @@ class JSONModel:
       return False
     if not self.BuildInputGroups_():
       print "Failed to build input_groups"
+      return False
+    if not self.BuildReports_():
+      print "Failed to build reports"
       return False
     return True
 
@@ -262,6 +268,27 @@ class JSONModel:
                                      start_time,
                                      end_time)
       self.input_groups[str(name)] = input_group
+    return True
+
+  def BuildReports_(self):
+    self.reports = {}
+    for name, spec in self.report_definitions.items():
+      target = pyncs.Report.Unknown 
+      target_string = str(spec["target"])
+      if target_string == "neuron":
+        target = pyncs.Report.Neuron
+      elif target_string == "synapse":
+        target = pyncs.Report.Synapse
+      else:
+        print "invalid target specified in report %s" % name
+        return False
+      percentage = float(spec["percentage"])
+      aliases = [ str(x) for x in spec["aliases"] ]
+      report = pyncs.Report(pyncs.string_list(aliases),
+                            target,
+                            str(spec["attribute"]),
+                            percentage)
+      self.reports[str(name)] = report
     return True
 
   def BuildSpecification_(self):

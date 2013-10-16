@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ncs/sim/ClusterDescription.h>
+#include <ncs/sim/DataSink.h>
 #include <ncs/sim/Device.h>
 #include <ncs/sim/FactoryMap.h>
 #include <ncs/sim/InputSimulator.h>
@@ -14,6 +15,7 @@
 #include <ncs/sim/VectorExchanger.h>
 #include <ncs/spec/InputGroup.h>
 #include <ncs/spec/ModelSpecification.h>
+#include <ncs/spec/Report.h>
 #include <ncs/spec/SimulationParameters.h>
 
 namespace ncs {
@@ -27,6 +29,7 @@ public:
   bool initialize(int argc, char** argv);
   bool step();
   bool addInput(spec::InputGroup* input);
+  DataSink::Subscription* addReport(spec::Report* report);
   ~Simulator();
 private:
   bool initializeSeeds_();
@@ -46,7 +49,8 @@ private:
   bool loadInputSimulatorPlugins_();
   bool startDevices_();
   
-  spec::NeuronAlias* getNeuronAlias(const std::string& alias) const;
+  spec::NeuronAlias* getNeuronAlias_(const std::string& alias) const;
+  spec::SynapseAlias* getSynapseAlias_(const std::string& alias) const;
 
   int getNeuronSeed_() const;
   int getSynapseSeed_() const;

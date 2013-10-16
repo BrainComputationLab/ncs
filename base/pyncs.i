@@ -2,6 +2,7 @@
 %{
 #include <include/ncs/sim/Simulation.h>
 #include <include/ncs/spec/BoxGenerator.h>
+#include <include/ncs/spec/DataSource.h>
 #include <include/ncs/spec/ExactGenerator.h>
 #include <include/ncs/spec/Generator.h>
 #include <include/ncs/spec/InputGroup.h>
@@ -17,6 +18,7 @@
 %include <std_vector.i>
 %include <include/ncs/sim/Simulation.h>
 %include <include/ncs/spec/BoxGenerator.h>
+%include <include/ncs/spec/DataSource.h>
 %include <include/ncs/spec/ExactGenerator.h>
 %include <include/ncs/spec/Generator.h>
 %include <include/ncs/spec/InputGroup.h>

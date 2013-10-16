@@ -17,7 +17,7 @@ bool DataSinkBuffer::init() {
   return data_ != nullptr;
 }
 
-const void* DataSinkBuffer::getData() {
+const void* DataSinkBuffer::getData() const {
   return data_;
 }
 

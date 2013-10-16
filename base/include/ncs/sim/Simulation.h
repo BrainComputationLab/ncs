@@ -1,6 +1,8 @@
 #pragma once
+#include <ncs/spec/DataSource.h>
 #include <ncs/spec/InputGroup.h>
 #include <ncs/spec/ModelSpecification.h>
+#include <ncs/spec/Report.h>
 #include <ncs/spec/SimulationParameters.h>
 
 namespace ncs {

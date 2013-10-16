@@ -35,6 +35,7 @@ SET(CMAKE_SWIG_FLAGS "")
 SET_SOURCE_FILES_PROPERTIES("pyncs.i" PROPERTIES CPLUSPLUS ON)
 SET_SOURCE_FILES_PROPERTIES("pyncs.i" PROPERTIES SWIG_FLAGS "-includeall")
 SET(SWIG_MODULE_pyncs_EXTRA_DEPS
+    "include/ncs/spec/DataSource.h"
     "include/ncs/spec/InputGroup.h"
     "include/ncs/sim/Simulation.h"
     "include/ncs/spec/BoxGenerator.h"

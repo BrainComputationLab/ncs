@@ -165,7 +165,7 @@ bool Simulator::step() {
 
 bool Simulator::addInput(spec::InputGroup* input) {
   // TODO(rvhoang): echo this spec to the other machines
-  spec::NeuronAlias* alias = getNeuronAlias(input->getNeuronAlias());
+  spec::NeuronAlias* alias = getNeuronAlias_(input->getNeuronAlias());
   if (nullptr == alias) {
     std::cerr << "Failed to find neuron alias " << input->getNeuronAlias() <<
       std::endl;
@@ -235,9 +235,10 @@ bool Simulator::addInput(spec::InputGroup* input) {
                                    input->getEndTime());
     device->threadDestroy();
   }
-
-  
   return true;
+}
+
+DataSink::Subscription* Simulator::addReport(spec::Report* report) {
 }
 
 Simulator::~Simulator() {
@@ -722,8 +723,18 @@ bool Simulator::startDevices_() {
   return result;
 }
 
-spec::NeuronAlias* Simulator::getNeuronAlias(const std::string& alias) const {
+spec::NeuronAlias* Simulator::getNeuronAlias_(const std::string& alias) const {
   const auto& alias_map = model_specification_->neuron_aliases;
+  auto search_result = alias_map.find(alias);
+  if (alias_map.end() == search_result) {
+    return nullptr;
+  }
+  return search_result->second;
+}
+
+spec::SynapseAlias* Simulator::
+getSynapseAlias_(const std::string& alias) const {
+  const auto& alias_map = model_specification_->synapse_aliases;
   auto search_result = alias_map.find(alias);
   if (alias_map.end() == search_result) {
     return nullptr;

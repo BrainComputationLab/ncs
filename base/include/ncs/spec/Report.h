@@ -13,7 +13,8 @@ public:
   enum Target {
     Neuron = 0,
     Synapse = 1,
-    Input = 2
+    Input = 2,
+    Unknown = 3
   };
   Report(const std::vector<std::string>& aliases,
          Target target,

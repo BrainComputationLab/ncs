@@ -10,7 +10,7 @@ class DataSinkBuffer : public DataBuffer {
 public:
   DataSinkBuffer(size_t data_size);
   bool init();
-  const void* getData();
+  const void* getData() const;
   virtual ~DataSinkBuffer();
 private:
   size_t data_size_;
