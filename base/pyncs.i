@@ -7,6 +7,7 @@
 #include <include/ncs/spec/InputGroup.h>
 #include <include/ncs/spec/ModelSpecification.h>
 #include <include/ncs/spec/NormalGenerator.h>
+#include <include/ncs/spec/Report.h>
 #include <include/ncs/spec/UniformGenerator.h>
 %}
 
@@ -21,6 +22,7 @@
 %include <include/ncs/spec/InputGroup.h>
 %include <include/ncs/spec/ModelSpecification.h>
 %include <include/ncs/spec/NormalGenerator.h>
+%include <include/ncs/spec/Report.h>
 %include <include/ncs/spec/UniformGenerator.h>
 
 %template(string_to_generator_map) std::map<std::string, ncs::spec::Generator*>;
