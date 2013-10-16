@@ -1,4 +1,5 @@
 #pragma once
+#include <cstddef>
 
 namespace ncs {
 
@@ -12,6 +13,7 @@ public:
     Integer,
     Unknown
   };
+  static size_t num_bytes(std::size_t count, Type t);
 private:
 };
 
