@@ -1,4 +1,5 @@
 #pragma once
+#include <ncs/sim/Location.h>
 
 namespace ncs {
 
@@ -13,11 +14,7 @@ struct Neuron {
     unsigned int machine;
     unsigned int global;
   } id;
-  struct {
-    int plugin;
-    int device;
-    int machine;
-  } location;
+  Location location;
 };
 
 } // namespace sim

@@ -1,4 +1,7 @@
 #pragma once
+#include <ncs/sim/DataBuffer.h>
+#include <ncs/sim/DeviceType.h>
+#include <ncs/sim/Memory.h>
 
 namespace ncs {
 

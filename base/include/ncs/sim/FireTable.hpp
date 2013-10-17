@@ -1,3 +1,5 @@
+#include <ncs/sim/Memory.h>
+
 namespace ncs {
 
 namespace sim {

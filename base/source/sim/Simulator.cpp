@@ -275,10 +275,118 @@ DataSink* Simulator::addReport(spec::Report* report) {
                         gen);
     size_t num_to_select =
       potential_neurons.size() * report->getPercentage();
+    if (num_to_select <= 0) {
+      std::cerr << "Not enough neurons to report on." << std::endl;
+      return nullptr;
+    }
     num_to_select = std::min(num_to_select, potential_neurons.size());
     potential_neurons.resize(num_to_select);
+    auto CompareNeuronLocation = [=](const Neuron* a, const Neuron* b) {
+      return a->location < b->location;
+    };
+    std::sort(potential_neurons.begin(),
+              potential_neurons.end(),
+              CompareNeuronLocation);
+    std::function<bool(Neuron* a, Neuron* b)> same_location;
+    std::function<Location(Neuron* n)> relevant_location;
+    switch(data_description->getDataSpace()) {
+      case DataSpace::Global:
+        same_location = [](Neuron* a, Neuron* b) {
+          return true;
+        };
+        relevant_location = [](Neuron* a) {
+          return Location(-1, -1, -1);
+        };
+        break;
+      case DataSpace::Machine:
+        same_location = [](Neuron* a, Neuron* b) {
+          return a->location.machine == b->location.machine;
+        };
+        relevant_location = [](Neuron* a) {
+          return Location(a->location.machine, -1, -1);
+        };
+        break;
+      case DataSpace::Device:
+        same_location = [](Neuron* a, Neuron* b) {
+          return a->location.machine == b->location.machine &&
+            a->location.device == b->location.device;
+        };
+        relevant_location = [](Neuron* a) {
+          return Location(a->location.machine, a->location.device, -1);
+        };
+        break;
+      case DataSpace::Plugin:
+        same_location = [](Neuron* a, Neuron* b) {
+          return a->location.machine == b->location.machine &&
+            a->location.device == b->location.device &&
+            a->location.plugin == b->location.plugin;
+        };
+        relevant_location = [](Neuron* a) {
+          return a->location;
+        };
+        break;
+      default:
+        std::cerr << "Invalid data space." << std::endl;
+        return nullptr;
+    }
+    std::map<Location, std::vector<Neuron*>> neurons_by_location;
+    {
+      auto it = potential_neurons.begin();
+      while (it != potential_neurons.end()) {
+        Neuron* base_neuron = *it; 
+        Location location = relevant_location(base_neuron);
+        auto SameAsCurrentLocation = [base_neuron, same_location](Neuron* n) {
+          return same_location(base_neuron, n);
+        };
+        auto segment_end = std::find_if_not(it,
+                                            potential_neurons.end(),
+                                            SameAsCurrentLocation);
+        neurons_by_location[location] = std::vector<Neuron*>(it, segment_end);
+        it = segment_end;
+      }
+    }
+    DataType::Type datatype = data_description->getDataType();
+    std::map<Location, size_t> bytes_per_location;
+    for (auto it : neurons_by_location) {
+      size_t num_bytes = DataType::num_bytes(it.second.size(), datatype);
+      bytes_per_location[it.first] = num_bytes;
+    }
+    std::map<int, size_t> bytes_per_machine;
+    for (auto it : bytes_per_location) {
+      bytes_per_machine[it.first.machine] = 0;
+    }
+    for (auto it : bytes_per_location) {
+      bytes_per_machine[it.first.machine] += it.second;
+    }
+    int my_machine_index = cluster_->getThisMachineIndex();
+    std::map<int, std::vector<Location>> locations_by_machine;
+    for (auto it : neurons_by_location) {
+      Location location = it.first;
+      locations_by_machine[location.machine].push_back(location);
+    }
+    std::vector<Location> my_locations;
+    if (locations_by_machine.count(my_machine_index)) {
+      my_locations = locations_by_machine[my_machine_index];
+    }
+    // For globally indexed data, just let the master handle it
+    if (locations_by_machine.count(-1)) {
+      my_locations.push_back(Location(-1, -1, -1));
+    }
+    // TODO(rvhoang): relay this information out to other nodes
+    std::map<Location, Publisher*> publisher_by_location;
+    for (auto& location : my_locations) {
+      auto publisher = neuron_manager->getSource(report_name,
+                                                 location.machine,
+                                                 location.device,
+                                                 location.plugin);
+      if (!publisher) {
+        std::cerr << "Failed to find a publisher for report " <<
+          report_name << std::endl;
+        return nullptr;
+      }
+      publisher_by_location[location] = publisher;
+    }
     // TODO(rvhoang): finish this code
-    
   } else if (report->getTarget() == spec::Report::Synapse) {
     // TODO(rvhoang): this is more complicated since synapse information only
     // exists on the machine the synapse resides on

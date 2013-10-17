@@ -140,7 +140,11 @@ public:
     */
   virtual ~Publisher();
 	bool clearSubscriptions();
+
+  bool setDevice(class DeviceBase* device);
+  class DeviceBase* getDevice() const;
 private:
+  class DeviceBase* device_;
 	///Lock around the subscriber list.
 	std::mutex mutex_;
 	
@@ -175,7 +179,7 @@ public:
 
 		@param data The publication to push to subscribers
 	*/
-	void publish(T* data);
+	unsigned int publish(T* data);
 
 	/**
 		Removes a subscriber from the list of subscriptions. All subsequent

@@ -8,8 +8,8 @@ Mailbox::Mailbox()
 	: failed(false) {
 }
 
-Publisher::Publisher() {
-  // TODO(rvhoang): Set device
+Publisher::Publisher()
+  : device_(nullptr) {
 }
 
 Publisher::Subscription* Publisher::subscribe() {
@@ -60,6 +60,15 @@ bool Publisher::clearSubscriptions() {
   return true;
 }
 
+bool Publisher::setDevice(DeviceBase* device) {
+  device_ = device;
+  return true;
+}
+
+DeviceBase* Publisher::getDevice() const {
+  return device_;
+}
+
 Publisher::~Publisher() {
 }
 
@@ -71,6 +80,14 @@ DataBuffer::Pin::Pin()
 DataBuffer::Pin::Pin(const void* data, DeviceType::Type memory_type)
 	: data_(data),
 	  memory_type_(memory_type) {
+}
+
+const void* DataBuffer::Pin::getData() const {
+  return data_;
+}
+
+DeviceType::Type DataBuffer::Pin::getMemoryType() const {
+  return memory_type_;
 }
 
 const DataBuffer::Pin& DataBuffer::getPin(const std::string& key) const {

@@ -15,11 +15,7 @@ struct Synapse {
     unsigned int plugin;
     unsigned int device;
   } id;
-  struct {
-    int plugin;
-    int device;
-    int machine;
-  } location;
+  Location location;
 };
 
 } // namespace sim

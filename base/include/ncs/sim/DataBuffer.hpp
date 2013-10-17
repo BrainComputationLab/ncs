@@ -166,7 +166,7 @@ typename SpecificPublisher<T>::Subscription* SpecificPublisher<T>::subscribe() {
 }
 
 template<typename T>
-void SpecificPublisher<T>::publish(T* data) {
+unsigned int SpecificPublisher<T>::publish(T* data) {
   // Make sure no one else is messing with the subscriber list
   std::unique_lock<std::mutex> lock(mutex_);
   // Increment the sub count by the number of specific subscriptions
@@ -187,6 +187,7 @@ void SpecificPublisher<T>::publish(T* data) {
     blanks_.push(data);
     blank_available_.notify_all();
   }
+  return subpubs + subscriptions_.size();
 }
 
 template<typename T>
