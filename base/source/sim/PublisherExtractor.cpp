@@ -94,6 +94,7 @@ bool PublisherExtractor::start() {
     }
   };
   thread_ = std::thread(thread_function);
+  return true;
 }
 
 PublisherExtractor::~PublisherExtractor() {

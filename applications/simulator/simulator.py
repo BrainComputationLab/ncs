@@ -31,7 +31,7 @@ def Run(argv):
       print "Failed to add report %s" % name
       return
     sinks[name] = sink
-
+  print "Starting simulation."
   for i in range(0,100):
     simulation.step()
   del simulation

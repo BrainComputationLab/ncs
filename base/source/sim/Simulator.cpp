@@ -363,9 +363,14 @@ DataSink* Simulator::addReport(spec::Report* report) {
       }
     }
     DataType::Type datatype = data_description->getDataType();
+    size_t num_total_elements = 0;
+    size_t num_real_elements = 0;
     std::map<Location, size_t> bytes_per_location;
     for (auto it : neurons_by_location) {
       size_t num_bytes = DataType::num_bytes(it.second.size(), datatype);
+      num_total_elements += DataType::num_padded_elements(it.second.size(),
+                                                          datatype);
+      num_real_elements += it.second.size();
       bytes_per_location[it.first] = num_bytes;
     }
     size_t buffer_size = 0;
@@ -436,11 +441,24 @@ DataSink* Simulator::addReport(spec::Report* report) {
         delete report_controller;
         return nullptr;
       }
+      extractor->start();
       extractors.push_back(extractor);
+    }
+    DataSink* data_sink = new DataSink(data_description,
+                                       num_total_elements - num_real_elements,
+                                       num_real_elements,
+                                       Constants::num_buffers);
+    if (!data_sink->init(extractors, report_controller)) {
+      std::cerr << "Failed to initialize data sink." << std::endl;
+      delete report_controller;
+      for (auto extractor : extractors) {
+        delete extractor;
+      }
+      delete data_sink;
     }
     std::cout << "This should success so far." << std::endl;
     std::cout << "#engrish" << std::endl;
-    // TODO(rvhoang): finish this code
+    return data_sink;
   } else if (report->getTarget() == spec::Report::Synapse) {
     // TODO(rvhoang): this is more complicated since synapse information only
     // exists on the machine the synapse resides on

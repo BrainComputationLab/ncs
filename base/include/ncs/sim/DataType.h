@@ -14,6 +14,7 @@ public:
     Unknown
   };
   static size_t num_bytes(std::size_t count, Type t);
+  static size_t num_padded_elements(std::size_t count, Type t);
 private:
 };
 

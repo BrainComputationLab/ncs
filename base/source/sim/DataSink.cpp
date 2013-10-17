@@ -32,7 +32,7 @@ DataSink::DataSink(const DataDescription* data_description,
 }
 
 bool DataSink::init(const std::vector<SpecificPublisher<Signal>*> dependents,
-                    SpecificPublisher<ReportDataBuffer>* source_publisher) {
+                    ReportController* report_controller) {
   size_t data_size = DataType::num_bytes(num_total_elements_,
                                          data_description_->getDataType());
   if (data_size <= 0) {
@@ -48,10 +48,12 @@ bool DataSink::init(const std::vector<SpecificPublisher<Signal>*> dependents,
     DataSinkBuffer* buffer = new DataSinkBuffer();
     addBlank(buffer);
   }
-  for (auto dependent : dependents) {
+  dependent_publishers_ = dependents;
+  for (auto dependent : dependent_publishers_) {
     dependent_subscriptions_.push_back(dependent->subscribe());
   }
-  source_subscription_ = source_publisher->subscribe();
+  report_controller_ = report_controller;
+  source_subscription_ = report_controller->subscribe();
   return true;
 }
 
@@ -80,6 +82,12 @@ DataSink::~DataSink() {
   }
   for (auto sub : dependent_subscriptions_) {
     delete sub;
+  }
+  for (auto dependent : dependent_publishers_) {
+    delete dependent;
+  }
+  if (report_controller_) {
+    delete report_controller_;
   }
 }
 

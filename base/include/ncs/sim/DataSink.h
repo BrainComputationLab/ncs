@@ -1,6 +1,10 @@
 #pragma once
+
+#include <thread>
+
 #include <ncs/sim/DataBuffer.h>
 #include <ncs/sim/DataDescription.h>
+#include <ncs/sim/ReportController.h>
 #include <ncs/sim/ReportDataBuffer.h>
 #include <ncs/sim/Signal.h>
 
@@ -25,7 +29,8 @@ public:
            size_t num_real_elements,
            size_t num_buffers);
   bool init(const std::vector<SpecificPublisher<Signal>*> dependents,
-            SpecificPublisher<ReportDataBuffer>* source_publisher);
+            ReportController* report_controller);
+  bool start();
   const DataDescription* getDataDescription() const;
   size_t getTotalNumberOfElements() const;
   size_t getNumberOfPaddingElements() const;
@@ -37,10 +42,13 @@ private:
   size_t num_real_elements_;
   size_t num_total_elements_;
   size_t num_buffers_;
+  std::vector<SpecificPublisher<Signal>*> dependent_publishers_;
   typedef typename SpecificPublisher<Signal>::Subscription SignalSubscription;
   std::vector<SignalSubscription*> dependent_subscriptions_;
-  typename SpecificPublisher<ReportDataBuffer>::Subscription* 
+  ReportController* report_controller_;
+  typename ReportController::Subscription* 
     source_subscription_;
+  std::thread thread_;
 };
 
 } // namespace sim
