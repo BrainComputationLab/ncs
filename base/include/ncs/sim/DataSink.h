@@ -1,6 +1,8 @@
 #pragma once
 #include <ncs/sim/DataBuffer.h>
 #include <ncs/sim/DataDescription.h>
+#include <ncs/sim/ReportDataBuffer.h>
+#include <ncs/sim/Signal.h>
 
 namespace ncs {
 
@@ -8,13 +10,12 @@ namespace sim {
 
 class DataSinkBuffer : public DataBuffer {
 public:
-  DataSinkBuffer(size_t data_size);
-  bool init();
+  DataSinkBuffer();
+  void setData(const void* data);
   const void* getData() const;
   virtual ~DataSinkBuffer();
 private:
-  size_t data_size_;
-  void* data_;
+  const void* data_;
 };
 
 class DataSink : public SpecificPublisher<DataSinkBuffer> {
@@ -23,7 +24,8 @@ public:
            size_t num_padding_elements,
            size_t num_real_elements,
            size_t num_buffers);
-  bool init();
+  bool init(const std::vector<SpecificPublisher<Signal>*> dependents,
+            SpecificPublisher<ReportDataBuffer>* source_publisher);
   const DataDescription* getDataDescription() const;
   size_t getTotalNumberOfElements() const;
   size_t getNumberOfPaddingElements() const;
@@ -35,6 +37,10 @@ private:
   size_t num_real_elements_;
   size_t num_total_elements_;
   size_t num_buffers_;
+  typedef typename SpecificPublisher<Signal>::Subscription SignalSubscription;
+  std::vector<SignalSubscription*> dependent_subscriptions_;
+  typename SpecificPublisher<ReportDataBuffer>::Subscription* 
+    source_subscription_;
 };
 
 } // namespace sim

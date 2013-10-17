@@ -4,17 +4,12 @@ namespace ncs {
 
 namespace sim {
 
-DataSinkBuffer::DataSinkBuffer(size_t data_size)
-  : data_size_(data_size),
-    data_(nullptr) {
+DataSinkBuffer::DataSinkBuffer()
+  : data_(nullptr) {
 }
 
-bool DataSinkBuffer::init() {
-  if (data_size_ == 0) {
-    return false;
-  }
-  data_ = new char[data_size_];
-  return data_ != nullptr;
+void DataSinkBuffer::setData(const void* data) {
+  data_ = data;
 }
 
 const void* DataSinkBuffer::getData() const {
@@ -22,11 +17,6 @@ const void* DataSinkBuffer::getData() const {
 }
 
 DataSinkBuffer::~DataSinkBuffer() {
-  if (data_) {
-    char* p = (char*)data_;
-    delete [] p;
-    data_ = nullptr;
-  }
 }
 
 DataSink::DataSink(const DataDescription* data_description,
@@ -36,11 +26,13 @@ DataSink::DataSink(const DataDescription* data_description,
   : data_description_(new DataDescription(*data_description)),
     num_padding_elements_(num_padding_elements),
     num_real_elements_(num_real_elements),
-    num_buffers_(num_buffers) {
+    num_buffers_(num_buffers),
+    source_subscription_(nullptr) {
   num_total_elements_ = num_padding_elements_ + num_real_elements_;
 }
 
-bool DataSink::init() {
+bool DataSink::init(const std::vector<SpecificPublisher<Signal>*> dependents,
+                    SpecificPublisher<ReportDataBuffer>* source_publisher) {
   size_t data_size = DataType::num_bytes(num_total_elements_,
                                          data_description_->getDataType());
   if (data_size <= 0) {
@@ -53,14 +45,13 @@ bool DataSink::init() {
     return false;
   }
   for (size_t i = 0; i < num_buffers_; ++i) {
-    DataSinkBuffer* buffer = new DataSinkBuffer(data_size);
-    if (!buffer->init()) {
-      std::cerr << "Failed to initialize DataSinkBuffer." << std::endl;
-      delete buffer;
-      return false;
-    }
+    DataSinkBuffer* buffer = new DataSinkBuffer();
     addBlank(buffer);
   }
+  for (auto dependent : dependents) {
+    dependent_subscriptions_.push_back(dependent->subscribe());
+  }
+  source_subscription_ = source_publisher->subscribe();
   return true;
 }
 
@@ -83,6 +74,12 @@ size_t DataSink::getNumberOfRealElements() const {
 DataSink::~DataSink() {
   if (data_description_) {
     delete data_description_;
+  }
+  if (source_subscription_) {
+    delete source_subscription_;
+  }
+  for (auto sub : dependent_subscriptions_) {
+    delete sub;
   }
 }
 

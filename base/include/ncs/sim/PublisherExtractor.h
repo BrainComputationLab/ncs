@@ -19,7 +19,7 @@ public:
             Publisher* source_publisher,
             SpecificPublisher<ReportDataBuffer>* destination_publisher);
   bool start();
-  ~PublisherExtractor();
+  virtual ~PublisherExtractor();
 private:
   size_t output_offset_;
   DataType::Type datatype_;

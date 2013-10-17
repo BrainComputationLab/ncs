@@ -20,6 +20,7 @@ bool ReportController::init(size_t buffer_size,
     }
     addBlank(buffer);
   }
+  return true;
 }
 
 bool ReportController::start() {

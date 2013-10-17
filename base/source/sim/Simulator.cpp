@@ -13,6 +13,9 @@
 #include <ncs/sim/CUDADevice.h>
 #include <ncs/sim/File.h>
 #include <ncs/sim/MPI.h>
+#include <ncs/sim/PublisherExtractor.h>
+#include <ncs/sim/ReportController.h>
+#include <ncs/sim/Signal.h>
 #include <ncs/sim/Simulator.h>
 
 namespace ncs {
@@ -289,13 +292,18 @@ DataSink* Simulator::addReport(spec::Report* report) {
               CompareNeuronLocation);
     std::function<bool(Neuron* a, Neuron* b)> same_location;
     std::function<Location(Neuron* n)> relevant_location;
+    std::function<unsigned int(Neuron*)> get_index;
+    int my_machine_index = cluster_->getThisMachineIndex();
     switch(data_description->getDataSpace()) {
       case DataSpace::Global:
         same_location = [](Neuron* a, Neuron* b) {
           return true;
         };
-        relevant_location = [](Neuron* a) {
-          return Location(-1, -1, -1);
+        relevant_location = [my_machine_index](Neuron* a) {
+          return Location(my_machine_index, -1, -1);
+        };
+        get_index = [](Neuron* n) {
+          return n->id.global;
         };
         break;
       case DataSpace::Machine:
@@ -304,6 +312,9 @@ DataSink* Simulator::addReport(spec::Report* report) {
         };
         relevant_location = [](Neuron* a) {
           return Location(a->location.machine, -1, -1);
+        };
+        get_index = [](Neuron* n) {
+          return n->id.machine;
         };
         break;
       case DataSpace::Device:
@@ -314,6 +325,9 @@ DataSink* Simulator::addReport(spec::Report* report) {
         relevant_location = [](Neuron* a) {
           return Location(a->location.machine, a->location.device, -1);
         };
+        get_index = [](Neuron* n) {
+          return n->id.device;
+        };
         break;
       case DataSpace::Plugin:
         same_location = [](Neuron* a, Neuron* b) {
@@ -323,6 +337,9 @@ DataSink* Simulator::addReport(spec::Report* report) {
         };
         relevant_location = [](Neuron* a) {
           return a->location;
+        };
+        get_index = [](Neuron* n) {
+          return n->id.plugin;
         };
         break;
       default:
@@ -351,29 +368,45 @@ DataSink* Simulator::addReport(spec::Report* report) {
       size_t num_bytes = DataType::num_bytes(it.second.size(), datatype);
       bytes_per_location[it.first] = num_bytes;
     }
+    size_t buffer_size = 0;
     std::map<int, size_t> bytes_per_machine;
     for (auto it : bytes_per_location) {
       bytes_per_machine[it.first.machine] = 0;
     }
     for (auto it : bytes_per_location) {
       bytes_per_machine[it.first.machine] += it.second;
+      buffer_size += it.second;
     }
-    int my_machine_index = cluster_->getThisMachineIndex();
+    std::map<int, size_t> byte_offset_per_machine;
+    {
+      size_t offset = 0;
+      for (auto it : bytes_per_machine) {
+        byte_offset_per_machine[it.first] = offset;
+        offset += it.second;
+      }
+    }
     std::map<int, std::vector<Location>> locations_by_machine;
     for (auto it : neurons_by_location) {
       Location location = it.first;
       locations_by_machine[location.machine].push_back(location);
     }
     std::vector<Location> my_locations;
+    size_t my_machine_offset = 0;
     if (locations_by_machine.count(my_machine_index)) {
       my_locations = locations_by_machine[my_machine_index];
+      my_machine_offset = byte_offset_per_machine[my_machine_offset];
     }
-    // For globally indexed data, just let the master handle it
-    if (locations_by_machine.count(-1)) {
-      my_locations.push_back(Location(-1, -1, -1));
+
+    ReportController* report_controller = new ReportController();
+    if (!report_controller->init(buffer_size,
+                                 Constants::num_buffers)) {
+      std::cerr << "Failed to initialize ReportController." << std::endl;
+      delete report_controller;
+      return nullptr;
     }
+
+    std::vector<SpecificPublisher<Signal>*> extractors;
     // TODO(rvhoang): relay this information out to other nodes
-    std::map<Location, Publisher*> publisher_by_location;
     for (auto& location : my_locations) {
       auto publisher = neuron_manager->getSource(report_name,
                                                  location.machine,
@@ -384,8 +417,29 @@ DataSink* Simulator::addReport(spec::Report* report) {
           report_name << std::endl;
         return nullptr;
       }
-      publisher_by_location[location] = publisher;
+      std::vector<unsigned int> indices;
+      const auto& location_neurons = neurons_by_location[location];
+      for (auto neuron : location_neurons) {
+        indices.push_back(get_index(neuron));
+      }
+      PublisherExtractor* extractor = new PublisherExtractor();
+      if (!extractor->init(bytes_per_location[location],
+                           datatype,
+                           indices,
+                           report_name,
+                           publisher,
+                           report_controller)) {
+        std::cerr << "Failed to initialize PublisherExtractor." << std::endl;
+        for (auto extractor : extractors) {
+          delete extractor;
+        }
+        delete report_controller;
+        return nullptr;
+      }
+      extractors.push_back(extractor);
     }
+    std::cout << "This should success so far." << std::endl;
+    std::cout << "#engrish" << std::endl;
     // TODO(rvhoang): finish this code
   } else if (report->getTarget() == spec::Report::Synapse) {
     // TODO(rvhoang): this is more complicated since synapse information only
