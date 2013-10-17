@@ -23,7 +23,7 @@ bool ReportManager::addDescription(const std::string& report_name,
   return true;
 }
 
-DataDescription* ReportManager::
+const DataDescription* ReportManager::
 getDescription(const std::string& report_name) const {
   auto result = description_by_report_name_.find(report_name);
   if (result == description_by_report_name_.end()) {
@@ -75,39 +75,6 @@ Publisher* ReportManager::getSource(const std::string& report_name,
     return nullptr;
   }
   return name_result->second;
-}
-
-ReportManager::Location::Location(int m, int d, int p)
-  : machine(m),
-    device(d),
-    plugin(p) {
-}
-
-bool ReportManager::Location::operator==(const Location& r) const {
-  return machine == r.machine &&
-    device == r.device &&
-    plugin == r.plugin;
-}
-
-bool ReportManager::Location::operator<(const Location& r) const {
-  if (machine < r.machine) {
-    return true;
-  }
-  if (machine > r.machine) {
-    return false;
-  }
-  // Machines are equal
-  if (device < r.device) {
-    return true;
-  }
-  if (device > r.device) {
-    return false;
-  }
-  // Devices are equal
-  if (plugin < r.plugin) {
-    return true;
-  }
-  return false;
 }
 
 ReportManager::~ReportManager() {

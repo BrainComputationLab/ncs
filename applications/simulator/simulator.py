@@ -1,7 +1,6 @@
 #!/usr/bin/python
 import sys
 
-
 import json_model 
 import pyncs
 
@@ -24,6 +23,15 @@ def Run(argv):
   for name, group in model.input_groups.items():
     simulation.addInput(group)
   print "Injection complete."
+  print "Adding reports."
+  sinks = {}
+  for name, report in model.reports.items():
+    sink = simulation.addReport(report)
+    if not sink:
+      print "Failed to add report %s" % name
+      return
+    sinks[name] = sink
+
   for i in range(0,100):
     simulation.step()
   del simulation

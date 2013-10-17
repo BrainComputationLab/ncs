@@ -2,7 +2,7 @@
   "#voltage_report": {
     "type": "report",
     "target": "neuron",
-    "attribute": "voltage",
+    "attribute": "neuron_voltage",
     "percentage": 1.0,
     "aliases": [
       "submodel_0:neuron_group_0",

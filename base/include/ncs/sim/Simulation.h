@@ -16,6 +16,7 @@ public:
   bool init(const std::vector<std::string>& args);
   bool step();
   bool addInput(spec::InputGroup* input);
+  spec::DataSource* addReport(spec::Report* report);
   bool shutdown();
   ~Simulation();
 private:

@@ -33,6 +33,14 @@ bool Simulation::addInput(spec::InputGroup* input) {
   return simulator_->addInput(input);
 }
 
+spec::DataSource* Simulation::addReport(spec::Report* report) {
+  auto sink = simulator_->addReport(report);
+  if (nullptr == sink) {
+    return nullptr;
+  }
+  return new spec::DataSource(sink);
+}
+
 bool Simulation::shutdown() {
   if (simulator_) {
     delete simulator_;

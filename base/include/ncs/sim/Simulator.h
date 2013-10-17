@@ -29,7 +29,7 @@ public:
   bool initialize(int argc, char** argv);
   bool step();
   bool addInput(spec::InputGroup* input);
-  DataSink::Subscription* addReport(spec::Report* report);
+  DataSink* addReport(spec::Report* report);
   ~Simulator();
 private:
   bool initializeSeeds_();
@@ -51,6 +51,11 @@ private:
   
   spec::NeuronAlias* getNeuronAlias_(const std::string& alias) const;
   spec::SynapseAlias* getSynapseAlias_(const std::string& alias) const;
+
+  bool getNeuronsInGroups_(const std::vector<spec::NeuronGroup*>& groups,
+                           std::vector<Neuron*>* neurons) const;
+  bool getNeuronsInGroup_(spec::NeuronGroup* group, 
+                          std::vector<Neuron*>* neurons) const;
 
   int getNeuronSeed_() const;
   int getSynapseSeed_() const;

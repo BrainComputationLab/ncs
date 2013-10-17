@@ -1,6 +1,7 @@
 #pragma once
 #include <ncs/sim/DataBuffer.h>
 #include <ncs/sim/DataDescription.h>
+#include <ncs/sim/Location.h>
 
 namespace ncs {
 
@@ -11,7 +12,7 @@ public:
   ReportManager();
   bool addDescription(const std::string& report_name,
                       const DataDescription& description);
-  DataDescription* getDescription(const std::string& report_name) const;
+  const DataDescription* getDescription(const std::string& report_name) const;
   bool addSource(const std::string& report_name,
                  int machine_location,
                  int device_location,
@@ -24,14 +25,6 @@ public:
   ~ReportManager();
 private:
   std::map<std::string, DataDescription*> description_by_report_name_;
-  struct Location {
-    Location(int m, int d, int p);
-    bool operator==(const Location& r) const;
-    bool operator<(const Location& r) const;
-    int machine;
-    int device;
-    int plugin;
-  };
   typedef std::map<std::string, Publisher*> PublisherByReportName;
   std::map<Location, PublisherByReportName> publisher_by_name_by_location_; 
 };

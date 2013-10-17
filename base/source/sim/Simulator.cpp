@@ -172,16 +172,10 @@ bool Simulator::addInput(spec::InputGroup* input) {
     return false;
   }
   std::vector<Neuron*> potential_neurons;
-  for (auto neuron_group : alias->getGroups()) {
-    auto search_result = neurons_by_group_.find(neuron_group);
-    if (neurons_by_group_.end() == search_result) {
-      std::cerr << "Failed to find neuron group in alias " <<
-        input->getNeuronAlias() << std::endl;
-      return false;
-    }
-    for (auto neuron : search_result->second) {
-      potential_neurons.push_back(neuron);
-    }
+  if (!getNeuronsInGroups_(alias->getGroups(), &potential_neurons)) {
+    std::cerr << "Failed to get all neurons in alias " <<
+      input->getNeuronAlias() << std::endl;
+    return false;
   }
 
   spec::ModelParameters* parameters = input->getModelParameters();
@@ -238,7 +232,58 @@ bool Simulator::addInput(spec::InputGroup* input) {
   return true;
 }
 
-DataSink::Subscription* Simulator::addReport(spec::Report* report) {
+DataSink* Simulator::addReport(spec::Report* report) {
+  if (report->getTarget() == spec::Report::Neuron) {
+    // Make sure the report type is real
+    const auto neuron_manager = report_managers_->getNeuronManager();
+    const auto report_name = report->getReportName();
+    const auto data_description = neuron_manager->getDescription(report_name);
+    if (nullptr == data_description) {
+      std::cerr << "Report of name " << report_name << " not found." <<
+        std::endl;
+      return nullptr;
+    }
+    std::vector<spec::NeuronAlias*> aliases;
+    for (const auto& alias_name : report->getAliases()) {
+      auto alias = getNeuronAlias_(alias_name);
+      if (nullptr == alias) {
+        std::cerr << "Neuron alias " << alias_name << " not found." << 
+          std::endl;
+        return nullptr;
+      }
+      aliases.push_back(alias);
+    }
+    std::vector<spec::NeuronGroup*> potential_groups;
+    for (auto alias : aliases) {
+      for (auto group : alias->getGroups()) {
+        potential_groups.push_back(group);
+      }
+    }
+    std::vector<Neuron*> potential_neurons;
+    if (!getNeuronsInGroups_(potential_groups, &potential_neurons)) {
+      std::cerr << "Failed to expand all neuron aliases." << std::endl;
+      return nullptr;
+    }
+
+    // TODO(rvhoang): seed this
+    ncs::spec::RNG rng(0);
+    auto gen = [&](unsigned int i) {
+      return std::uniform_int_distribution<unsigned int>(0, i - 1)(rng);
+    };
+    std::random_shuffle(potential_neurons.begin(),
+                        potential_neurons.end(),
+                        gen);
+    size_t num_to_select =
+      potential_neurons.size() * report->getPercentage();
+    num_to_select = std::min(num_to_select, potential_neurons.size());
+    potential_neurons.resize(num_to_select);
+    // TODO(rvhoang): finish this code
+    
+  } else if (report->getTarget() == spec::Report::Synapse) {
+    // TODO(rvhoang): this is more complicated since synapse information only
+    // exists on the machine the synapse resides on
+  }
+  return nullptr;
 }
 
 Simulator::~Simulator() {
@@ -740,6 +785,31 @@ getSynapseAlias_(const std::string& alias) const {
     return nullptr;
   }
   return search_result->second;
+}
+
+bool Simulator::
+getNeuronsInGroups_(const std::vector<spec::NeuronGroup*>& groups,
+                    std::vector<Neuron*>* neurons) const {
+  for (auto group : groups) {
+    if (!getNeuronsInGroup_(group, neurons)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool Simulator::getNeuronsInGroup_(spec::NeuronGroup* group, 
+                          std::vector<Neuron*>* neurons) const {
+  auto search_result = neurons_by_group_.find(group);
+  if (neurons_by_group_.end() == search_result) {
+    std::cerr << "Failed to find a neuron_group." << std::endl;
+    return false;
+  }
+  const auto& neuron_list = search_result->second;
+  for (auto neuron : neuron_list) {
+    neurons->push_back(neuron);
+  }
+  return true;
 }
 
 int Simulator::getNeuronSeed_() const {

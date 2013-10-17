@@ -14,9 +14,9 @@ struct Neuron {
     unsigned int global;
   } id;
   struct {
-    unsigned int plugin;
-    unsigned int device;
-    unsigned int machine;
+    int plugin;
+    int device;
+    int machine;
   } location;
 };
 
