@@ -12,6 +12,13 @@ DataSource::DataSource(ncs::sim::DataSink* data_sink)
   if (data_sink_) {
     subscription_ = data_sink_->subscribe();
   }
+  if (!data_sink_->start()) {
+    std::cerr << "Failed to start DataSink." << std::endl;
+    if (subscription_) {
+      delete subscription_;
+      subscription_ = nullptr;
+    }
+  }
 }
 
 DataSource::DataSource()

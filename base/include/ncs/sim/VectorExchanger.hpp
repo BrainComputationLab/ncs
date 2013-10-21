@@ -143,7 +143,7 @@ bool GlobalVectorInjector<MType>::start() {
         dependent_subscriptions_[i]->pull(exchange_results.data() + i,
                                           &mailbox);
       }
-      if (!mailbox.wait(&cpu_buffer, &dependent_subscriptions_)) {
+      if (!mailbox.wait(&cpu_buffer, &exchange_results)) {
         source_subscription_->cancel();
         for (auto sub : dependent_subscriptions_) {
           sub->cancel();

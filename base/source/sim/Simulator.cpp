@@ -455,9 +455,8 @@ DataSink* Simulator::addReport(spec::Report* report) {
         delete extractor;
       }
       delete data_sink;
+      return nullptr;
     }
-    std::cout << "This should success so far." << std::endl;
-    std::cout << "#engrish" << std::endl;
     return data_sink;
   } else if (report->getTarget() == spec::Report::Synapse) {
     // TODO(rvhoang): this is more complicated since synapse information only

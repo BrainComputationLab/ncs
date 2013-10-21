@@ -25,7 +25,8 @@ init(size_t output_offset,
   datatype_ = datatype;
   indices_ = indices;
   pin_name_ = pin_name;
-  source_subscription_ = source_publisher->subscribe();
+  source_publisher_ = source_publisher;
+  source_subscription_ = source_publisher_->subscribe();
   destination_subscription_ = destination_publisher->subscribe();
   return true;
 }

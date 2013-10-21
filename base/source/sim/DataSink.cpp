@@ -57,6 +57,61 @@ bool DataSink::init(const std::vector<SpecificPublisher<Signal>*> dependents,
   return true;
 }
 
+bool DataSink::start() {
+  auto thread_function = [this]() {
+    Mailbox mailbox;
+    std::vector<Signal*> dependent_signals;
+    dependent_signals.resize(dependent_subscriptions_.size());
+    while(true) {
+      ReportDataBuffer* data_buffer = nullptr;
+      source_subscription_->pull(&data_buffer, &mailbox);
+      for (size_t i= 0; i < dependent_subscriptions_.size(); ++i) {
+        dependent_subscriptions_[i]->pull(dependent_signals.data() + i,
+                                          &mailbox);
+      }
+      if (!mailbox.wait(&data_buffer, &dependent_signals)) {
+        source_subscription_->cancel();
+        for (auto sub : dependent_subscriptions_) {
+          sub->cancel();
+        }
+        if (data_buffer) {
+          data_buffer->release();
+        }
+        for (auto signal : dependent_signals) {
+          if (signal) {
+            signal->release();
+          }
+        }
+        return;
+      }
+      bool status = true;
+      for (auto signal : dependent_signals) {
+        status &= signal->getStatus();
+        signal->release();
+      }
+      if (!status) {
+        data_buffer->release();
+        return;
+      }
+      
+      auto blank = this->getBlank();
+      blank->setData(data_buffer->getData());
+      auto prerelease_function = [data_buffer]() {
+        data_buffer->release();
+      };
+      blank->setPrereleaseFunction(prerelease_function);
+      unsigned int num_subscribers = this->publish(blank);
+      if (0 == this->publish(blank)) {
+        return;
+      }
+      // data_buffer will be automatically released upon publishing if zero
+      // subscribers are listening, so don't release it here
+    }
+  };
+
+  return true;
+}
+
 const DataDescription* DataSink::getDataDescription() const {
   return data_description_;
 }
