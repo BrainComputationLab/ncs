@@ -378,9 +378,15 @@ DataSink* Simulator::addReport(spec::Report* report) {
     for (auto it : bytes_per_location) {
       bytes_per_machine[it.first.machine] = 0;
     }
-    for (auto it : bytes_per_location) {
-      bytes_per_machine[it.first.machine] += it.second;
-      buffer_size += it.second;
+    std::map<Location, size_t> byte_offset_per_location;
+    {
+      size_t offset = 0;
+      for (auto it : bytes_per_location) {
+        bytes_per_machine[it.first.machine] += it.second;
+        buffer_size += it.second;
+        byte_offset_per_location[it.first] = offset;
+        offset += it.second;
+      }
     }
     std::map<int, size_t> byte_offset_per_machine;
     {
@@ -411,6 +417,7 @@ DataSink* Simulator::addReport(spec::Report* report) {
     }
 
     std::vector<SpecificPublisher<Signal>*> extractors;
+    std::vector<PublisherExtractor*> publisher_extractors;
     // TODO(rvhoang): relay this information out to other nodes
     for (auto& location : my_locations) {
       auto publisher = neuron_manager->getSource(report_name,
@@ -428,7 +435,7 @@ DataSink* Simulator::addReport(spec::Report* report) {
         indices.push_back(get_index(neuron));
       }
       PublisherExtractor* extractor = new PublisherExtractor();
-      if (!extractor->init(bytes_per_location[location],
+      if (!extractor->init(byte_offset_per_location[location],
                            datatype,
                            indices,
                            report_name,
@@ -441,7 +448,7 @@ DataSink* Simulator::addReport(spec::Report* report) {
         delete report_controller;
         return nullptr;
       }
-      extractor->start();
+      publisher_extractors.push_back(extractor);
       extractors.push_back(extractor);
     }
     DataSink* data_sink = new DataSink(data_description,
@@ -456,6 +463,9 @@ DataSink* Simulator::addReport(spec::Report* report) {
       }
       delete data_sink;
       return nullptr;
+    }
+    for (auto extractor : publisher_extractors) {
+      extractor->start();
     }
     return data_sink;
   } else if (report->getTarget() == spec::Report::Synapse) {

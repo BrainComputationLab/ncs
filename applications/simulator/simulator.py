@@ -26,13 +26,13 @@ def Run(argv):
   print "Adding reports."
   sinks = {}
   for name, report in model.reports.items():
-    sink = simulation.addReport(report)
-    if not sink:
+    source = simulation.addReport(report)
+    if not source:
       print "Failed to add report %s" % name
       return
-    sinks[name] = sink
+    sinks[name] = pyncs.NullSink(source)
   print "Starting simulation."
-  for i in range(0,100):
+  for i in range(0,1000):
     simulation.step()
   del simulation
 

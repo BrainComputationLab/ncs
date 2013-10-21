@@ -28,6 +28,9 @@ init(size_t output_offset,
   source_publisher_ = source_publisher;
   source_subscription_ = source_publisher_->subscribe();
   destination_subscription_ = destination_publisher->subscribe();
+  for (size_t i = 0; i < Constants::num_buffers; ++i) {
+    addBlank(new Signal());
+  }
   return true;
 }
 
@@ -53,6 +56,10 @@ bool PublisherExtractor::start() {
         if (destination_buffer) {
           destination_buffer->release();
         }
+        delete source_subscription_;
+        source_subscription_ = nullptr;
+        delete destination_subscription_;
+        destination_subscription_ = nullptr;
         break;
       }
       auto signal = this->getBlank();
@@ -83,9 +90,9 @@ bool PublisherExtractor::start() {
       char* dest = 
         static_cast<char*>(destination_buffer->getData()) + output_offset_;
       extractor->extract(pin.getData(), dest);
-      auto num_subscribers = this->publish(signal);
       source_buffer->release();
       destination_buffer->release();
+      auto num_subscribers = this->publish(signal);
       if (0 == num_subscribers) {
         break;
       }
@@ -93,6 +100,11 @@ bool PublisherExtractor::start() {
     if (device) {
       device->threadDestroy();
     }
+    delete source_subscription_;
+    source_subscription_ = nullptr;
+    delete destination_subscription_;
+    destination_subscription_ = nullptr;
+    this->clearSubscriptions();
   };
   thread_ = std::thread(thread_function);
   return true;

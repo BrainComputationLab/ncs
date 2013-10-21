@@ -58,6 +58,12 @@ bool DataSink::init(const std::vector<SpecificPublisher<Signal>*> dependents,
 }
 
 bool DataSink::start() {
+  // start the report controller since by this point everyone that should have
+  // subscribed to it already has
+  if (!report_controller_->start()) {
+    std::cerr << "Failed to start ReportController." << std::endl;
+    return false;
+  }
   auto thread_function = [this]() {
     Mailbox mailbox;
     std::vector<Signal*> dependent_signals;
@@ -82,7 +88,7 @@ bool DataSink::start() {
             signal->release();
           }
         }
-        return;
+        break;
       }
       bool status = true;
       for (auto signal : dependent_signals) {
@@ -91,7 +97,7 @@ bool DataSink::start() {
       }
       if (!status) {
         data_buffer->release();
-        return;
+        break;
       }
       
       auto blank = this->getBlank();
@@ -101,14 +107,15 @@ bool DataSink::start() {
       };
       blank->setPrereleaseFunction(prerelease_function);
       unsigned int num_subscribers = this->publish(blank);
-      if (0 == this->publish(blank)) {
-        return;
+      if (0 == num_subscribers) {
+        break;
       }
       // data_buffer will be automatically released upon publishing if zero
       // subscribers are listening, so don't release it here
     }
+    clearSubscriptions();
   };
-
+  thread_ = std::thread(thread_function);
   return true;
 }
 
@@ -129,6 +136,9 @@ size_t DataSink::getNumberOfRealElements() const {
 }
 
 DataSink::~DataSink() {
+  if (thread_.joinable()) {
+    thread_.join();
+  }
   if (data_description_) {
     delete data_description_;
   }

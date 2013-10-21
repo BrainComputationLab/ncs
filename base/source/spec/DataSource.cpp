@@ -44,14 +44,19 @@ size_t DataSource::getNumberOfRealElements() const {
 }
 
 const void* DataSource::pull() {
-  if (pulled_buffer_) {
-    pulled_buffer_->release();
-  }
+  release();
   pulled_buffer_ = subscription_->pull();
   if (nullptr == pulled_buffer_) {
     return nullptr;
   }
   return pulled_buffer_->getData();
+}
+
+void DataSource::release() {
+  if (pulled_buffer_) {
+    pulled_buffer_->release();
+    pulled_buffer_ = nullptr;
+  }
 }
 
 DataSource::~DataSource() {

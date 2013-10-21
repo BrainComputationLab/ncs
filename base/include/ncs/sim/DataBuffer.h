@@ -211,6 +211,7 @@ public:
 	*/
 	T* getBlank();
 
+	bool clearSubscriptions();
 private:
 	///The mutex for the lock
 	std::mutex mutex_;
@@ -288,11 +289,6 @@ public:
 
 	///A count of all subscribers currently still consuming this buffer.
 	std::atomic<unsigned int> subscription_count;
-
-	///The number of threads that still need to update this buffer
-	std::atomic<unsigned int> updates_needed;
-
-	bool update();
 
   std::mutex* getWriteLock();
 

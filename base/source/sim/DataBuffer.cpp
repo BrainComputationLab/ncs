@@ -117,10 +117,6 @@ std::mutex* DataBuffer::getWriteLock() {
   return &write_lock_;
 }
 
-bool DataBuffer::update() {
-	return 1 == std::atomic_fetch_sub(&updates_needed, 1u);
-}
-
 } // namespace sim
 
 } // namespace ncs

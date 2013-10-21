@@ -8,6 +8,7 @@
 #include <include/ncs/spec/InputGroup.h>
 #include <include/ncs/spec/ModelSpecification.h>
 #include <include/ncs/spec/NormalGenerator.h>
+#include <include/ncs/spec/NullSink.h>
 #include <include/ncs/spec/Report.h>
 #include <include/ncs/spec/UniformGenerator.h>
 %}
@@ -24,6 +25,7 @@
 %include <include/ncs/spec/InputGroup.h>
 %include <include/ncs/spec/ModelSpecification.h>
 %include <include/ncs/spec/NormalGenerator.h>
+%include <include/ncs/spec/NullSink.h>
 %include <include/ncs/spec/Report.h>
 %include <include/ncs/spec/UniformGenerator.h>
 

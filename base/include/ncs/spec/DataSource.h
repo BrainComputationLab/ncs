@@ -20,6 +20,7 @@ public:
   size_t getNumberOfPaddingElements() const;
   size_t getNumberOfRealElements() const;
   const void* pull();
+  void release();
   ~DataSource();
 private:
   ncs::sim::DataSink* data_sink_;

@@ -199,7 +199,7 @@ void SpecificPublisher<T>::unsubscribe(Subscription* sub) {
 }
 
 template<typename T>
-SpecificPublisher<T>::~SpecificPublisher() {
+bool SpecificPublisher<T>::clearSubscriptions() {
   // Clear the generics
   Publisher::clearSubscriptions();
   {
@@ -212,7 +212,11 @@ SpecificPublisher<T>::~SpecificPublisher() {
 
     subscriptions_.clear();
   }
+}
 
+template<typename T>
+SpecificPublisher<T>::~SpecificPublisher() {
+  clearSubscriptions();
   // Destroy all blanks
   for (unsigned int i = 0; i < num_blanks_; ++i) {
     delete getBlank();
@@ -223,12 +227,14 @@ template<typename T>
 void SpecificPublisher<T>::addBlank(T* blank) {
   // Make sure the blank knows how to add itself back to the pile
   blank->release_function = [this, blank]() {
+#if 0
     if (blank->subscription_count == 0) {
       std::unique_lock<std::mutex> lock(this->mutex_);
       this->blanks_.push(blank);
       this->blank_available_.notify_all();
       return;
     }
+#endif
     // Decrement the sub count
     unsigned int remaining =
       std::atomic_fetch_sub(&(blank->subscription_count), 1u);
