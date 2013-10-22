@@ -8,7 +8,7 @@ template<>
 bool FireTableUpdater<DeviceType::CPU>::
 update_(GlobalNeuronStateBuffer<DeviceType::CPU>* neuron_state,
         unsigned int step) {
-  Bit::Word* fire_vector = neuron_state->getFireBits();
+  const Bit::Word* fire_vector = neuron_state->getFireBits();
   for (size_t i = 0; i < device_synaptic_vector_size_; ++i) {
     unsigned int presynaptic_neuron_id = global_presynaptic_neuron_ids_[i];
     if (presynaptic_neuron_id == 0xFFFFFFFF) {

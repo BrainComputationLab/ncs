@@ -187,6 +187,84 @@ GlobalVectorInjector<MType>::~GlobalVectorInjector() {
   }
 }
 
+#if 0
+template<DeviceType::Type MType>
+DeviceVectorExtractor<MType>::DeviceVectorExtractor() 
+  : source_subscription_(nullptr),
+    destination_subscription_(nullptr) {
+}
+
+template<DeviceType::Type MType>
+bool DeviceVectorExtractor<MType>::init(size_t global_word_offset,
+          size_t num_buffers,
+          SourcePublisher* source_publisher,
+          DestinationPublisher* destination_publisher) {
+  global_word_offset_ = Bit::num_words(global_word_offset);
+  for (size_t i = 0; i < num_buffers_; ++i) {
+    auto blank = new Signal();
+    addBlank(blank);
+  }
+  source_subscription_ = source_publisher->subscribe();
+  destination_subscription_ = destination_publisher->subscribe();
+  return true;
+}
+
+template<DeviceType::Type MType>
+bool DeviceVectorExtractor<MType>::start() {
+  auto thread_function = [this]() {
+    while(true) {
+      Mailbox mailbox;
+      SourceBuffer* source_buffer = nullptr;
+      source_subscription_->pull(&source_buffer, &mailbox);
+      DestinationBuffer* destination_buffer = nullptr;
+      destination_subscription_->pull(&destination_buffer, &mailbox);
+      if (!mailbox.wait(&source_buffer, &destination_buffer)) {
+        source_subscription_->cancel();
+        destination_subscription_->cancel();
+        if (source_buffer) {
+          source_buffer->release();
+        }
+        if (destination_buffer) {
+          destination_buffer->release();
+        }
+        break;
+      }
+      auto signal = this->getBlank();
+      Bit::Word* dst = destination_buffer->getFireBits() + global_word_offset_;
+      Bit::Word* src = source_buffer->getFireBits();
+      size_t size = Bit::num_words(source->getVectorSize());
+      bool result = mem::copy<DeviceType::CPU, MType>(dst, src, size);
+      signal->setStatus(result);
+      source_buffer->release();
+      destination_buffer->release();
+      auto num_subscribers = this->publish(signal);
+      if (!result) {
+        break;
+      }
+      if (0 == num_subscribers) {
+        break;
+      }
+    }
+  };
+  thread_ = std::thread(thread_function);
+  return true;
+}
+
+template<DeviceType::Type MType>
+DeviceVectorExtractor<MType>::~DeviceVectorExtractor() {
+  if (thread_.joinable()) {
+    thread_.join();
+  }
+  if (source_subscription_) {
+    delete source_subscription_;
+  }
+  if (destination_subscription_) {
+    delete destination_subscription_;
+  }
+}
+#endif
+
+
 } // namespace sim
 
 } // namespace ncs
