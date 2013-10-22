@@ -30,9 +30,11 @@ def Run(argv):
     if not source:
       print "Failed to add report %s" % name
       return
-    sinks[name] = pyncs.NullSink(source)
+#sinks[name] = pyncs.NullSink(source)
+#sinks[name] = pyncs.AsciiStreamSink(source)
+    sinks[name] = pyncs.AsciiFileSink(source, "/dev/fd/0")
   print "Starting simulation."
-  for i in range(0,1000):
+  for i in range(0,100):
     simulation.step()
   del simulation
 

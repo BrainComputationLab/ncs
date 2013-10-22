@@ -50,7 +50,7 @@ bool RectangularSimulator<MType, IType>::
 update(ncs::sim::InputUpdateParameters* parameters) {
   const auto simulation_time = parameters->simulation_time;
   auto BatchIsDone = [simulation_time](Batch* b) {
-    return b->end_time > simulation_time;
+    return b->end_time < simulation_time;
   };
   for (auto batch : active_batches_) {
     if (BatchIsDone(batch)) {

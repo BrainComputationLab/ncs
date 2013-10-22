@@ -22,6 +22,7 @@ bool InputBuffer<MType>::init() {
     std::cerr << "Failed to allocate memory for InputBuffer." << std::endl;
     return false;
   }
+  setPin_("input_current", input_current_, MType);
   return true;
 }
 

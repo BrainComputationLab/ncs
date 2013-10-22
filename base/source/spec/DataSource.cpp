@@ -43,6 +43,10 @@ size_t DataSource::getNumberOfRealElements() const {
   return data_sink_->getNumberOfRealElements();
 }
 
+sim::DataType::Type DataSource::getDataType() const {
+  return data_sink_->getDataDescription()->getDataType();
+}
+
 const void* DataSource::pull() {
   release();
   pulled_buffer_ = subscription_->pull();

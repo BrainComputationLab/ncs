@@ -1,8 +1,10 @@
 #pragma once
+
 #ifndef SWIG
 #include <cstddef>
 
 #include <ncs/sim/DataSink.h>
+#include <ncs/sim/DataType.h>
 #endif // SWIG
 
 namespace ncs {
@@ -13,14 +15,15 @@ class DataSource {
 public:
 #ifndef SWIG
   DataSource(ncs::sim::DataSink* data_sink);
-#endif // SWIG
   DataSource();
   bool isValid();
   size_t getTotalNumberOfElements() const;
   size_t getNumberOfPaddingElements() const;
   size_t getNumberOfRealElements() const;
+  sim::DataType::Type getDataType() const;
   const void* pull();
   void release();
+#endif // SWIG
   ~DataSource();
 private:
   ncs::sim::DataSink* data_sink_;

@@ -1,6 +1,7 @@
 %module pyncs
 %{
 #include <include/ncs/sim/Simulation.h>
+#include <include/ncs/spec/AsciiSink.h>
 #include <include/ncs/spec/BoxGenerator.h>
 #include <include/ncs/spec/DataSource.h>
 #include <include/ncs/spec/ExactGenerator.h>
@@ -18,6 +19,7 @@
 %include <std_string.i>
 %include <std_vector.i>
 %include <include/ncs/sim/Simulation.h>
+%include <include/ncs/spec/AsciiSink.h>
 %include <include/ncs/spec/BoxGenerator.h>
 %include <include/ncs/spec/DataSource.h>
 %include <include/ncs/spec/ExactGenerator.h>

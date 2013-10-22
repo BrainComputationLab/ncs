@@ -2,11 +2,11 @@
   "#rectangular_parameters": {
     "type": "model_parameters",
     "model_type": "rectangular_current",
-    "amplitude": {"type": "exact", "value": 2.0}
+    "amplitude": {"type": "exact", "value": 18.0}
   },
   "#rectangular_group": {
     "type": "input_group",
-    "probability": 0.1,
+    "probability": 1.0,
     "neurons": "submodel_0:neuron_group_0",
     "start_time": 0.0,
     "end_time": 1.0,

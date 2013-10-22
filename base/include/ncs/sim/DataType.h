@@ -1,5 +1,7 @@
 #pragma once
+#ifndef SWIG
 #include <cstddef>
+#endif // SWIG
 
 namespace ncs {
 

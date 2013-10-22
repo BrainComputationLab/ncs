@@ -5,8 +5,7 @@
     "attribute": "neuron_voltage",
     "percentage": 1.0,
     "aliases": [
-      "submodel_0:neuron_group_0",
-      "submodel_0:neuron_group_1"
+      "submodel_0:neuron_group_0"
     ]
   }
 }
