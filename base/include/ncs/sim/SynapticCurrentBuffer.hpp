@@ -19,9 +19,14 @@ bool SynapticCurrentBuffer<MType>::clear() {
 template<DeviceType::Type MType>
 bool SynapticCurrentBuffer<MType>::init() {
   if (device_neuron_vector_size_ > 0) {
-    return Memory<MType>::malloc(current_per_neuron_,
-                                 device_neuron_vector_size_);
+    bool result = Memory<MType>::malloc(current_per_neuron_,
+                                        device_neuron_vector_size_);
+    if (!result) {
+      std::cerr << "Failed to allocate SynapticCurrentBuffer." << std::endl;
+      return false;
+    }
   }
+  setPin_("synaptic_current", current_per_neuron_, MType);
   return true;
 }
 
