@@ -33,10 +33,10 @@ AsciiStream<sim::Bit>::AsciiStream(std::ostream& stream,
       }
       const sim::Bit::Word* d = static_cast<const sim::Bit::Word*>(data);
       print_word(d[0]);
-      for (size_t i = 1; i < num_elements; ++i) {
+      for (size_t i = 1; i < num_words; ++i) {
         print_word(d[i]);
       }
-      std::cout << std::endl;
+      stream_ << std::endl;
       data_source_->release();
     }
   };

@@ -279,9 +279,11 @@ DataSink* Simulator::addReport(spec::Report* report) {
     auto gen = [&](unsigned int i) {
       return std::uniform_int_distribution<unsigned int>(0, i - 1)(rng);
     };
+#if 0
     std::random_shuffle(potential_neurons.begin(),
                         potential_neurons.end(),
                         gen);
+#endif
     size_t num_to_select =
       potential_neurons.size() * report->getPercentage();
     if (num_to_select <= 0) {
@@ -873,6 +875,21 @@ bool Simulator::initializeVectorExchanger_() {
 
 bool Simulator::initializeReporters_() {
   int machine_index = cluster_->getThisMachineIndex();
+  auto neuron_manager = report_managers_->getNeuronManager();
+  bool result = true;
+  result &= neuron_manager->addDescription("neuron_fire",
+                                           DataDescription(DataSpace::Global,
+                                                           DataType::Bit));
+  result &= neuron_manager->addSource("neuron_fire",
+                                      machine_index,
+                                      -1,
+                                      -1,
+                                      global_vector_publisher_);
+  if (!result) {
+    std::cerr << "Failed to add Simulator-wide reports." << std::endl;
+    return false;
+  }
+  
   for (int i = 0; i < devices_.size(); ++i) {
     if (!devices_[i]->initializeReporters(machine_index,
                                           i,

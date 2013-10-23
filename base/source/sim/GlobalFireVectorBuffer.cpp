@@ -10,6 +10,7 @@ GlobalFireVectorBuffer::GlobalFireVectorBuffer()
 
 void GlobalFireVectorBuffer::setFireBits(const Bit::Word* fire_bits) {
   fire_bits_ = fire_bits;
+  setPin_("neuron_fire", fire_bits_, DeviceType::CPU);
 }
 
 const Bit::Word* GlobalFireVectorBuffer::getFireBits() const {

@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 
+#include <ncs/sim/Bit.h>
 #include <ncs/sim/DataType.h>
 #include <ncs/sim/DeviceType.h>
 
@@ -24,6 +25,9 @@ public:
 private:
   std::vector<unsigned int> indices_;
 };
+
+template<>
+bool CPUExtractor<Bit>::extract(const void* source, void* destination);
 
 } // namespace sim
 

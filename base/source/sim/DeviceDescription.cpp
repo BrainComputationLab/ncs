@@ -93,7 +93,7 @@ DeviceDescription::getDevicesOnThisMachine(unsigned int enabled_device_types) {
     results.push_back(new DeviceDescription(true, power, DeviceType::CPU));
     std::clog << "YO DAWG, I HEARD YOU LIKE DEBUGGING MULTIPLE CORES" <<
       std::endl;
-    results.push_back(new DeviceDescription(true, power, DeviceType::CPU));
+    //results.push_back(new DeviceDescription(true, power, DeviceType::CPU));
   }
 
   // Get CUDA devices

@@ -21,7 +21,6 @@ def Run(argv):
     return
   print "Injecting pre-specified inputs."
   for name, group in model.input_groups.items():
-    break
     simulation.addInput(group)
   print "Injection complete."
   print "Adding reports."
@@ -33,6 +32,7 @@ def Run(argv):
       return
 #sinks[name] = pyncs.NullSink(source)
 #sinks[name] = pyncs.AsciiStreamSink(source)
+#sinks[name] = pyncs.AsciiFileSink(source, "/dev/fd/0")
     sinks[name] = pyncs.AsciiFileSink(source, "/dev/fd/0")
   print "Starting simulation."
   for i in range(0,100):
