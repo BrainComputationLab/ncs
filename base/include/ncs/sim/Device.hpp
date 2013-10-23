@@ -1,4 +1,5 @@
 #include <ncs/sim/Bit.h>
+#include <ncs/sim/Parallel.h>
 
 namespace ncs {
 
@@ -26,7 +27,8 @@ initialize(DeviceDescription* description,
            FactoryMap<NeuronSimulator>* neuron_plugins,
            FactoryMap<SynapseSimulator>* synapse_plugins,
            FactoryMap<InputSimulator>* input_plugins,
-           VectorExchanger* vector_exchanger,
+           VectorExchangeController* vector_exchange_controller,
+           GlobalVectorPublisher* global_vector_publisher,
            size_t global_neuron_vector_size,
            size_t global_neuron_vector_offset,
            SpecificPublisher<StepSignal>* signal_publisher,
@@ -50,10 +52,17 @@ initialize(DeviceDescription* description,
     return false;
   }
 
-  std::clog << "Initializing vector exchangers..." << std::endl;
-  if (!initializeVectorExchangers_(vector_exchanger,
+  std::clog << "Initializing DeviceVectorExtractor..." << std::endl;
+  if (!initializeVectorExtractor_(vector_exchange_controller,
                                    global_neuron_vector_offset)) {
-    std::cerr << "Failed to initialize vector exchangers." << std::endl;
+    std::cerr << "Failed to initialize DeviceVectorExtractor." << std::endl;
+    return false;
+  }
+
+  std::clog << "Initializing GlobalVectorInjector..." << std::endl;
+  if (!this->initializeVectorInjector_(global_vector_publisher,
+                                       global_neuron_vector_size)) {
+    std::cerr << "Failed to initialize GlobalVectorInjector." << std::endl;
     return false;
   }
 
@@ -140,17 +149,6 @@ bool Device<MType>::initializeReporters(int machine_location,
 }
 
 template<DeviceType::Type MType>
-bool Device<MType>::initializeInjector(const ExchangePublisherList& dependents,
-                                       VectorExchanger* vector_exchanger,
-                                       size_t global_neuron_vector_size) {
-  return global_vector_injector_->init(dependents,
-                                       vector_exchanger,
-                                       global_neuron_vector_size,
-                                       Constants::num_buffers);
-}
-
-
-template<DeviceType::Type MType>
 bool Device<MType>::threadInit() {
   return true;
 }
@@ -214,65 +212,20 @@ bool Device<MType>::addInput(const std::vector<Input*>& inputs,
 }
 
 template<DeviceType::Type MType>
+SpecificPublisher<Signal>* Device<MType>::getVectorExtractor() {
+  return fire_vector_extractor_;
+}
+
+template<DeviceType::Type MType>
 Device<MType>::~Device() {
-  std::vector<std::thread> kill_threads;
-  if (input_updater_) {
-    auto deleter = [input_updater_]() {
-      std::clog << "Destroying InputUpdater..." << std::endl;
-      delete input_updater_;
-      std::clog << "Destroyed InputUpdater." << std::endl;
-    };
-    kill_threads.push_back(std::thread(deleter));
-  }
-  
-  if (neuron_simulator_updater_) {
-    auto deleter = [neuron_simulator_updater_]() {
-      std::clog << "Destroying NeuronSimulatorUpdater..." << std::endl;
-      delete neuron_simulator_updater_;
-      std::clog << "Destroyed NeuronSimulatorUpdater." << std::endl;
-    };
-    kill_threads.push_back(std::thread(deleter));
-  }
-
-  std::clog << "Destroying DeviceVectorExtractor..." << std::endl;
-  if (fire_vector_extractor_) {
-    auto deleter = [fire_vector_extractor_]() {
-      std::clog << "Destroying DeviceVectorExtractor..." << std::endl;
-      delete fire_vector_extractor_;
-      std::clog << "Destroyed DeviceVectorExtractor." << std::endl;
-    };
-    kill_threads.push_back(std::thread(deleter));
-  }
-
-  if (global_vector_injector_) {
-    auto deleter = [global_vector_injector_]() {
-      std::clog << "Destroying GlobalVectorInjector..." << std::endl;
-      delete global_vector_injector_;
-      std::clog << "Destroyed GlobalVectorInjector." << std::endl;
-    };
-    kill_threads.push_back(std::thread(deleter));
-  }
-
-  if (fire_table_updater_) {
-    auto deleter = [fire_table_updater_]() {
-      std::clog << "Destroying FireTableUpdater..." << std::endl;
-      delete fire_table_updater_;
-      std::clog << "Destroyed FireTableUpdater" << std::endl;
-    };
-    kill_threads.push_back(std::thread(deleter));
-  }
-
-  if (synapse_simulator_updater_) {
-    auto deleter = [synapse_simulator_updater_]() {
-      std::clog << "Destroying SynapseSimulatorUpdater..." << std::endl;
-      delete synapse_simulator_updater_;
-      std::clog << "Destroyed SynapseSimulatorUpdater." << std::endl;
-    };
-    kill_threads.push_back(std::thread(deleter));
-  }
-  for (auto& thread : kill_threads) {
-    thread.join();
-  }
+  ParallelDelete pd;
+  pd.add(input_updater_, "InputUpdater");
+  pd.add(neuron_simulator_updater_, "NeuronSimulatorUpdater");
+  pd.add(fire_vector_extractor_, "DeviceVectorExtractor");
+  pd.add(global_vector_injector_, "GlobalVectorInjector");
+  pd.add(fire_table_updater_, "FireTableUpdater");
+  pd.add(synapse_simulator_updater_, "SynapseSimulatorUpdater");
+  pd.wait();
 }
 
 template<DeviceType::Type MType>
@@ -343,24 +296,21 @@ bool Device<MType>::initializeNeuronUpdater_() {
 
 template<DeviceType::Type MType>
 bool Device<MType>::
-initializeVectorExchangers_(VectorExchanger* vector_exchanger,
-                            size_t global_neuron_vector_offset) {
-  if (!fire_vector_extractor_->setSourcePublisher(neuron_simulator_updater_)) {
-    std::cerr << "Failed to set source publisher for DeviceVectorExtractor." <<
-      std::endl;
-    return false;
-  }
-  if (!fire_vector_extractor_->setDestinationPublisher(vector_exchanger)) {
-    std::cerr << "Failed to set destination publisher for " <<
-      "DeviceVectorExtractor." << std::endl;
-    return false;
-  }
-  if (!fire_vector_extractor_->init(global_neuron_vector_offset,
-                                    Constants::num_buffers)) {
-    std::cerr << "Failed to initialize DeviceVectorExtractor." << std::endl;
-    return false;
-  }
-  return true;
+initializeVectorExtractor_(VectorExchangeController* controller,
+                           size_t global_neuron_vector_offset) {
+  return fire_vector_extractor_->init(global_neuron_vector_offset,
+                                      Constants::num_buffers,
+                                      neuron_simulator_updater_,
+                                      controller);
+}
+
+template<DeviceType::Type MType>
+bool Device<MType>::
+initializeVectorInjector_(GlobalVectorPublisher* publisher,
+                          size_t global_vector_size) {
+  return global_vector_injector_->init(publisher,
+                                       global_vector_size,
+                                       Constants::num_buffers);
 }
 
 template<DeviceType::Type MType>

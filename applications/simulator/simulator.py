@@ -21,6 +21,7 @@ def Run(argv):
     return
   print "Injecting pre-specified inputs."
   for name, group in model.input_groups.items():
+    break
     simulation.addInput(group)
   print "Injection complete."
   print "Adding reports."

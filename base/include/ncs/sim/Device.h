@@ -31,14 +31,12 @@ public:
                FactoryMap<NeuronSimulator>* neuron_plugins,
                FactoryMap<SynapseSimulator>* synapse_plugins,
                FactoryMap<InputSimulator>* input_plugins,
-               VectorExchanger* vector_exchanger,
+               VectorExchangeController* vector_exchange_controller,
+               GlobalVectorPublisher* global_vector_publisher,
                size_t global_neuron_vector_size,
                size_t global_neuron_vector_offset,
                SpecificPublisher<StepSignal>* signal_publisher,
                const spec::SimulationParameters* simulation_parameters) = 0;
-  virtual bool initializeInjector(const ExchangePublisherList& dependents,
-                                  VectorExchanger* vector_exchanger,
-                                  size_t global_neuron_vector_size) = 0;
   virtual bool initializeReporters(int machine_location,
                                    int device_location,
                                    ReportManagers* report_managers) = 0;
@@ -50,6 +48,7 @@ public:
                         const std::string& type,
                         float start_time,
                         float end_time) = 0;
+  virtual SpecificPublisher<Signal>* getVectorExtractor() = 0;
   virtual ~DeviceBase() = 0;
 private:
 };
@@ -64,7 +63,8 @@ public:
                FactoryMap<NeuronSimulator>* neuron_plugins,
                FactoryMap<SynapseSimulator>* synapse_plugins,
                FactoryMap<InputSimulator>* input_plugins,
-               VectorExchanger* vector_exchanger,
+               VectorExchangeController* vector_exchange_controller,
+               GlobalVectorPublisher* global_vector_publisher,
                size_t global_neuron_vector_size,
                size_t global_neuron_vector_offset,
                SpecificPublisher<StepSignal>* signal_publisher,
@@ -72,9 +72,6 @@ public:
   virtual bool initializeReporters(int machine_location,
                                    int device_location,
                                    ReportManagers* report_managers);
-  virtual bool initializeInjector(const ExchangePublisherList& dependents,
-                                  VectorExchanger* vector_exchanger,
-                                  size_t global_neuron_vector_size);
   virtual bool threadInit();
   virtual bool threadDestroy();
   virtual bool start();
@@ -83,6 +80,7 @@ public:
                         const std::string& type,
                         float start_time,
                         float end_time);
+  virtual SpecificPublisher<Signal>* getVectorExtractor();
   virtual ~Device();
 private:
   bool allocateUpdaters_();
@@ -93,8 +91,10 @@ private:
                                   NeuronPluginDescription* description);
   bool initializeNeuronUpdater_();
 
-  bool initializeVectorExchangers_(VectorExchanger* vector_exchanger,
-                                   size_t global_neuron_vector_offset);
+  bool initializeVectorExtractor_(VectorExchangeController* controller,
+                                  size_t global_neuron_vector_offset);
+  bool initializeVectorInjector_(GlobalVectorPublisher* publisher,
+                                 size_t global_vector_size);
 
   bool initializeSynapses_(DeviceDescription* description,
                            FactoryMap<SynapseSimulator>* synapse_plugins);

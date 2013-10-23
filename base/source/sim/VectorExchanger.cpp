@@ -4,54 +4,6 @@ namespace ncs {
 
 namespace sim {
 
-VectorExchanger::VectorExchanger() {
-}
-
-bool VectorExchanger::init(SpecificPublisher<StepSignal>* signal_publisher,
-                           size_t global_neuron_vector_size,
-                           size_t num_buffers) {
-  global_neuron_vector_size_ = global_neuron_vector_size;
-  num_buffers_ = num_buffers;
-  for (size_t i = 0; i < num_buffers; ++i) {
-    auto buffer = 
-      new GlobalNeuronStateBuffer<DeviceType::CPU>(global_neuron_vector_size_);
-    if (!buffer->init()) {
-      std::cerr << "Failed to initialize GlobalNeuronStateBuffer<CPU>" <<
-        std::endl;
-      delete buffer;
-      return false;
-    }
-    addBlank(buffer);
-  }
-  step_subscription_ = signal_publisher->subscribe();
-  return nullptr != step_subscription_;
-}
-
-bool VectorExchanger::start() {
-  auto thread_function = [this]() {
-    while(true) {
-      auto step_signal = step_subscription_->pull();
-      if (nullptr == step_signal) {
-        return;
-      }
-      auto blank = this->getBlank();
-      this->publish(blank);
-      step_signal->release();
-    }
-  };
-  thread_ = std::thread(thread_function);
-  return true;
-}
-
-VectorExchanger::~VectorExchanger() {
-  if (thread_.joinable()) {
-    thread_.join();
-  }
-  if (step_subscription_) {
-    delete step_subscription_;
-  }
-}
-
 VectorExchangeBuffer::VectorExchangeBuffer(size_t global_vector_size)
   : global_vector_size_(global_vector_size),
     data_vector_(nullptr) {
@@ -92,6 +44,10 @@ bool VectorExchangeController::init(size_t global_vector_size,
 }
 
 bool VectorExchangeController::start() {
+  if (thread_.joinable()) {
+    std::cerr << "VectorExchangeController already started." << std::endl;
+    return false;
+  }
   auto thread_function = [this]() {
     while(true) {
       auto blank = this->getBlank();
@@ -112,7 +68,8 @@ VectorExchangeController::~VectorExchangeController() {
 }
 
 GlobalVectorPublisher::GlobalVectorPublisher()
-  : source_subscription_(nullptr) {
+  : source_subscription_(nullptr),
+    initialized_(false) {
 };
 
 bool GlobalVectorPublisher::
@@ -128,10 +85,19 @@ init(size_t global_vector_size,
     dependent_subscriptions_.push_back(dependent->subscribe());
   }
   source_subscription_ = source_publisher->subscribe();
+  initialized_ = true;
   return true;
 }
 
 bool GlobalVectorPublisher::start() {
+  if (thread_.joinable()) {
+    std::cerr << "GlobalVectorPublisher already started." << std::endl;
+    return false;
+  }
+  if (!initialized_) {
+    std::cerr << "GlobalVectorPublisher not initialized." << std::endl;
+    return false;
+  }
   auto thread_function = [this]() {
     Mailbox mailbox;
     std::vector<Signal*> dependent_signals;

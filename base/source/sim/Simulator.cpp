@@ -13,6 +13,7 @@
 #include <ncs/sim/CUDADevice.h>
 #include <ncs/sim/File.h>
 #include <ncs/sim/MPI.h>
+#include <ncs/sim/Parallel.h>
 #include <ncs/sim/PublisherExtractor.h>
 #include <ncs/sim/ReportController.h>
 #include <ncs/sim/Signal.h>
@@ -28,7 +29,8 @@ Simulator::Simulator(spec::ModelSpecification* model_specification,
     simulation_parameters_(simulation_parameters),
     communicator_(nullptr),
     neurons_(nullptr),
-    vector_exchanger_(new VectorExchanger()),
+    vector_exchange_controller_(new VectorExchangeController()),
+    global_vector_publisher_(new GlobalVectorPublisher()),
     simulation_controller_(new SimulationController()),
     report_managers_(new ReportManagers()) {
 }
@@ -151,8 +153,12 @@ bool Simulator::initialize(int argc, char** argv) {
   }
   
   std::clog << "Starting global exchangers..." << std::endl;
-  if (!vector_exchanger_->start()) {
-    std::cerr << "Failed to start global exchangers." << std::endl;
+  if (!vector_exchange_controller_->start()) {
+    std::cerr << "Failed to start VectorExchangeController." << std::endl;
+    return false;
+  }
+  if (!global_vector_publisher_->start()) {
+    std::cerr << "Failed to start GlobalVectorPublisher." << std::endl;
     return false;
   }
 
@@ -477,18 +483,12 @@ DataSink* Simulator::addReport(spec::Report* report) {
 
 Simulator::~Simulator() {
   std::clog << "Shutting down simulation." << std::endl;
-
-  std::clog << "Destroying simulation controller..." << std::endl;
-  delete simulation_controller_;
-
-  std::clog << "Destroying vector exchanger..." << std::endl;
-  delete vector_exchanger_;
-
-  std::clog << "Destroying devices..." << std::endl;
-  for (auto device : devices_) {
-    delete device;
-  }
-
+  ParallelDelete pd;
+  pd.add(simulation_controller_, "SimulationController");
+  pd.add(vector_exchange_controller_, "VectorExchangeController");
+  pd.add(global_vector_publisher_, "GlobalVectorPublisher");
+  pd.add(devices_, "Device");
+  pd.wait();
   std::clog << "Shut down complete." << std::endl;
 }
 
@@ -851,9 +851,24 @@ bool Simulator::distributeSynapses_() {
 }
 
 bool Simulator::initializeVectorExchanger_() {
-  return vector_exchanger_->init(simulation_controller_,
-                                 global_neuron_vector_size_,
-                                 Constants::num_buffers);
+  if (!vector_exchange_controller_->init(global_neuron_vector_size_,
+                                         Constants::num_buffers)) {
+    std::cerr << "Failed to initialize VectorExchangeController." << std::endl;
+    return false;
+  }
+  // Get the vector extractor for each device
+  std::vector<SpecificPublisher<Signal>*> vector_extractors;
+  for (auto device : devices_) {
+    vector_extractors.push_back(device->getVectorExtractor());
+  }
+  if (!global_vector_publisher_->init(global_neuron_vector_size_,
+                                      Constants::num_buffers,
+                                      vector_extractors,
+                                      vector_exchange_controller_)) {
+    std::cerr << "Failed to initialize GlobalVectorPublisher." << std::endl;
+    return false;
+  }
+  return true;
 }
 
 bool Simulator::initializeReporters_() {
@@ -888,6 +903,8 @@ bool Simulator::initializeDevices_() {
   auto& my_devices = cluster_->getThisMachine()->getDevices();
   std::clog << "Initializing " << my_devices.size() << " devices." <<
     std::endl;
+
+  // Instantiate all devices first
   for (size_t i = 0; i < my_devices.size(); ++i) {
     DeviceDescription* description = my_devices[i];
     DeviceBase* device = nullptr;
@@ -913,6 +930,13 @@ bool Simulator::initializeDevices_() {
       std::cerr << "Failed to create a device." << std::endl;
       return false;
     }
+    devices_.push_back(device);
+  }
+  // Initialize each device
+  for (size_t i = 0; i < my_devices.size(); ++i) {
+    DeviceDescription* description = my_devices[i];
+    DeviceBase* device = devices_[i];
+
     if (!device->threadInit()) {
       std::cerr << "Failed to initialize device thread." << std::endl;
       delete device;
@@ -922,7 +946,8 @@ bool Simulator::initializeDevices_() {
                             neuron_simulator_generators_,
                             synapse_simulator_generators_,
                             input_simulator_generators_,
-                            vector_exchanger_,
+                            vector_exchange_controller_,
+                            global_vector_publisher_,
                             global_neuron_vector_size_,
                             neuron_global_id_offsets_per_my_devices_[i],
                             simulation_controller_,
@@ -931,20 +956,11 @@ bool Simulator::initializeDevices_() {
       delete device;
       return false;
     }
-    ExchangePublisherList machine_extractors;
-    if (!device->initializeInjector(machine_extractors,
-                                    vector_exchanger_,
-                                    global_neuron_vector_size_)) {
-      std::cerr << "Failed to initialize Injector." << std::endl;
-      delete device;
-      return false;
-    }
     if (!device->threadDestroy()) {
       std::cerr << "Failed to destroy device thread." << std::endl;
       delete device;
       return false;
     }
-    devices_.push_back(device);
   }
   return true;
 }

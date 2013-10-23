@@ -81,7 +81,8 @@ private:
 
   FactoryMap<InputSimulator>* input_simulator_generators_;
 
-  VectorExchanger* vector_exchanger_;
+  VectorExchangeController* vector_exchange_controller_;
+  GlobalVectorPublisher* global_vector_publisher_;
 
   SimulationController* simulation_controller_;
 
