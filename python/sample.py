@@ -43,7 +43,7 @@ def Run(argv):
                                       "amplitude": 18.0 }, "group_2", 0.1, 1.1)
 
   data_source = sim.addReport("group_1", "neuron", "neuron_voltage", 1.0)
-  data_source.to_file("/tmp/foo.txt")
+  data_source.to_ascii_file("/tmp/foo.txt")
   sim.step(100)
   return
 
