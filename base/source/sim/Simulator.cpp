@@ -174,16 +174,25 @@ bool Simulator::step() {
 
 bool Simulator::addInput(spec::InputGroup* input) {
   // TODO(rvhoang): echo this spec to the other machines
-  spec::NeuronAlias* alias = getNeuronAlias_(input->getNeuronAlias());
-  if (nullptr == alias) {
-    std::cerr << "Failed to find neuron alias " << input->getNeuronAlias() <<
-      std::endl;
-    return false;
+  std::vector<spec::NeuronAlias*> aliases;
+  for (const auto& alias_name : input->getNeuronAliases()) {
+    auto alias = getNeuronAlias_(alias_name);
+    if (nullptr == alias) {
+      std::cerr << "Neuron alias " << alias_name << " not found." << 
+        std::endl;
+      return false;
+    }
+    aliases.push_back(alias);
+  }
+  std::vector<spec::NeuronGroup*> potential_groups;
+  for (auto alias : aliases) {
+    for (auto group : alias->getGroups()) {
+      potential_groups.push_back(group);
+    }
   }
   std::vector<Neuron*> potential_neurons;
-  if (!getNeuronsInGroups_(alias->getGroups(), &potential_neurons)) {
-    std::cerr << "Failed to get all neurons in alias " <<
-      input->getNeuronAlias() << std::endl;
+  if (!getNeuronsInGroups_(potential_groups, &potential_neurons)) {
+    std::cerr << "Failed to expand all neuron aliases." << std::endl;
     return false;
   }
 

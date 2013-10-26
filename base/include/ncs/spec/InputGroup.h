@@ -1,5 +1,4 @@
 #pragma once
-
 #include <ncs/spec/ModelParameters.h>
 
 namespace ncs {
@@ -8,13 +7,13 @@ namespace spec {
 
 class InputGroup {
 public:
-  InputGroup(const std::string& neuron_alias,
+  InputGroup(const std::vector<std::string>& neuron_alias,
              ModelParameters* model_parameters,
              double probability,
              float start_time,
              float end_time);
 
-  const std::string& getNeuronAlias() const;
+  const std::vector<std::string>& getNeuronAliases() const;
 
   ModelParameters* getModelParameters() const;
 
@@ -23,7 +22,7 @@ public:
   float getStartTime() const;
   float getEndTime() const;
 private:
-  std::string neuron_alias_;
+  std::vector<std::string> neuron_aliases_;
   ModelParameters* model_parameters_;
   double probability_;
   float start_time_;

@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 import sys
 
 import ncs
@@ -12,7 +14,8 @@ def Run(argv):
                                                   "c": -65.0,
                                                   "d": ncs.Uniform(7.0, 9.0),
                                                   "u": [-15.0, -11.0], # this also makes a uniform
-                                                  "v": ncs.Normal(-60.0, 5.0)
+                                                  "v": ncs.Normal(-60.0, 5.0),
+                                                  "threshold": 30,
                                                  }
                                                 )
   group_1 = sim.addCellGroup("group_1", 100, "label_excitatory", None) # last param is geometry
@@ -27,9 +30,17 @@ def Run(argv):
                                            { "delay": [2,5],
                                              "current": ncs.Normal(18.0,2.0)
                                            })
-  all_to_all = sim.connect(all_cells, "all_2", 1.0, flat_parameters)
-  all_to_all_2 = sim.connect([group_1, group_2], "all_2", 1.0, flat_parameters)
-  one_to_two = sim.connect(group_1, "group_2", 1.0, "flat_synapse")
+  all_to_all = sim.connect("all_to_all", all_cells, "all_2", 0.1, flat_parameters)
+  all_to_all_2 = sim.connect("all_to_all_2", 
+                             [group_1, group_2], 
+                             "all_2", 
+                             0.1, 
+                             flat_parameters)
+  one_to_two = sim.connect("one_to_two", 
+                           group_1, 
+                           "group_2", 
+                           0.1, 
+                           "flat_synapse")
 
   all_connections = sim.addConnectionAlias("all_connections", [all_to_all, one_to_two])
 
@@ -37,13 +48,17 @@ def Run(argv):
     print "Failed to initialize simulation."
     return
 
-  sim.addInput("rectangular_current", { "amplitude": 18.0 }, group_1, 0.0, 1.0)
-  sim.addInput("rectangular_current", { "amplitude": 18.0 }, "all", 0.0, 0.5)
-  sim.addInput("rectangular_pulse", { "frequency": 60.0,
-                                      "amplitude": 18.0 }, "group_2", 0.1, 1.1)
+  sim.addInput("rectangular_current", { "amplitude": 18.0 }, group_1, 0.1, 0.0, 1.0)
+  sim.addInput("rectangular_current", { "amplitude": 18.0 }, "all", 0.1, 0.0, 0.5)
+  sim.addInput("rectangular_current", { "amplitude": 18.0 }, "group_2", 0.1, 0.1, 1.1)
 
-  data_source = sim.addReport("group_1", "neuron", "neuron_voltage", 1.0)
-  data_source.to_ascii_file("/tmp/foo.txt")
+  voltage_report = sim.addReport("group_1", "neuron", "neuron_voltage", 1.0)
+  voltage_report.toAsciiFile("/tmp/foo.txt")
+
+  fire_report = sim.addReport(all_cells, "neuron", "neuron_fire", 1.0)
+  fire_report.toStdOut()
+
+  
   sim.step(100)
   return
 
