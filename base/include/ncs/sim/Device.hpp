@@ -387,6 +387,7 @@ initializeSynapseUpdater_() {
   }
   return synapse_simulator_updater_->init(synapse_simulators_,
                                           synapse_device_id_offsets_,
+                                          simulation_parameters_,
                                           neuron_device_vector_size_,
                                           Constants::num_buffers);
 }

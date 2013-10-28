@@ -34,6 +34,7 @@ template<DeviceType::Type MType>
 bool SynapseSimulatorUpdater<MType>::
 init(const std::vector<SynapseSimulator<MType>*>& simulators,
      const std::vector<size_t>& device_synaptic_vector_offsets,
+     const spec::SimulationParameters* simulation_parameters,
      size_t neuron_device_vector_size,
      size_t num_buffers) {
   if (nullptr == fire_subscription_) {
@@ -57,6 +58,7 @@ init(const std::vector<SynapseSimulator<MType>*>& simulators,
     }
     addBlank(blank);
   }
+  simulation_parameters_ = simulation_parameters;
   return true;
 }
 
@@ -66,12 +68,16 @@ bool SynapseSimulatorUpdater<MType>::start() {
     DeviceNeuronStateBuffer<MType>* neuron_state;
     SynapticFireVectorBuffer<MType>* synaptic_fire;
     SynapticCurrentBuffer<MType>* synaptic_current;
+    float simulation_time;
+    float time_step;
   };
   auto synchronizer_publisher = new SpecificPublisher<Synchronizer>();
   for (size_t i = 0; i < num_buffers_; ++i) {
     synchronizer_publisher->addBlank(new Synchronizer());
   }
   auto master_function = [this, synchronizer_publisher]() {
+    float simulation_time = 0.0f;
+    float time_step = simulation_parameters_->getTimeStep();
     Mailbox mailbox;
     while(true) {
       DeviceNeuronStateBuffer<MType>* neuron_state = nullptr;
@@ -99,6 +105,8 @@ bool SynapseSimulatorUpdater<MType>::start() {
       synchronizer->neuron_state = neuron_state;
       synchronizer->synaptic_fire = synaptic_fire;
       synchronizer->synaptic_current = synaptic_current;
+      synchronizer->time_step = time_step;
+      synchronizer->simulation_time = simulation_time;
       auto prerelease_function = [this, synchronizer]() {
         this->publish(synchronizer->synaptic_current);
         synchronizer->neuron_state->release();
@@ -106,6 +114,7 @@ bool SynapseSimulatorUpdater<MType>::start() {
       };
       synchronizer->setPrereleaseFunction(prerelease_function);
       synchronizer_publisher->publish(synchronizer);
+      simulation_time += time_step;
     }
   };
   master_thread_ = std::thread(master_function);
@@ -131,6 +140,8 @@ bool SynapseSimulatorUpdater<MType>::start() {
           synchronizer->synaptic_current->getCurrents();
         parameters.write_lock =
           synchronizer->synaptic_current->getWriteLock();
+        parameters.simulation_time = synchronizer->simulation_time;
+        parameters.time_step = synchronizer->time_step;
         if (!simulator->update(&parameters)) {
           std::cerr << "An error occurred updating a SynapseSimulator." <<
             std::endl;

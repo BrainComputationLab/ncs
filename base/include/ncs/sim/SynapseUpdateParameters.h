@@ -13,6 +13,8 @@ struct SynapseUpdateParameters {
   const float* neuron_voltage;
   float* synaptic_current;
   std::mutex* write_lock;
+  float simulation_time;
+  float time_step;
 };
 
 } // namespace sim

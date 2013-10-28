@@ -23,6 +23,7 @@ public:
   bool setNeuronStatePublisher(NeuronStatePublisher* publisher);
   bool init(const std::vector<SynapseSimulator<MType>*>& simulators,
             const std::vector<size_t>& device_synaptic_vector_offsets,
+            const spec::SimulationParameters* simulation_parameters,
             size_t neuron_device_vector_size,
             size_t num_buffers);
   bool start();
@@ -36,6 +37,7 @@ private:
   size_t num_buffers_;
   std::thread master_thread_;
   std::vector<std::thread> worker_threads_;
+  const spec::SimulationParameters* simulation_parameters_;
 };
 
 } // namespace sim
