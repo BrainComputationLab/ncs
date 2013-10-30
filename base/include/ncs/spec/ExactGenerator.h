@@ -115,6 +115,64 @@ private:
   std::string value_;
 };
 
+class ExactList : public Generator {
+public:
+  /**
+    Constructor.
+
+    @param value The list to always generate.
+  */
+  ExactList(const std::vector<Generator*>& value);
+
+  /**
+    Generates a parameter list.
+
+    @param rng A random number generator.
+    @return A list.
+  */
+  virtual std::vector<Generator*> generateList(RNG* rng);
+
+  /**
+    Returns the name of the generator. Useful for printing error messages.
+
+    @return The name of this specific generator type.
+  */
+  virtual const std::string& name() const;
+private:
+  // The string to always generate.
+  std::vector<Generator*> value_;
+};
+
+class ExactParameters : public Generator {
+public:
+  /**
+    Constructor.
+
+    @param value The list to always generate.
+  */
+  ExactParameters(ModelParameters* value);
+
+  /**
+    Generates a parameter list.
+
+    @param rng A random number generator.
+    @return A list.
+  */
+  virtual ModelParameters* generateParameters(RNG* rng);
+
+  /**
+    Returns the name of the generator. Useful for printing error messages.
+
+    @return The name of this specific generator type.
+  */
+  virtual const std::string& name() const;
+
+  virtual ~ExactParameters();
+private:
+  // The string to always generate.
+  ModelParameters* value_;
+};
+
 } // namespace spec
 
 } // namespace ncs

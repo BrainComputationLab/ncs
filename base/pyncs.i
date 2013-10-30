@@ -32,17 +32,7 @@
 %include <include/ncs/spec/UniformGenerator.h>
 
 %template(string_to_generator_map) std::map<std::string, ncs::spec::Generator*>;
-%{
-  namespace swig {
-    template<>  struct traits<ncs::spec::Generator> {
-      typedef pointer_category category;
-      static const char* type_name() {
-        return "ncs::spec::Generator";
-      }
-    };
-  }
-%}
-
+%template(generator_list) std::vector<ncs::spec::Generator*>;
 %template(string_to_model_parameters_map) std::map<std::string, ncs::spec::ModelParameters*>;
 %{
   namespace swig {

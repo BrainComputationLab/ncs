@@ -10,6 +10,8 @@ namespace ncs {
 
 namespace spec {
 
+class Generator;
+
 /**
   Contains all the parameters needed to generate some sort of model, be it
   a neuron, synapse, input, or whatever else.

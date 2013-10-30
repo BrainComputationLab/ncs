@@ -47,6 +47,38 @@ const std::string& ExactString::name() const {
   return n;
 }
 
+ExactList::ExactList(const std::vector<Generator*>& value)
+  : value_(value) {
+}
+
+std::vector<Generator*> ExactList::generateList(RNG* rng) {
+  return value_;
+}
+
+const std::string& ExactList::name() const {
+  static std::string n = "ExactList";
+  return n;
+}
+
+ExactParameters::ExactParameters(ModelParameters* value)
+  : value_(value) {
+}
+
+ModelParameters* ExactParameters::generateParameters(RNG* rng) {
+  return value_;
+}
+
+const std::string& ExactParameters::name() const {
+  static std::string n = "ExactParameters";
+  return n;
+}
+
+ExactParameters::~ExactParameters() {
+  if (value_) {
+    delete value_;
+  }
+}
+
 } // namespace spec
 
 } // namespace ncs

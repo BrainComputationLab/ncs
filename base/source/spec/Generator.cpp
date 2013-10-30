@@ -21,6 +21,17 @@ double Generator::generateDouble(RNG* rng) {
   std::terminate();
 }
 
+std::vector<Generator*> Generator::generateList(RNG* rng) {
+  std::vector<Generator*> self;
+  self.push_back(this);
+  return self;
+}
+
+ModelParameters* Generator::generateParameters(RNG* rng) {
+  std::cerr << name() << " cannot generate Parameters." << std::endl;
+  std::terminate();
+}
+
 const std::string& Generator::name() const {
   static std::string s = "Unknown";
   return s;

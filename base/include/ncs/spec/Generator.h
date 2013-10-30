@@ -7,11 +7,15 @@
 #include <string>
 #endif // SWIG
 
+#include <ncs/spec/ModelParameters.h>
+
 namespace ncs {
 
 namespace spec {
 
 typedef std::mt19937 RNG;
+
+class ModelParameters;
 
 /**
   Generates output values given a random number generator. Its exact behavior
@@ -47,6 +51,15 @@ public:
     @return A 64-bit floating point value.
   */
   virtual double generateDouble(RNG* rng);
+
+  /**
+    Generates a list of generators.
+    @param rng A random number generator.
+    @return A vector of generators.
+  */
+  virtual std::vector<Generator*> generateList(RNG* rng);
+
+  virtual ModelParameters* generateParameters(RNG* rng);
 
   /**
     Returns the name of the generator. Useful for printing error messages.

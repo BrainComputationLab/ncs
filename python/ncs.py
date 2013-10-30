@@ -97,10 +97,10 @@ class Simulation:
       print "ModelParameters %s already exists." % label
       return None
     model_parameters = self.buildModelParameters_(type_name, parameters)
-    model_parameters.thisown = False
     if not model_parameters:
       print "Failed to build ModelParameters %s" % label
       return None
+    model_parameters.thisown = False
     self.model_parameters[label] = model_parameters
     return model_parameters
 
@@ -336,30 +336,42 @@ class Simulation:
       return self.connections[connection]
     return None
 
+  def buildGenerator_(self, v):
+    if isinstance(v, float):
+      return pyncs.ExactDouble(v)
+    elif isinstance(v, int):
+      return pyncs.ExactInteger(v)
+    elif isinstance(v, list):
+      generators = [ self.buildGenerator_(x) for x in v ]
+      if not all(generators):
+        print "Failed to build a generator inside a list generator"
+        return False
+      for x in generators:
+        x.thisown = False
+      return pyncs.ExactList(pyncs.generator_list(generators))
+    elif isinstance(v, Uniform):
+      return v.build()
+    elif isinstance(v, Normal):
+      return v.build()
+    elif isinstance(v, str):
+      return pyncs.ExactString(v)
+    elif isinstance(v, dict):
+      subtype_name = ""
+      if "type" in v:
+        subtype_name = v["type"]
+      sub_parameters = self.buildModelParameters_(subtype_name, v)
+      if not sub_parameters:
+        print "Failed to build subparameters inside generator."
+        return None
+      return pyncs.ExactParameters(sub_parameters)
+    else:
+      print "Unrecognized parameter", v
+      return None
+
   def buildModelParameters_(self, type_name, parameters):
     parameter_map = {}
     for k, v in parameters.items():
-      generator = None
-      if isinstance(v, float):
-        generator = pyncs.ExactDouble(v)
-      elif isinstance(v, int):
-        generator = pyncs.ExactInteger(v)
-      elif isinstance(v, list):
-        if len(v) != 2:
-          print "list as a uniform must be exactly two values"
-          print "for parameter %s" % k
-          return None
-        uniform = Uniform(v[0], v[1])
-        generator = uniform.build()
-      elif isinstance(v, Uniform):
-        generator = v.build()
-      elif isinstance(v, Normal):
-        generator = v.build()
-      elif isinstance(v, str):
-        generator = pyncs.ExactString(v)
-      else:
-        print "Unrecognized parameter", v
-        return None
+      generator = self.buildGenerator_(v)
       if not generator:
         print "Failed to build generator for %s" % k
         return None

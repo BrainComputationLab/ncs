@@ -13,7 +13,7 @@ def Run(argv):
                                                   "b": 0.2,
                                                   "c": -65.0,
                                                   "d": ncs.Uniform(7.0, 9.0),
-                                                  "u": [-15.0, -11.0], # this also makes a uniform
+                                                  "u": ncs.Uniform(-15.0, -11.0),
                                                   "v": ncs.Normal(-60.0, 5.0),
                                                   "threshold": 30,
                                                  }
