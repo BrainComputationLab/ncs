@@ -363,6 +363,7 @@ class Simulation:
       if not sub_parameters:
         print "Failed to build subparameters inside generator."
         return None
+      sub_parameters.thisown = False
       return pyncs.ExactParameters(sub_parameters)
     else:
       print "Unrecognized parameter", v
