@@ -103,4 +103,16 @@ public:
 private:
 };
 
+template<ncs::sim::DeviceType::Type MType>
+class NCSSimulator {
+public:
+  NCSSimulator();
+  virtual bool addNeuron(ncs::sim::Neuron* neuron);
+  virtual bool initialize();
+  virtual bool initializeVoltages(float* plugin_voltages);
+  virtual bool update(ncs::sim::NeuronUpdateParameters* parameters);
+  virtual ~NCSSimulator();
+private:
+};
+
 #include "NCS.hpp"

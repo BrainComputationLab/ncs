@@ -108,5 +108,22 @@ VoltageGatedChannelSimulator<MType>::ParticleConstants::~ParticleConstants() {
   }
 }
 
+template<ncs::sim::DeviceType::Type MType>
+NCSSimulator<MType>::NCSSimulator() {
+}
 
+template<ncs::sim::DeviceType::Type MType>
+bool NCSSimulator<MType>::addNeuron(ncs::sim::Neuron* neuron) {
+}
 
+template<ncs::sim::DeviceType::Type MType>
+bool NCSSimulator<MType>::initialize() {
+}
+
+template<ncs::sim::DeviceType::Type MType>
+bool NCSSimulator<MType>::initializeVoltages(float* plugin_voltages) {
+}
+
+template<ncs::sim::DeviceType::Type MType>
+NCSSimulator<MType>::~NCSSimulator() {
+}
