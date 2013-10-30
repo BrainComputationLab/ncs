@@ -11,8 +11,8 @@ PluginLoader<PluginType>::loadPaths(const std::vector<std::string>& paths,
     if (!loadPlugin_(path, plugin_map)) {
       std::cerr << "Failed to load " << plugin_type << " from file " <<
         path << std::endl;
-      delete plugin_map;
-      return nullptr;
+      //delete plugin_map;
+      //return nullptr;
     }
   }
   return plugin_map;
