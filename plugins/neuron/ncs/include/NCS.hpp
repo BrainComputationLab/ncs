@@ -86,5 +86,27 @@ VoltageGatedChannelSimulator<MType>::ParticleConstants::ParticleConstants()
     h(nullptr) {
 }
 
+template<ncs::sim::DeviceType::Type MType>
+VoltageGatedChannelSimulator<MType>::ParticleConstants::~ParticleConstants() {
+  if (a) {
+    ncs::sim::Memory<MType>::free(a);
+  }
+  if (b) {
+    ncs::sim::Memory<MType>::free(b);
+  }
+  if (c) {
+    ncs::sim::Memory<MType>::free(c);
+  }
+  if (d) {
+    ncs::sim::Memory<MType>::free(d);
+  }
+  if (f) {
+    ncs::sim::Memory<MType>::free(f);
+  }
+  if (h) {
+    ncs::sim::Memory<MType>::free(h);
+  }
+}
+
 
 

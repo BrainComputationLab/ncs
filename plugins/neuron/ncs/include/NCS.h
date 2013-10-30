@@ -82,6 +82,7 @@ protected:
 private:
   struct ParticleConstants {
     ParticleConstants();
+    ~ParticleConstants();
     float* a;
     float* b;
     float* c;
