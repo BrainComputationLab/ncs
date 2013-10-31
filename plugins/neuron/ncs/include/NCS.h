@@ -60,13 +60,14 @@ template<ncs::sim::DeviceType::Type MType>
 class ChannelSimulator {
 public:
   ChannelSimulator();
-  bool addChannel(void* instantiator, ncs::sim::Neuron* neuron);
+  bool addChannel(void* instantiator, unsigned int neuron_plugin_id, int seed);
   bool initialize();
   virtual ~ChannelSimulator();
 protected:
   virtual bool init_() = 0;
   std::vector<void*> instantiators_;
-  std::vector<ncs::sim::Neuron*> neurons_;
+  std::vector<unsigned int> cpu_neuron_plugin_ids_;
+  std::vector<int> seeds_;
   unsigned int* neuron_plugin_ids_;
   size_t num_channels_;
 private:
@@ -100,11 +101,16 @@ template<ncs::sim::DeviceType::Type MType>
 class ChannelUpdater 
   : public ncs::sim::SpecificPublisher<ChannelCurrentBuffer<MType>> {
 public:
+  ChannelUpdater();
+  bool init(std::vector<ChannelSimulator<MType>*> simulators,
+            size_t num_neurons,
+            size_t num_buffers);
+  ~ChannelUpdater();
 private:
 };
 
 template<ncs::sim::DeviceType::Type MType>
-class NCSSimulator {
+class NCSSimulator : public ncs::sim::NeuronSimulator<MType> {
 public:
   NCSSimulator();
   virtual bool addNeuron(ncs::sim::Neuron* neuron);
@@ -113,6 +119,21 @@ public:
   virtual bool update(ncs::sim::NeuronUpdateParameters* parameters);
   virtual ~NCSSimulator();
 private:
+  std::vector<ChannelSimulator<MType>*> channel_simulators_;
+  std::vector<ncs::sim::Neuron*> neurons_;
+  size_t num_neurons_;
+  ChannelUpdater<MType>* channel_updater_;
+  typename ChannelUpdater<MType>::Subscription* channel_current_subscription_;
+
+  float* threshold_;
+  float* resting_potential_;
+  float* calcium_;
+  float* calcium_spike_increment_;
+  float* tau_calcium_;
+  float* leak_reversal_potential_;
+  float* leak_conductance_;
+  float* tau_membrane_;
+  float* r_membrane_;
 };
 
 #include "NCS.hpp"
