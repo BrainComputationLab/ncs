@@ -1,4 +1,6 @@
 #pragma once
+#include <thread>
+
 #include <ncs/sim/DataBuffer.h>
 #include <ncs/sim/NeuronSimulator.h>
 #include <ncs/spec/Generator.h>
@@ -57,10 +59,25 @@ private:
 };
 
 template<ncs::sim::DeviceType::Type MType>
+class NeuronBuffer : public ncs::sim::DataBuffer {
+public:
+  NeuronBuffer();
+  bool init(size_t num_neurons);
+  float* getVoltage();
+  float* getCalcium();
+  ~NeuronBuffer();
+private:
+  float* voltage_;
+  float* calcium_;
+};
+
+template<ncs::sim::DeviceType::Type MType>
 class ChannelSimulator {
 public:
   ChannelSimulator();
-  bool addChannel(void* instantiator, unsigned int neuron_plugin_id, int seed);
+  bool addChannel(void* instantiator,
+                  unsigned int neuron_plugin_id,
+                  int seed);
   bool initialize();
   virtual ~ChannelSimulator();
 protected:
@@ -102,15 +119,22 @@ class ChannelUpdater
   : public ncs::sim::SpecificPublisher<ChannelCurrentBuffer<MType>> {
 public:
   ChannelUpdater();
+  typedef ncs::sim::SpecificPublisher<NeuronBuffer<MType>> NeuronPublisher;
   bool init(std::vector<ChannelSimulator<MType>*> simulators,
+            NeuronPublisher* source_publisher,
             size_t num_neurons,
             size_t num_buffers);
+  bool start();
   ~ChannelUpdater();
 private:
+  std::thread thread_;
+  typename NeuronPublisher::Subscription* neuron_subscription_;
 };
 
 template<ncs::sim::DeviceType::Type MType>
-class NCSSimulator : public ncs::sim::NeuronSimulator<MType> {
+class NCSSimulator 
+  : public ncs::sim::NeuronSimulator<MType>,
+    public ncs::sim::SpecificPublisher<NeuronBuffer<MType>> {
 public:
   NCSSimulator();
   virtual bool addNeuron(ncs::sim::Neuron* neuron);

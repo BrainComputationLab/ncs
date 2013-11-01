@@ -26,6 +26,40 @@ ChannelCurrentBuffer<MType>::~ChannelCurrentBuffer() {
 }
 
 template<ncs::sim::DeviceType::Type MType>
+NeuronBuffer<MType>::NeuronBuffer()
+  : voltage_(nullptr),
+    calcium_(nullptr) {
+}
+
+template<ncs::sim::DeviceType::Type MType>
+bool NeuronBuffer<MType>::init(size_t num_neurons) {
+  bool result = true;
+  result &= ncs::sim::Memory<MType>::malloc(voltage_, num_neurons);
+  result &= ncs::sim::Memory<MType>::malloc(calcium_, num_neurons);
+  return true;
+}
+
+template<ncs::sim::DeviceType::Type MType>
+float* NeuronBuffer<MType>::getVoltage() {
+  return voltage_;
+}
+
+template<ncs::sim::DeviceType::Type MType>
+float* NeuronBuffer<MType>::getCalcium() {
+  return calcium_;
+}
+
+template<ncs::sim::DeviceType::Type MType>
+NeuronBuffer<MType>::~NeuronBuffer() {
+  if (voltage_) {
+    ncs::sim::Memory<MType>::free(voltage_);
+  }
+  if (calcium_) {
+    ncs::sim::Memory<MType>::free(calcium_);
+  }
+}
+
+template<ncs::sim::DeviceType::Type MType>
 ChannelSimulator<MType>::ChannelSimulator() 
   : neuron_plugin_ids_(nullptr) {
 }
@@ -110,6 +144,29 @@ VoltageGatedChannelSimulator<MType>::ParticleConstants::~ParticleConstants() {
 }
 
 template<ncs::sim::DeviceType::Type MType>
+ChannelUpdater<MType>::ChannelUpdater() {
+}
+
+template<ncs::sim::DeviceType::Type MType>
+bool ChannelUpdater<MType>::
+init(std::vector<ChannelSimulator<MType>*> simulators,
+     ncs::sim::SpecificPublisher<NeuronBuffer<MType>>* source_publisher,
+     size_t num_neurons,
+     size_t num_buffers) {
+}
+
+template<ncs::sim::DeviceType::Type MType>
+bool ChannelUpdater<MType>::start() {
+}
+
+template<ncs::sim::DeviceType::Type MType>
+ChannelUpdater<MType>::~ChannelUpdater() {
+  if (thread_.joinable()) {
+    thread_.join();
+  }
+}
+
+template<ncs::sim::DeviceType::Type MType>
 NCSSimulator<MType>::NCSSimulator() {
   // TODO(rvhoang): add calcium simulator here
   channel_simulators_.push_back(new VoltageGatedChannelSimulator<MType>());
@@ -123,6 +180,7 @@ NCSSimulator<MType>::NCSSimulator() {
   tau_membrane_ = nullptr;
   r_membrane_ = nullptr;
   channel_current_subscription_ = nullptr;
+  channel_updater_ = new ChannelUpdater<MType>();
 }
 
 template<ncs::sim::DeviceType::Type MType>
@@ -207,6 +265,16 @@ bool NCSSimulator<MType>::initialize() {
     return false;
   }
 
+  for (size_t i = 0; i < ncs::sim::Constants::num_buffers; ++i) {
+    auto blank = new NeuronBuffer<MType>();
+    if (!blank->init(num_neurons_)) {
+      delete blank;
+      std::cerr << "Failed to initialize NeuronBuffer." << std::endl;
+      return false;
+    }
+    addBlank(blank);
+  }
+
   for (auto simulator : channel_simulators_) {
     if (!simulator->initialize()) {
       std::cerr << "Failed to initialize channel simulator." << std::endl;
@@ -216,12 +284,12 @@ bool NCSSimulator<MType>::initialize() {
 
   channel_current_subscription_ = channel_updater_->subscribe();
   if (!channel_updater_->init(channel_simulators_,
+                              this,
                               num_neurons_,
                               ncs::sim::Constants::num_buffers)) {
     std::cerr << "Failed to initialize ChannelUpdater." << std::endl;
     return false;
   }
-
   return true;
 }
 
