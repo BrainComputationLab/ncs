@@ -4,6 +4,7 @@
 #include <ncs/sim/DataBuffer.h>
 #include <ncs/sim/NeuronSimulator.h>
 #include <ncs/spec/Generator.h>
+#include <ncs/spec/SimulationParameters.h>
 
 enum ChannelType {
   VoltageGated = 0,
@@ -27,6 +28,7 @@ struct VoltageParticleInstantiator {
   ParticleConstantsInstantiator* alpha;
   ParticleConstantsInstantiator* beta;
   ncs::spec::Generator* power;
+  ncs::spec::Generator* x_initial;
 };
 
 struct VoltageGatedInstantiator : public ChannelInstantiator {
@@ -52,10 +54,12 @@ class ChannelCurrentBuffer : public ncs::sim::DataBuffer {
 public:
   ChannelCurrentBuffer();
   bool init(size_t num_neurons);
+  void clear();
   float* getCurrent();
   ~ChannelCurrentBuffer();
 private:
   float* current_;
+  size_t num_neurons_;
 };
 
 template<ncs::sim::DeviceType::Type MType>
@@ -63,12 +67,21 @@ class NeuronBuffer : public ncs::sim::DataBuffer {
 public:
   NeuronBuffer();
   bool init(size_t num_neurons);
+  void clear();
   float* getVoltage();
   float* getCalcium();
   ~NeuronBuffer();
 private:
   float* voltage_;
   float* calcium_;
+};
+
+struct ChannelUpdateParameters {
+  const float* calcium;
+  const float* voltage;
+  float* current;
+  float simulation_time;
+  float time_step;
 };
 
 template<ncs::sim::DeviceType::Type MType>
@@ -79,6 +92,7 @@ public:
                   unsigned int neuron_plugin_id,
                   int seed);
   bool initialize();
+  virtual bool update(ChannelUpdateParameters* parameters) = 0;
   virtual ~ChannelSimulator();
 protected:
   virtual bool init_() = 0;
@@ -91,27 +105,41 @@ private:
 };
 
 template<ncs::sim::DeviceType::Type MType>
+struct ParticleConstants {
+  ParticleConstants();
+  bool init(size_t num_constants);
+  template<ncs::sim::DeviceType::Type SType>
+  bool copyFrom(ParticleConstants<SType>* source, size_t num_constants);
+  ~ParticleConstants();
+  float* a;
+  float* b;
+  float* c;
+  float* d;
+  float* f;
+  float* h;
+};
+
+template<ncs::sim::DeviceType::Type MType>
 class VoltageGatedChannelSimulator : public ChannelSimulator<MType> {
 public:
   VoltageGatedChannelSimulator();
+  virtual bool update(ChannelUpdateParameters* parameters);
   virtual ~VoltageGatedChannelSimulator();
 protected:
   virtual bool init_();
 private:
-  struct ParticleConstants {
-    ParticleConstants();
-    ~ParticleConstants();
-    float* a;
-    float* b;
-    float* c;
-    float* d;
-    float* f;
-    float* h;
-  };
-  ParticleConstants alpha_;
-  ParticleConstants beta_;
+  size_t num_particles_;
+  ParticleConstants<MType> alpha_;
+  ParticleConstants<MType> beta_;
   unsigned int* particle_indices_;
+
+  // num_particles_ in size
+  float* x_;
+  float* power_;
+
+  // num_channels_ in size
   float* particle_products_;
+  float* conductance_;
 };
 
 template<ncs::sim::DeviceType::Type MType>
@@ -122,13 +150,18 @@ public:
   typedef ncs::sim::SpecificPublisher<NeuronBuffer<MType>> NeuronPublisher;
   bool init(std::vector<ChannelSimulator<MType>*> simulators,
             NeuronPublisher* source_publisher,
+            const ncs::spec::SimulationParameters* simulation_parameters,
             size_t num_neurons,
             size_t num_buffers);
   bool start();
   ~ChannelUpdater();
 private:
-  std::thread thread_;
+  std::vector<ChannelSimulator<MType>*> simulators_;
+  std::thread master_thread_;
+  std::vector<std::thread> worker_threads_;
   typename NeuronPublisher::Subscription* neuron_subscription_;
+  size_t num_buffers_;
+  const ncs::spec::SimulationParameters* simulation_parameters_;
 };
 
 template<ncs::sim::DeviceType::Type MType>
@@ -138,7 +171,7 @@ class NCSSimulator
 public:
   NCSSimulator();
   virtual bool addNeuron(ncs::sim::Neuron* neuron);
-  virtual bool initialize();
+  virtual bool initialize(const ncs::spec::SimulationParameters* parameters);
   virtual bool initializeVoltages(float* plugin_voltages);
   virtual bool update(ncs::sim::NeuronUpdateParameters* parameters);
   virtual ~NCSSimulator();
@@ -148,6 +181,7 @@ private:
   size_t num_neurons_;
   ChannelUpdater<MType>* channel_updater_;
   typename ChannelUpdater<MType>::Subscription* channel_current_subscription_;
+  typename  NCSSimulator<MType>::Subscription* state_subscription_;
 
   float* threshold_;
   float* resting_potential_;

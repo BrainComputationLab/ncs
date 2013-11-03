@@ -19,7 +19,7 @@ class IzhikevichSimulator : public ncs::sim::NeuronSimulator<MType> {
 public:
   IzhikevichSimulator();
   virtual bool addNeuron(ncs::sim::Neuron* neuron);
-  virtual bool initialize();
+  virtual bool initialize(const ncs::spec::SimulationParameters* parameters);
   virtual bool initializeVoltages(float* plugin_voltages);
   virtual bool update(ncs::sim::NeuronUpdateParameters* parameters);
   virtual ~IzhikevichSimulator();

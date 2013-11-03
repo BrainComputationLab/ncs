@@ -7,10 +7,16 @@ ChannelCurrentBuffer<MType>::ChannelCurrentBuffer()
 
 template<ncs::sim::DeviceType::Type MType>
 bool ChannelCurrentBuffer<MType>::init(size_t num_neurons) {
-  if (num_neurons > 0) {
-    return ncs::sim::Memory<MType>::malloc(current_, num_neurons);
+  num_neurons_ = num_neurons;
+  if (num_neurons_ > 0) {
+    return ncs::sim::Memory<MType>::malloc(current_, num_neurons_);
   }
   return true;
+}
+
+template<ncs::sim::DeviceType::Type MType>
+void ChannelCurrentBuffer<MType>::clear() {
+  ncs::sim::Memory<MType>::zero(current_, num_neurons_);
 }
 
 template<ncs::sim::DeviceType::Type MType>
@@ -101,18 +107,112 @@ ChannelSimulator<MType>::~ChannelSimulator() {
 
 template<ncs::sim::DeviceType::Type MType>
 VoltageGatedChannelSimulator<MType>::VoltageGatedChannelSimulator() {
+  particle_indices_ = nullptr;
+  particle_products_ = nullptr;
 }
 
 template<ncs::sim::DeviceType::Type MType>
 VoltageGatedChannelSimulator<MType>::~VoltageGatedChannelSimulator() {
+  if (particle_indices_) {
+    ncs::sim::Memory<MType>::free(particle_indices_);
+  }
+  if (particle_products_) {
+    ncs::sim::Memory<MType>::free(particle_products_);
+  }
+}
+
+template<ncs::sim::DeviceType::Type MType>
+bool VoltageGatedChannelSimulator<MType>::
+update(ChannelUpdateParameters* parameters) {
+  std::cout << "STUB: VoltageGatedChannelSimulator<MType>::update()" <<
+    std::endl;
+  return true;
 }
 
 template<ncs::sim::DeviceType::Type MType>
 bool VoltageGatedChannelSimulator<MType>::init_() {
+  num_particles_ = 0;
+  for (auto i : this->instantiators_) {
+    auto instantiator = (VoltageGatedInstantiator*)i;
+    num_particles_ += instantiator->particles.size();
+  }
+  const auto CPU = ncs::sim::DeviceType::CPU;
+  ParticleConstants<CPU> alpha;
+  ParticleConstants<CPU> beta;
+  if (!alpha.init(num_particles_) ||
+      !beta.init(num_particles_)) {
+    std::cerr << "Failed to allocate CPU particle buffer." << std::endl;
+    return false;
+  }
+  if (!alpha_.init(num_particles_) || !beta_.init(num_particles_)) {
+    std::cerr << "Failed to allocate MType particle buffer." << std::endl;
+    return false;
+  }
+  bool result = true;
+  result &= ncs::sim::Memory<MType>::malloc(conductance_, this->num_channels_);
+  result &= ncs::sim::Memory<MType>::malloc(particle_products_, 
+                                            this->num_channels_);
+  result &= ncs::sim::Memory<MType>::malloc(x_, num_particles_);
+  result &= ncs::sim::Memory<MType>::malloc(power_, num_particles_);
+  result &= ncs::sim::Memory<MType>::malloc(particle_indices_, num_particles_);
+  if (!result) {
+    std::cerr << "Failed to allocate MType memory." << std::endl;
+    return false;
+  }
+  auto generate_particle = [=](ParticleConstants<CPU>& p,
+                               void* instantiator,
+                               ncs::spec::RNG* rng,
+                               size_t index) {
+    auto pci = (ParticleConstantsInstantiator*)instantiator;
+    p.a[index] = pci->a->generateDouble(rng);
+    p.b[index] = pci->b->generateDouble(rng);
+    p.c[index] = pci->c->generateDouble(rng);
+    p.d[index] = pci->d->generateDouble(rng);
+    p.f[index] = pci->f->generateDouble(rng);
+    p.h[index] = pci->h->generateDouble(rng);
+  };
+  float* conductance = new float[this->num_channels_];
+  float* x = new float[num_particles_];
+  float* power = new float[num_particles_];
+  unsigned int* particle_indices = new unsigned int[num_particles_];
+  for (size_t i = 0, particle_index = 0; i < this->num_channels_; ++i) {
+    auto ci = (VoltageGatedInstantiator*)(this->instantiators_[i]);
+    auto seed = this->seeds_[i];
+    ncs::spec::RNG rng(seed);
+    conductance[i] = ci->conductance->generateDouble(&rng);
+    for (auto particle_instantiator : ci->particles) {
+      auto vpi = (VoltageParticleInstantiator*)particle_instantiator;
+      power[particle_index] = vpi->power->generateDouble(&rng);
+      x[particle_index] = vpi->x_initial->generateDouble(&rng);
+      generate_particle(alpha, vpi->alpha, &rng, particle_index);
+      generate_particle(beta, vpi->beta, &rng, particle_index);
+      particle_indices_[particle_index] = i;
+      ++particle_index;
+    }
+  }
+
+  using ncs::sim::mem::copy;
+  result &= copy<MType, CPU>(conductance_, conductance, this->num_channels_);
+  result &= copy<MType, CPU>(x_, x, num_particles_);
+  result &= copy<MType, CPU>(power_, power, num_particles_);
+  result &= copy<MType, CPU>(particle_indices_,
+                             particle_indices, 
+                             num_particles_);
+  result &= alpha_.copyFrom(&alpha, num_particles_);
+  result &= beta_.copyFrom(&beta, num_particles_);
+  delete [] conductance;
+  delete [] x;
+  delete [] power;
+  if (!result) {
+    std::cerr << "Failed to transfer data to device." << std::endl;
+    return false;
+  }
+
+  return true;
 }
 
 template<ncs::sim::DeviceType::Type MType>
-VoltageGatedChannelSimulator<MType>::ParticleConstants::ParticleConstants()
+ParticleConstants<MType>::ParticleConstants()
   : a(nullptr),
     b(nullptr),
     c(nullptr),
@@ -122,7 +222,33 @@ VoltageGatedChannelSimulator<MType>::ParticleConstants::ParticleConstants()
 }
 
 template<ncs::sim::DeviceType::Type MType>
-VoltageGatedChannelSimulator<MType>::ParticleConstants::~ParticleConstants() {
+bool ParticleConstants<MType>::init(size_t num_constants) {
+  bool result = true;
+  result &= ncs::sim::Memory<MType>::malloc(a, num_constants);
+  result &= ncs::sim::Memory<MType>::malloc(b, num_constants);
+  result &= ncs::sim::Memory<MType>::malloc(c, num_constants);
+  result &= ncs::sim::Memory<MType>::malloc(d, num_constants);
+  result &= ncs::sim::Memory<MType>::malloc(f, num_constants);
+  result &= ncs::sim::Memory<MType>::malloc(h, num_constants);
+  return result;
+}
+
+template<ncs::sim::DeviceType::Type MType>
+template<ncs::sim::DeviceType::Type SType>
+bool ParticleConstants<MType>::copyFrom(ParticleConstants<SType>* source,
+                                        size_t num_constants) {
+  bool result = true;
+  result &= ncs::sim::mem::copy<MType, SType>(a, source->a, num_constants);
+  result &= ncs::sim::mem::copy<MType, SType>(b, source->b, num_constants);
+  result &= ncs::sim::mem::copy<MType, SType>(c, source->c, num_constants);
+  result &= ncs::sim::mem::copy<MType, SType>(d, source->d, num_constants);
+  result &= ncs::sim::mem::copy<MType, SType>(f, source->f, num_constants);
+  result &= ncs::sim::mem::copy<MType, SType>(h, source->h, num_constants);
+  return result;
+}
+
+template<ncs::sim::DeviceType::Type MType>
+ParticleConstants<MType>::~ParticleConstants() {
   if (a) {
     ncs::sim::Memory<MType>::free(a);
   }
@@ -145,24 +271,110 @@ VoltageGatedChannelSimulator<MType>::ParticleConstants::~ParticleConstants() {
 
 template<ncs::sim::DeviceType::Type MType>
 ChannelUpdater<MType>::ChannelUpdater() {
+  neuron_subscription_ = nullptr;
 }
 
 template<ncs::sim::DeviceType::Type MType>
 bool ChannelUpdater<MType>::
 init(std::vector<ChannelSimulator<MType>*> simulators,
      ncs::sim::SpecificPublisher<NeuronBuffer<MType>>* source_publisher,
+     const ncs::spec::SimulationParameters* simulation_parameters,
      size_t num_neurons,
      size_t num_buffers) {
+  simulators_ = simulators;
+  simulation_parameters_ = simulation_parameters_;
+  num_buffers_ = num_buffers;
+  for (size_t i = 0; i < num_buffers_; ++i) {
+    auto blank = new ChannelCurrentBuffer<MType>();
+    if (!blank->init(num_neurons)) {
+      std::cerr << "Failed to initialize ChannelCurrentBuffer." << std::endl;
+      delete blank;
+      return false;
+    }
+    addBlank(blank);
+  }
+  neuron_subscription_ = source_publisher->subscribe();
+  return true;
 }
 
 template<ncs::sim::DeviceType::Type MType>
 bool ChannelUpdater<MType>::start() {
+  struct Synchronizer : public ncs::sim::DataBuffer {
+    ChannelCurrentBuffer<MType>* channel_buffer;
+    NeuronBuffer<MType>* neuron_buffer;
+    float simulation_time;
+    float time_step;
+  };
+  auto synchronizer_publisher = 
+    new ncs::sim::SpecificPublisher<Synchronizer>();
+  for (size_t i = 0; i < num_buffers_; ++i) {
+    auto blank = new Synchronizer();
+    synchronizer_publisher->addBlank(blank);
+  }
+  auto master_function = [this, synchronizer_publisher]() {
+    float simulation_time = 0.0f;
+    float time_step = simulation_parameters_->getTimeStep();
+    while(true) {
+      NeuronBuffer<MType>* neuron_buffer = neuron_subscription_->pull();
+      if (nullptr == neuron_buffer) {
+        delete synchronizer_publisher;
+        return;
+      }
+      auto channel_buffer = this->getBlank();
+      channel_buffer->clear();
+      auto synchronizer = synchronizer_publisher->getBlank();
+      synchronizer->channel_buffer = channel_buffer;
+      synchronizer->neuron_buffer = neuron_buffer;
+      synchronizer->simulation_time = simulation_time;
+      synchronizer->time_step = time_step;
+      auto prerelease_function = [this, channel_buffer, neuron_buffer]() {
+        neuron_buffer->release();
+        this->publish(channel_buffer);
+      };
+      synchronizer->setPrereleaseFunction(prerelease_function);
+      synchronizer_publisher->publish(synchronizer);
+      simulation_time += time_step;
+    }
+  };
+  master_thread_ = std::thread(master_function);
+
+  for (auto simulator : simulators_) {
+    auto subscription = synchronizer_publisher->subscribe();
+    auto worker_function = [subscription, simulator]() {
+      while(true) {
+        auto synchronizer = subscription->pull();
+        if (nullptr == synchronizer) {
+          delete subscription;
+          return;
+        }
+        ChannelUpdateParameters parameters;
+        parameters.calcium = synchronizer->neuron_buffer->getCalcium();
+        parameters.voltage = synchronizer->neuron_buffer->getVoltage();
+        parameters.current = synchronizer->channel_buffer->getCurrent();
+        parameters.simulation_time = synchronizer->simulation_time;
+        parameters.time_step = synchronizer->time_step;
+        if (!simulator->update(&parameters)) {
+          std::cerr << "An error occurred updating a ChannelSimulator." <<
+            std::endl;
+        }
+        synchronizer->release();
+      }
+    };
+    worker_threads_.push_back(std::thread(worker_function));
+  }
+  return true;
 }
 
 template<ncs::sim::DeviceType::Type MType>
 ChannelUpdater<MType>::~ChannelUpdater() {
-  if (thread_.joinable()) {
-    thread_.join();
+  if (master_thread_.joinable()) {
+    master_thread_.join();
+  }
+  for (auto& thread : worker_threads_) {
+    thread.join();
+  }
+  if (neuron_subscription_) {
+    delete neuron_subscription_;
   }
 }
 
@@ -190,7 +402,8 @@ bool NCSSimulator<MType>::addNeuron(ncs::sim::Neuron* neuron) {
 }
 
 template<ncs::sim::DeviceType::Type MType>
-bool NCSSimulator<MType>::initialize() {
+bool NCSSimulator<MType>::
+initialize(const ncs::spec::SimulationParameters* simulation_parameters) {
   using ncs::sim::Memory;
   num_neurons_ = neurons_.size();
   bool result = true;
@@ -285,20 +498,44 @@ bool NCSSimulator<MType>::initialize() {
   channel_current_subscription_ = channel_updater_->subscribe();
   if (!channel_updater_->init(channel_simulators_,
                               this,
+                              simulation_parameters,
                               num_neurons_,
                               ncs::sim::Constants::num_buffers)) {
     std::cerr << "Failed to initialize ChannelUpdater." << std::endl;
     return false;
   }
+
+  if (!channel_updater_->start()) {
+    std::cerr << "Failed to start ChannelUpdater." << std::endl;
+    return false;
+  }
+
+  state_subscription_ = this->subscribe();
   return true;
 }
 
 template<ncs::sim::DeviceType::Type MType>
 bool NCSSimulator<MType>::initializeVoltages(float* plugin_voltages) {
+  return ncs::sim::mem::copy<MType, MType>(plugin_voltages, 
+                                           resting_potential_, 
+                                           num_neurons_);
+}
+
+template<ncs::sim::DeviceType::Type MType>
+bool NCSSimulator<MType>::
+update(ncs::sim::NeuronUpdateParameters* parameters) {
+  std::cout << "STUB: NCSSimulator<MType>::update()" << std::endl;
+  return true;
 }
 
 template<ncs::sim::DeviceType::Type MType>
 NCSSimulator<MType>::~NCSSimulator() {
+  if (state_subscription_) {
+    delete state_subscription_;
+  }
+  if (channel_current_subscription_) {
+    delete channel_current_subscription_;
+  }
   auto if_delete = [](float* p) {
     if (p) {
       ncs::sim::Memory<MType>::free(p);

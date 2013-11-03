@@ -277,7 +277,7 @@ initializeNeuronSimulator_(NeuronSimulator<MType>* simulator,
       return false;
     }
   }
-  if (!simulator->initialize()) {
+  if (!simulator->initialize(simulation_parameters_)) {
     std::cerr << "Failed to initialize a neuron simulator." << std::endl;
     return false;
   }

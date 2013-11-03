@@ -29,7 +29,8 @@ addNeuron(ncs::sim::Neuron* neuron) {
 }
 
 template<ncs::sim::DeviceType::Type MType>
-bool IzhikevichSimulator<MType>::initialize() {
+bool IzhikevichSimulator<MType>::
+initialize(const ncs::spec::SimulationParameters* simulation_parameters) {
   using ncs::sim::Memory;
   num_neurons_ = buffers_->a.size();
   bool result = true;
