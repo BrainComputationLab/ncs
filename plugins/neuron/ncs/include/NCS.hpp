@@ -150,11 +150,15 @@ bool VoltageGatedChannelSimulator<MType>::init_() {
   }
   bool result = true;
   result &= ncs::sim::Memory<MType>::malloc(conductance_, this->num_channels_);
+  result &= ncs::sim::Memory<MType>::malloc(reversal_potential_, 
+                                            this->num_channels_);
   result &= ncs::sim::Memory<MType>::malloc(particle_products_, 
                                             this->num_channels_);
   result &= ncs::sim::Memory<MType>::malloc(x_, num_particles_);
   result &= ncs::sim::Memory<MType>::malloc(power_, num_particles_);
   result &= ncs::sim::Memory<MType>::malloc(particle_indices_, num_particles_);
+  result &= ncs::sim::Memory<MType>::malloc(neuron_id_by_particle_,
+                                            num_particles_);
   if (!result) {
     std::cerr << "Failed to allocate MType memory." << std::endl;
     return false;
@@ -172,37 +176,49 @@ bool VoltageGatedChannelSimulator<MType>::init_() {
     p.h[index] = pci->h->generateDouble(rng);
   };
   float* conductance = new float[this->num_channels_];
+  float* reversal_potential = new float[this->num_channels_];
   float* x = new float[num_particles_];
   float* power = new float[num_particles_];
   unsigned int* particle_indices = new unsigned int[num_particles_];
+  unsigned int* neuron_id_by_particle = new unsigned int[num_particles_];
   for (size_t i = 0, particle_index = 0; i < this->num_channels_; ++i) {
     auto ci = (VoltageGatedInstantiator*)(this->instantiators_[i]);
     auto seed = this->seeds_[i];
     ncs::spec::RNG rng(seed);
     conductance[i] = ci->conductance->generateDouble(&rng);
+    reversal_potential[i] = ci->reversal_potential->generateDouble(&rng);
     for (auto particle_instantiator : ci->particles) {
       auto vpi = (VoltageParticleInstantiator*)particle_instantiator;
       power[particle_index] = vpi->power->generateDouble(&rng);
       x[particle_index] = vpi->x_initial->generateDouble(&rng);
       generate_particle(alpha, vpi->alpha, &rng, particle_index);
       generate_particle(beta, vpi->beta, &rng, particle_index);
-      particle_indices_[particle_index] = i;
+      particle_indices[particle_index] = i;
+      neuron_id_by_particle[particle_index] = this->cpu_neuron_plugin_ids_[i];
       ++particle_index;
     }
   }
 
   using ncs::sim::mem::copy;
   result &= copy<MType, CPU>(conductance_, conductance, this->num_channels_);
+  result &= copy<MType, CPU>(reversal_potential_, 
+                             reversal_potential, 
+                             this->num_channels_);
   result &= copy<MType, CPU>(x_, x, num_particles_);
   result &= copy<MType, CPU>(power_, power, num_particles_);
   result &= copy<MType, CPU>(particle_indices_,
                              particle_indices, 
+                             num_particles_);
+  result &= copy<MType, CPU>(neuron_id_by_particle_,
+                             neuron_id_by_particle,
                              num_particles_);
   result &= alpha_.copyFrom(&alpha, num_particles_);
   result &= beta_.copyFrom(&beta, num_particles_);
   delete [] conductance;
   delete [] x;
   delete [] power;
+  delete [] particle_indices;
+  delete [] neuron_id_by_particle;
   if (!result) {
     std::cerr << "Failed to transfer data to device." << std::endl;
     return false;
@@ -353,6 +369,7 @@ bool ChannelUpdater<MType>::start() {
         parameters.current = synchronizer->channel_buffer->getCurrent();
         parameters.simulation_time = synchronizer->simulation_time;
         parameters.time_step = synchronizer->time_step;
+        parameters.write_lock = synchronizer->channel_buffer->getWriteLock();
         if (!simulator->update(&parameters)) {
           std::cerr << "An error occurred updating a ChannelSimulator." <<
             std::endl;

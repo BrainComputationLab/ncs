@@ -33,6 +33,7 @@ struct VoltageParticleInstantiator {
 
 struct VoltageGatedInstantiator : public ChannelInstantiator {
   ncs::spec::Generator* conductance;
+  ncs::spec::Generator* reversal_potential;
   std::vector<VoltageParticleInstantiator*> particles;
 };
 
@@ -82,6 +83,7 @@ struct ChannelUpdateParameters {
   float* current;
   float simulation_time;
   float time_step;
+  std::mutex* write_lock;
 };
 
 template<ncs::sim::DeviceType::Type MType>
@@ -132,6 +134,7 @@ private:
   ParticleConstants<MType> alpha_;
   ParticleConstants<MType> beta_;
   unsigned int* particle_indices_;
+  unsigned int* neuron_id_by_particle_;
 
   // num_particles_ in size
   float* x_;
@@ -140,7 +143,16 @@ private:
   // num_channels_ in size
   float* particle_products_;
   float* conductance_;
+  float* reversal_potential_;
 };
+
+template<>
+bool VoltageGatedChannelSimulator<ncs::sim::DeviceType::CPU>::
+update(ChannelUpdateParameters* parameters);
+
+template<>
+bool VoltageGatedChannelSimulator<ncs::sim::DeviceType::CUDA>::
+update(ChannelUpdateParameters* parameters);
 
 template<ncs::sim::DeviceType::Type MType>
 class ChannelUpdater 

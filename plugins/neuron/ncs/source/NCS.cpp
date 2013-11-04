@@ -1,3 +1,4 @@
+#include <ncs/sim/AtomicWriter.h>
 #include <ncs/sim/FactoryMap.h>
 
 #include "NCS.h"
@@ -80,6 +81,15 @@ createVoltageGatedInstantiator(ncs::spec::ModelParameters* parameters) {
   VoltageGatedInstantiator* vgi = new VoltageGatedInstantiator();
   bool result = true;
   result &= set(vgi->conductance, "conductance", parameters, "voltage_gated");
+  result &= set(vgi->reversal_potential, 
+                "reversal_potential", 
+                parameters, 
+                "voltage_gated");
+  if (!result) {
+    std::cerr << "Failed to initialize VoltageGatedInstantiator." << std::endl;
+    delete vgi;
+    return nullptr;
+  }
   auto particle_generator = parameters->getGenerator("particles");
   if (nullptr == particle_generator) {
     std::cerr << "voltage_gated channels require at least one " <<
@@ -189,6 +199,86 @@ ncs::sim::NeuronSimulator<MType>* createSimulator() {
 }
 
 template<>
+bool VoltageGatedChannelSimulator<ncs::sim::DeviceType::CPU>::
+update(ChannelUpdateParameters* parameters) {
+  // Set all particle products to 1
+  for (size_t i = 0; i < num_channels_; ++i) {
+    particle_products_[i] = 1.0f;
+  }
+  // For each particle, update x
+  auto solve = [](float a,
+                  float b,
+                  float c, 
+                  float d, 
+                  float f, 
+                  float h, 
+                  float v) {
+    float numerator = a + b * v;
+    float exponent = 0.0f;
+    if (f != 0.0f) {
+      exponent = (v + d) / f;
+    }
+    float denominator = c + h * exp(exponent);
+    if (denominator == 0.0f) {
+      return 0.0f;
+    }
+    return numerator / denominator;
+  };
+  const float* neuron_voltages = parameters->voltage;
+  float time_step = parameters->time_step;
+  for (size_t i = 0; i < num_particles_; ++i) {
+    float voltage = neuron_voltages[neuron_id_by_particle_[i]];
+    float alpha = solve(alpha_.a[i],
+                        alpha_.b[i],
+                        alpha_.c[i],
+                        alpha_.d[i],
+                        alpha_.f[i],
+                        alpha_.h[i],
+                        voltage);
+    float beta = solve(beta_.a[i],
+                       beta_.b[i],
+                       beta_.c[i],
+                       beta_.d[i],
+                       beta_.f[i],
+                       beta_.h[i],
+                       voltage);
+    float tau = 1.0f / (alpha + beta);
+    float x_0 = alpha * tau;
+    float dt_over_tau = time_step / tau;
+    float x = x_[i];
+    x = (1.0f - dt_over_tau) * x + dt_over_tau * x_0;
+    x_[i] = x;
+    particle_products_[particle_indices_[i]] *= pow(x, power_[i]);
+  }
+  // Atomically add current
+  float* channel_current = parameters->current;
+  ncs::sim::AtomicWriter<float> current_adder;
+  for (size_t i = 0; i < num_channels_; ++i) {
+    unsigned int neuron_plugin_id = neuron_plugin_ids_[i];
+    float reversal_potential = reversal_potential_[i];
+    float voltage = neuron_voltages[neuron_plugin_id];
+    float conductance = conductance_[i];
+    float current = particle_products_[i] * 
+                    conductance * 
+                    (voltage - reversal_potential) * -1.0;
+    current_adder.write(channel_current + neuron_plugin_id, current);
+  }
+  std::unique_lock<std::mutex> lock(*(parameters->write_lock));
+  current_adder.commit(ncs::sim::AtomicWriter<float>::Add);
+  lock.unlock();
+  return true;
+}
+
+
+template<>
+bool VoltageGatedChannelSimulator<ncs::sim::DeviceType::CUDA>::
+update(ChannelUpdateParameters* parameters) {
+  std::cout << "STUB: VoltageGatedChannelSimulator<CUDA>::update()" <<
+    std::endl;
+  return true;
+}
+
+template<>
 bool NCSSimulator<ncs::sim::DeviceType::CPU>::
 update(ncs::sim::NeuronUpdateParameters* parameters) {
   using ncs::sim::Bit;
@@ -228,6 +318,7 @@ update(ncs::sim::NeuronUpdateParameters* parameters) {
     float current_voltage = resting_voltage + 
                         dv * voltage_persistence_[i] + 
                         total_current * dt_capacitance_[i];
+    std::cout << dt_capacitance_[i] << std::endl;
     float calcium = old_calcium[i];
     float threshold = threshold_[i];
     if (previous_voltage <= threshold && current_voltage > threshold) {
