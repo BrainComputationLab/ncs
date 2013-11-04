@@ -27,12 +27,17 @@ bool FireTable<MType>::init() {
   }
   size_t words_per_vector = getWordsPerVector();
   size_t total_words = words_per_vector * num_rows_;
-  bool result = Memory<MType>::malloc(table_, total_words);
+  bool result = true;
+  if (total_words > 0) {
+    result &= Memory<MType>::malloc(table_, total_words);
+  }
   if (!result) {
     std::cerr << "Failed to allocate FireTable." << std::endl;
     return false;
   }
-  result &= Memory<MType>::zero(table_, total_words);
+  if (total_words > 0) {
+    result &= Memory<MType>::zero(table_, total_words);
+  }
   if (!result) {
     std::cerr << "Failed to zero FireTable." << std::endl;
     return false;

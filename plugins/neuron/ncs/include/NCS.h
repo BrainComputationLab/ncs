@@ -33,7 +33,7 @@ struct VoltageParticleInstantiator {
 
 struct VoltageGatedInstantiator : public ChannelInstantiator {
   ncs::spec::Generator* conductance;
-  std::vector<VoltageGatedInstantiator*> particles;
+  std::vector<VoltageParticleInstantiator*> particles;
 };
 
 struct NeuronInstantiator {
@@ -192,6 +192,17 @@ private:
   float* leak_conductance_;
   float* tau_membrane_;
   float* r_membrane_;
+
+  float* voltage_persistence_;
+  float* dt_capacitance_;
 };
+
+template<>
+bool NCSSimulator<ncs::sim::DeviceType::CPU>::
+update(ncs::sim::NeuronUpdateParameters* parameters);
+
+template<>
+bool NCSSimulator<ncs::sim::DeviceType::CUDA>::
+update(ncs::sim::NeuronUpdateParameters* parameters);
 
 #include "NCS.hpp"

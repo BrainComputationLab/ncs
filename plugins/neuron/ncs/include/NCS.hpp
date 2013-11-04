@@ -282,7 +282,7 @@ init(std::vector<ChannelSimulator<MType>*> simulators,
      size_t num_neurons,
      size_t num_buffers) {
   simulators_ = simulators;
-  simulation_parameters_ = simulation_parameters_;
+  simulation_parameters_ = simulation_parameters;
   num_buffers_ = num_buffers;
   for (size_t i = 0; i < num_buffers_; ++i) {
     auto blank = new ChannelCurrentBuffer<MType>();
@@ -416,6 +416,8 @@ initialize(const ncs::spec::SimulationParameters* simulation_parameters) {
   result &= Memory<MType>::malloc(leak_conductance_, num_neurons_);
   result &= Memory<MType>::malloc(tau_membrane_, num_neurons_);
   result &= Memory<MType>::malloc(r_membrane_, num_neurons_);
+  result &= Memory<MType>::malloc(voltage_persistence_, num_neurons_);
+  result &= Memory<MType>::malloc(dt_capacitance_, num_neurons_);
   if (!result) {
     std::cerr << "Failed to allocate memory." << std::endl;
     return false;
@@ -448,6 +450,25 @@ initialize(const ncs::spec::SimulationParameters* simulation_parameters) {
       channel_simulators_[channel_type]->addChannel(channel, plugin_index, rng());
     }
   }
+  
+  float time_step = simulation_parameters->getTimeStep();
+  float* voltage_persistence = new float[num_neurons_];
+  float* dt_capacitance = new float[num_neurons_];
+  for (size_t i = 0; i < num_neurons_; ++i) {
+    float tau = tau_membrane[i];
+    if (tau != 0.0f) {
+      voltage_persistence[i] = 1.0f - time_step / tau;
+    } else {
+      voltage_persistence[i] = 1.0f;
+    }
+    float resistance = r_membrane[i];
+    if (resistance != 0.0f) {
+      float capacitance = tau / resistance;
+      dt_capacitance[i] = time_step / capacitance;
+    } else {
+      dt_capacitance[i] = 0.0f;
+    }
+  }
 
   const auto CPU = ncs::sim::DeviceType::CPU;
   auto copy = [num_neurons_](float* src, float* dst) {
@@ -462,6 +483,8 @@ initialize(const ncs::spec::SimulationParameters* simulation_parameters) {
   result &= copy(leak_conductance, leak_conductance_);
   result &= copy(tau_membrane, tau_membrane_);
   result &= copy(r_membrane, r_membrane_);
+  result &= copy(voltage_persistence, voltage_persistence_);
+  result &= copy(dt_capacitance, dt_capacitance_);
 
   delete [] threshold;
   delete [] resting_potential;
@@ -472,6 +495,8 @@ initialize(const ncs::spec::SimulationParameters* simulation_parameters) {
   delete [] leak_conductance;
   delete [] tau_membrane;
   delete [] r_membrane;
+  delete [] voltage_persistence;
+  delete [] dt_capacitance;
 
   if (!result) {
     std::cerr << "Failed to copy data." << std::endl;
@@ -511,6 +536,16 @@ initialize(const ncs::spec::SimulationParameters* simulation_parameters) {
   }
 
   state_subscription_ = this->subscribe();
+
+  // Publish the initial state
+  auto blank = this->getBlank();
+  ncs::sim::mem::copy<MType, MType>(blank->getCalcium(), 
+                                    calcium_,
+                                    num_neurons_);
+  ncs::sim::mem::copy<MType, MType>(blank->getVoltage(),
+                                    resting_potential_,
+                                    num_neurons_);
+  this->publish(blank);
   return true;
 }
 

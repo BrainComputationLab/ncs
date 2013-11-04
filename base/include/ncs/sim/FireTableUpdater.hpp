@@ -41,21 +41,25 @@ init(FireTable<MType>* table,
     addBlank(blank);
   }
   bool result = true;
-  result &= Memory<MType>::malloc(global_presynaptic_neuron_ids_,
-                                  global_presynaptic_neuron_ids.size());
-  result &= Memory<MType>::malloc(synaptic_delays_, synaptic_delays.size());
+  if (!global_presynaptic_neuron_ids.empty()) {
+    result &= Memory<MType>::malloc(global_presynaptic_neuron_ids_,
+                                    global_presynaptic_neuron_ids.size());
+    result &= Memory<MType>::malloc(synaptic_delays_, synaptic_delays.size());
+  }
   if (!result) {
     std::cerr << "Failed to allocate synaptic data arrays." << std::endl;
     return false;
   }
-  result &= 
-    mem::copy<MType, DeviceType::CPU>(global_presynaptic_neuron_ids_,
-                                      global_presynaptic_neuron_ids.data(),
-                                      global_presynaptic_neuron_ids.size());
-  result &=
-    mem::copy<MType, DeviceType::CPU>(synaptic_delays_,
-                                      synaptic_delays.data(),
-                                      synaptic_delays.size());
+  if (!global_presynaptic_neuron_ids.empty()) {
+    result &= 
+      mem::copy<MType, DeviceType::CPU>(global_presynaptic_neuron_ids_,
+                                        global_presynaptic_neuron_ids.data(),
+                                        global_presynaptic_neuron_ids.size());
+    result &=
+      mem::copy<MType, DeviceType::CPU>(synaptic_delays_,
+                                        synaptic_delays.data(),
+                                        synaptic_delays.size());
+  }
   if (!result) {
     std::cerr << "Failed to copy synaptic data arrays." << std::endl;
     return false;

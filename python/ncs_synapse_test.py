@@ -13,7 +13,7 @@ def Run(argv):
                                                   "b": 0.2,
                                                   "c": -65.0,
                                                   "d": ncs.Uniform(7.0, 9.0),
-                                                  "u": [-15.0, -11.0], # this also makes a uniform
+                                                  "u": ncs.Uniform(-15.0, -11.0), 
                                                   "v": ncs.Normal(-60.0, 5.0),
                                                   "threshold": 30,
                                                  }
@@ -41,7 +41,7 @@ def Run(argv):
                                              "reversal_potential": 0.0,
                                              "tau_postsynaptic_conductance": 0.025,
                                              "psg_waveform_duration": 0.05,
-                                             "delay": [1,5],
+                                             "delay": ncs.Uniform(1,5),
                                            })
   all_to_all = sim.connect("all_to_all", all_cells, "all_2", 0.1, flat_parameters)
   all_to_all_2 = sim.connect("all_to_all_2", 

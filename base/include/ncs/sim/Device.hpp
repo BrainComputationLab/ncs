@@ -434,7 +434,7 @@ initializeInputUpdater_(SpecificPublisher<StepSignal>* signal_publisher,
                         FactoryMap<InputSimulator>* input_plugins) {
   if (!input_updater_->init(signal_publisher,
                             Constants::num_buffers,
-                            device_synaptic_vector_size_,
+                            neuron_device_vector_size_,
                             input_plugins,
                             simulation_parameters_)) {
     std::cerr << "Failed to initialize InputUpdater." << std::endl;
