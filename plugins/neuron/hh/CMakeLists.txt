@@ -1,4 +1,4 @@
-PROJECT(neuron_ncs)
+PROJECT(neuron_hh)
 AUX_SOURCE_DIRECTORY(source "source")
 INCLUDE_DIRECTORIES("include" ${NCS_INCLUDES})
 

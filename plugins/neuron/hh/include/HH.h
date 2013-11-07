@@ -7,8 +7,7 @@
 #include <ncs/spec/SimulationParameters.h>
 
 enum ChannelType {
-  VoltageGated = 0,
-  CalciumGated = 1
+  VoltageGated = 0
 };
 
 struct ChannelInstantiator {
@@ -40,13 +39,7 @@ struct VoltageGatedInstantiator : public ChannelInstantiator {
 struct NeuronInstantiator {
   ncs::spec::Generator* threshold;
   ncs::spec::Generator* resting_potential;
-  ncs::spec::Generator* calcium;
-  ncs::spec::Generator* calcium_spike_increment;
-  ncs::spec::Generator* tau_calcium;
-  ncs::spec::Generator* leak_reversal_potential;
-  ncs::spec::Generator* leak_conductance;
-  ncs::spec::Generator* tau_membrane;
-  ncs::spec::Generator* r_membrane;
+  ncs::spec::Generator* capacitance;
   std::vector<ChannelInstantiator*> channels;
 };
 
@@ -72,15 +65,12 @@ public:
   bool init(size_t num_neurons);
   void clear();
   float* getVoltage();
-  float* getCalcium();
   ~NeuronBuffer();
 private:
   float* voltage_;
-  float* calcium_;
 };
 
 struct ChannelUpdateParameters {
-  const float* calcium;
   const float* voltage;
   float* current;
   float* reversal_current;
@@ -180,45 +170,36 @@ private:
 };
 
 template<ncs::sim::DeviceType::Type MType>
-class NCSSimulator 
+class HHSimulator 
   : public ncs::sim::NeuronSimulator<MType>,
     public ncs::sim::SpecificPublisher<NeuronBuffer<MType>> {
 public:
-  NCSSimulator();
+  HHSimulator();
   virtual bool addNeuron(ncs::sim::Neuron* neuron);
   virtual bool initialize(const ncs::spec::SimulationParameters* parameters);
   virtual bool initializeVoltages(float* plugin_voltages);
   virtual bool update(ncs::sim::NeuronUpdateParameters* parameters);
-  virtual ~NCSSimulator();
+  virtual ~HHSimulator();
 private:
   std::vector<ChannelSimulator<MType>*> channel_simulators_;
   std::vector<ncs::sim::Neuron*> neurons_;
   size_t num_neurons_;
   ChannelUpdater<MType>* channel_updater_;
   typename ChannelUpdater<MType>::Subscription* channel_current_subscription_;
-  typename  NCSSimulator<MType>::Subscription* state_subscription_;
+  typename  HHSimulator<MType>::Subscription* state_subscription_;
   const ncs::spec::SimulationParameters* simulation_parameters_;
 
   float* threshold_;
   float* resting_potential_;
-  float* calcium_;
-  float* calcium_spike_increment_;
-  float* tau_calcium_;
-  float* leak_reversal_potential_;
-  float* leak_conductance_;
-  float* tau_membrane_;
-  float* r_membrane_;
-
-  float* voltage_persistence_;
-  float* dt_capacitance_;
+  float* capacitance_;
 };
 
 template<>
-bool NCSSimulator<ncs::sim::DeviceType::CPU>::
+bool HHSimulator<ncs::sim::DeviceType::CPU>::
 update(ncs::sim::NeuronUpdateParameters* parameters);
 
 template<>
-bool NCSSimulator<ncs::sim::DeviceType::CUDA>::
+bool HHSimulator<ncs::sim::DeviceType::CUDA>::
 update(ncs::sim::NeuronUpdateParameters* parameters);
 
-#include "NCS.hpp"
+#include "HH.hpp"

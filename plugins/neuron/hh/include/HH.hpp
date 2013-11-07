@@ -46,15 +46,13 @@ ChannelCurrentBuffer<MType>::~ChannelCurrentBuffer() {
 
 template<ncs::sim::DeviceType::Type MType>
 NeuronBuffer<MType>::NeuronBuffer()
-  : voltage_(nullptr),
-    calcium_(nullptr) {
+  : voltage_(nullptr) {
 }
 
 template<ncs::sim::DeviceType::Type MType>
 bool NeuronBuffer<MType>::init(size_t num_neurons) {
   bool result = true;
   result &= ncs::sim::Memory<MType>::malloc(voltage_, num_neurons);
-  result &= ncs::sim::Memory<MType>::malloc(calcium_, num_neurons);
   return true;
 }
 
@@ -64,17 +62,9 @@ float* NeuronBuffer<MType>::getVoltage() {
 }
 
 template<ncs::sim::DeviceType::Type MType>
-float* NeuronBuffer<MType>::getCalcium() {
-  return calcium_;
-}
-
-template<ncs::sim::DeviceType::Type MType>
 NeuronBuffer<MType>::~NeuronBuffer() {
   if (voltage_) {
     ncs::sim::Memory<MType>::free(voltage_);
-  }
-  if (calcium_) {
-    ncs::sim::Memory<MType>::free(calcium_);
   }
 }
 
@@ -377,7 +367,6 @@ bool ChannelUpdater<MType>::start() {
           return;
         }
         ChannelUpdateParameters parameters;
-        parameters.calcium = synchronizer->neuron_buffer->getCalcium();
         parameters.voltage = synchronizer->neuron_buffer->getVoltage();
         parameters.current = synchronizer->channel_buffer->getCurrent();
         parameters.reversal_current = synchronizer->channel_buffer->getReversalCurrent();
@@ -410,30 +399,23 @@ ChannelUpdater<MType>::~ChannelUpdater() {
 }
 
 template<ncs::sim::DeviceType::Type MType>
-NCSSimulator<MType>::NCSSimulator() {
-  // TODO(rvhoang): add calcium simulator here
+HHSimulator<MType>::HHSimulator() {
   channel_simulators_.push_back(new VoltageGatedChannelSimulator<MType>());
   threshold_ = nullptr;
   resting_potential_ = nullptr;
-  calcium_ = nullptr;
-  calcium_spike_increment_ = nullptr;
-  tau_calcium_ = nullptr;
-  leak_reversal_potential_ = nullptr;
-  leak_conductance_ = nullptr;
-  tau_membrane_ = nullptr;
-  r_membrane_ = nullptr;
+  capacitance_ = nullptr;
   channel_current_subscription_ = nullptr;
   channel_updater_ = new ChannelUpdater<MType>();
 }
 
 template<ncs::sim::DeviceType::Type MType>
-bool NCSSimulator<MType>::addNeuron(ncs::sim::Neuron* neuron) {
+bool HHSimulator<MType>::addNeuron(ncs::sim::Neuron* neuron) {
   neurons_.push_back(neuron);
   return true;
 }
 
 template<ncs::sim::DeviceType::Type MType>
-bool NCSSimulator<MType>::
+bool HHSimulator<MType>::
 initialize(const ncs::spec::SimulationParameters* simulation_parameters) {
   simulation_parameters_ = simulation_parameters;
   using ncs::sim::Memory;
@@ -441,15 +423,7 @@ initialize(const ncs::spec::SimulationParameters* simulation_parameters) {
   bool result = true;
   result &= Memory<MType>::malloc(threshold_, num_neurons_);
   result &= Memory<MType>::malloc(resting_potential_, num_neurons_);
-  result &= Memory<MType>::malloc(calcium_, num_neurons_);
-  result &= Memory<MType>::malloc(calcium_spike_increment_, num_neurons_);
-  result &= Memory<MType>::malloc(tau_calcium_, num_neurons_);
-  result &= Memory<MType>::malloc(leak_reversal_potential_, num_neurons_);
-  result &= Memory<MType>::malloc(leak_conductance_, num_neurons_);
-  result &= Memory<MType>::malloc(tau_membrane_, num_neurons_);
-  result &= Memory<MType>::malloc(r_membrane_, num_neurons_);
-  result &= Memory<MType>::malloc(voltage_persistence_, num_neurons_);
-  result &= Memory<MType>::malloc(dt_capacitance_, num_neurons_);
+  result &= Memory<MType>::malloc(capacitance_, num_neurons_);
   if (!result) {
     std::cerr << "Failed to allocate memory." << std::endl;
     return false;
@@ -457,49 +431,17 @@ initialize(const ncs::spec::SimulationParameters* simulation_parameters) {
   
   float* threshold = new float[num_neurons_];
   float* resting_potential = new float[num_neurons_];
-  float* calcium = new float[num_neurons_];
-  float* calcium_spike_increment = new float[num_neurons_];
-  float* tau_calcium = new float[num_neurons_];
-  float* leak_reversal_potential = new float[num_neurons_];
-  float* leak_conductance = new float[num_neurons_];
-  float* tau_membrane = new float[num_neurons_];
-  float* r_membrane = new float[num_neurons_];
+  float* capacitance = new float[num_neurons_];
   for (size_t i = 0; i < num_neurons_; ++i) {
     NeuronInstantiator* ni = (NeuronInstantiator*)(neurons_[i]->instantiator);
     ncs::spec::RNG rng(neurons_[i]->seed);
     threshold[i] = ni->threshold->generateDouble(&rng);
     resting_potential[i] = ni->resting_potential->generateDouble(&rng);
-    calcium[i] = ni->calcium->generateDouble(&rng);
-    calcium_spike_increment[i] = ni->calcium_spike_increment->generateDouble(&rng);
-    tau_calcium[i] = ni->tau_calcium->generateDouble(&rng);
-    leak_reversal_potential[i] = ni->leak_reversal_potential->generateDouble(&rng);
-    leak_conductance[i] = ni->leak_conductance->generateDouble(&rng);
-    tau_membrane[i] = ni->tau_membrane->generateDouble(&rng);
-    r_membrane[i] = ni->r_membrane->generateDouble(&rng);
+    capacitance[i] = ni->capacitance->generateDouble(&rng);
     unsigned int plugin_index = neurons_[i]->id.plugin;
     for (auto channel : ni->channels) {
       auto channel_type = channel->type;
       channel_simulators_[channel_type]->addChannel(channel, plugin_index, rng());
-    }
-  }
-  
-  float time_step = simulation_parameters->getTimeStep();
-  time_step = 1.00f;
-  float* voltage_persistence = new float[num_neurons_];
-  float* dt_capacitance = new float[num_neurons_];
-  for (size_t i = 0; i < num_neurons_; ++i) {
-    float tau = tau_membrane[i];
-    if (tau != 0.0f) {
-      voltage_persistence[i] = 1.0f - time_step / tau;
-    } else {
-      voltage_persistence[i] = 1.0f;
-    }
-    float resistance = r_membrane[i];
-    if (resistance != 0.0f) {
-      float capacitance = tau * 1000.0f / resistance;
-      dt_capacitance[i] = time_step * 1000.0f / capacitance;
-    } else {
-      dt_capacitance[i] = 0.0f;
     }
   }
 
@@ -509,27 +451,11 @@ initialize(const ncs::spec::SimulationParameters* simulation_parameters) {
   };
   result &= copy(threshold, threshold_);
   result &= copy(resting_potential, resting_potential_);
-  result &= copy(calcium, calcium_);
-  result &= copy(calcium_spike_increment, calcium_spike_increment_);
-  result &= copy(tau_calcium, tau_calcium_);
-  result &= copy(leak_reversal_potential, leak_reversal_potential_);
-  result &= copy(leak_conductance, leak_conductance_);
-  result &= copy(tau_membrane, tau_membrane_);
-  result &= copy(r_membrane, r_membrane_);
-  result &= copy(voltage_persistence, voltage_persistence_);
-  result &= copy(dt_capacitance, dt_capacitance_);
+  result &= copy(capacitance, capacitance_);
 
   delete [] threshold;
   delete [] resting_potential;
-  delete [] calcium;
-  delete [] calcium_spike_increment;
-  delete [] tau_calcium;
-  delete [] leak_reversal_potential;
-  delete [] leak_conductance;
-  delete [] tau_membrane;
-  delete [] r_membrane;
-  delete [] voltage_persistence;
-  delete [] dt_capacitance;
+  delete [] capacitance;
 
   if (!result) {
     std::cerr << "Failed to copy data." << std::endl;
@@ -572,9 +498,6 @@ initialize(const ncs::spec::SimulationParameters* simulation_parameters) {
 
   // Publish the initial state
   auto blank = this->getBlank();
-  ncs::sim::mem::copy<MType, MType>(blank->getCalcium(), 
-                                    calcium_,
-                                    num_neurons_);
   ncs::sim::mem::copy<MType, MType>(blank->getVoltage(),
                                     resting_potential_,
                                     num_neurons_);
@@ -583,21 +506,21 @@ initialize(const ncs::spec::SimulationParameters* simulation_parameters) {
 }
 
 template<ncs::sim::DeviceType::Type MType>
-bool NCSSimulator<MType>::initializeVoltages(float* plugin_voltages) {
+bool HHSimulator<MType>::initializeVoltages(float* plugin_voltages) {
   return ncs::sim::mem::copy<MType, MType>(plugin_voltages, 
                                            resting_potential_, 
                                            num_neurons_);
 }
 
 template<ncs::sim::DeviceType::Type MType>
-bool NCSSimulator<MType>::
+bool HHSimulator<MType>::
 update(ncs::sim::NeuronUpdateParameters* parameters) {
-  std::cout << "STUB: NCSSimulator<MType>::update()" << std::endl;
+  std::cout << "STUB: HHSimulator<MType>::update()" << std::endl;
   return true;
 }
 
 template<ncs::sim::DeviceType::Type MType>
-NCSSimulator<MType>::~NCSSimulator() {
+HHSimulator<MType>::~HHSimulator() {
   if (state_subscription_) {
     delete state_subscription_;
   }
@@ -611,11 +534,5 @@ NCSSimulator<MType>::~NCSSimulator() {
   };
   if_delete(threshold_);
   if_delete(resting_potential_);
-  if_delete(calcium_);
-  if_delete(calcium_spike_increment_);
-  if_delete(tau_calcium_);
-  if_delete(leak_reversal_potential_);
-  if_delete(leak_conductance_);
-  if_delete(tau_membrane_);
-  if_delete(r_membrane_);
+  if_delete(capacitance_);
 }

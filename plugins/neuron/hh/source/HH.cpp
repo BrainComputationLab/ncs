@@ -1,7 +1,7 @@
 #include <ncs/sim/AtomicWriter.h>
 #include <ncs/sim/FactoryMap.h>
 
-#include "NCS.h"
+#include "HH.h"
 
 bool set(ncs::spec::Generator*& target,
          const std::string& parameter,
@@ -122,8 +122,6 @@ ChannelInstantiator*
 createChannelInstantiator(ncs::spec::ModelParameters* parameters) {
    if (parameters->getType() == "voltage_gated") {
      return createVoltageGatedInstantiator(parameters);
-   } else if (parameters->getType() == "calcium_gated") {
-     // TODO (rvhoang):
    } else {
      std::cerr << "Unknown channel type " << parameters->getType() <<
        std::endl;
@@ -137,39 +135,15 @@ void* createInstantiator(ncs::spec::ModelParameters* parameters) {
   result &= set(instantiator->threshold,
                 "threshold",
                 parameters,
-                "ncs neuron");
+                "hh neuron");
   result &= set(instantiator->resting_potential,
                 "resting_potential", 
                 parameters,
-                "ncs neuron");
-  result &= set(instantiator->calcium, 
-                "calcium", 
+                "hh neuron");
+  result &= set(instantiator->capacitance, 
+                "capacitance", 
                 parameters,
-                "ncs neuron");
-  result &= set(instantiator->calcium_spike_increment, 
-                "calcium_spike_increment", 
-                parameters,
-                "ncs neuron");
-  result &= set(instantiator->tau_calcium, 
-                "tau_calcium", 
-                parameters,
-                "ncs neuron");
-  result &= set(instantiator->leak_reversal_potential, 
-                "leak_reversal_potential", 
-                parameters,
-                "ncs neuron");
-  result &= set(instantiator->leak_conductance, 
-                "leak_conductance", 
-                parameters,
-                "ncs neuron");
-  result &= set(instantiator->tau_membrane, 
-                "tau_membrane", 
-                parameters,
-                "ncs neuron");
-  result &= set(instantiator->r_membrane, 
-                "r_membrane", 
-                parameters,
-                "ncs neuron");
+                "hh neuron");
   if (!result) {
     std::cerr << "Failed to build ncs instantiator." << std::endl;
     delete instantiator;
@@ -195,7 +169,7 @@ void* createInstantiator(ncs::spec::ModelParameters* parameters) {
 
 template<ncs::sim::DeviceType::Type MType>
 ncs::sim::NeuronSimulator<MType>* createSimulator() {
-  return new NCSSimulator<MType>();
+  return new HHSimulator<MType>();
 }
 
 template<>
@@ -288,10 +262,21 @@ update(ChannelUpdateParameters* parameters) {
 }
 
 template<>
-bool NCSSimulator<ncs::sim::DeviceType::CPU>::
+bool HHSimulator<ncs::sim::DeviceType::CPU>::
 update(ncs::sim::NeuronUpdateParameters* parameters) {
   using ncs::sim::Bit;
   float dt = simulation_parameters_->getTimeStep() * 1000.0f;
+  const float* input_current = parameters->input_current;
+  const float* clamp_voltage_values = parameters->clamp_voltage_values;
+  const Bit::Word* voltage_clamp_bits = parameters->voltage_clamp_bits;
+  const float* synaptic_current = parameters->synaptic_current;
+  float* device_neuron_voltage = parameters->neuron_voltage;
+  Bit::Word* neuron_fire_bits = parameters->neuron_fire_bits;
+  unsigned int num_words = Bit::num_words(num_neurons_);
+  for (unsigned int i = 0; i < num_words; ++i) {
+    neuron_fire_bits[i] = 0;
+  }
+  float step_dt = 0.5f * dt;
   for (size_t i = 0; i < 2; ++i) {
     ncs::sim::Mailbox mailbox;
     ChannelCurrentBuffer<ncs::sim::DeviceType::CPU>* channel_buffer = nullptr;
@@ -305,38 +290,25 @@ update(ncs::sim::NeuronUpdateParameters* parameters) {
     const float* channel_current = channel_buffer->getCurrent();
     const float* channel_reversal_current = channel_buffer->getReversalCurrent();
     const float* old_voltage = state_buffer->getVoltage();
-    const float* old_calcium = state_buffer->getCalcium();
-    const float* input_current = parameters->input_current;
-    const float* clamp_voltage_values = parameters->clamp_voltage_values;
-    const Bit::Word* voltage_clamp_bits = parameters->voltage_clamp_bits;
-    const float* synaptic_current = parameters->synaptic_current;
-    float* device_neuron_voltage = parameters->neuron_voltage;
-    float* new_calcium = blank->getCalcium();
     float* new_voltage = blank->getVoltage();
-    Bit::Word* neuron_fire_bits = parameters->neuron_fire_bits;
-    unsigned int num_words = Bit::num_words(num_neurons_);
-    for (unsigned int i = 0; i < num_words; ++i) {
-      neuron_fire_bits[i] = 0;
-    }
     for (unsigned int i = 0; i < num_neurons_; ++i) {
       float previous_voltage = old_voltage[i];
       float external_current = input_current[i] + synaptic_current[i];
       float reversal_current = channel_reversal_current[i];
       float forward_current = channel_current[i];
-      float A = reversal_current + external_current;
-      float B = channel_current[i];
-      float e_minus_B_dt = exp(-B * dt * 0.5f);
+      float capacitance = capacitance_[i];
+      float one_over_capacitance = 1.0f / capacitance;
+      float A = reversal_current + external_current * one_over_capacitance;
+      float B = channel_current[i] * one_over_capacitance;
+      float e_minus_B_dt = exp(-B * step_dt);
       float current_voltage = 
-        previous_voltage * e_minus_B_dt + A / B * (1.0 - e_minus_B_dt);
-      float calcium = old_calcium[i];
+        previous_voltage * e_minus_B_dt + A / B * (1.0f - e_minus_B_dt);
       float threshold = threshold_[i];
       if (previous_voltage <= threshold && current_voltage > threshold) {
-        calcium += calcium_spike_increment_[i];
         unsigned int word_index = Bit::word(i);
         Bit::Word mask = Bit::mask(i);
         neuron_fire_bits[word_index] |= mask;
       }
-      new_calcium[i] = calcium;
       new_voltage[i] = current_voltage;
       device_neuron_voltage[i] = current_voltage;
     }
@@ -348,9 +320,9 @@ update(ncs::sim::NeuronUpdateParameters* parameters) {
 }
 
 template<>
-bool NCSSimulator<ncs::sim::DeviceType::CUDA>::
+bool HHSimulator<ncs::sim::DeviceType::CUDA>::
 update(ncs::sim::NeuronUpdateParameters* parameters) {
-  std::cout << "STUB: NCSSimulator<CUDA>::update" << std::endl;
+  std::cout << "STUB: HHSimulator<CUDA>::update" << std::endl;
   return true;
 }
 
@@ -358,17 +330,17 @@ extern "C" {
 
 bool load(ncs::sim::FactoryMap<ncs::sim::NeuronSimulator>* plugin_map) {
   bool result = true;
-  result &= plugin_map->registerInstantiator("ncs", createInstantiator);
+  result &= plugin_map->registerInstantiator("hh", createInstantiator);
 
   const auto CPU = ncs::sim::DeviceType::CPU;
   result &= 
-    plugin_map->registerCPUProducer("ncs", createSimulator<CPU>);
+    plugin_map->registerCPUProducer("hh", createSimulator<CPU>);
 
-#ifdef NCS_CUDA
+#ifdef HH_CUDA
   const auto CUDA = ncs::sim::DeviceType::CUDA;
   result &=
-    plugin_map->registerCUDAProducer("ncs", createSimulator<CUDA>);
-#endif // NCS_CUDA
+    plugin_map->registerCUDAProducer("hh", createSimulator<CUDA>);
+#endif // HH_CUDA
   return result;
 }
   
