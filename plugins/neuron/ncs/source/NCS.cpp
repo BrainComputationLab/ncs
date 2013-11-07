@@ -226,6 +226,7 @@ update(ChannelUpdateParameters* parameters) {
   };
   const float* neuron_voltages = parameters->voltage;
   float time_step = parameters->time_step;
+  float dt = time_step * 1000.0f * 0.5f;
   for (size_t i = 0; i < num_particles_; ++i) {
     float voltage = neuron_voltages[neuron_id_by_particle_[i]];
     float alpha = solve(alpha_.a[i],
@@ -244,14 +245,19 @@ update(ChannelUpdateParameters* parameters) {
                        voltage);
     float tau = 1.0f / (alpha + beta);
     float x_0 = alpha * tau;
-    float dt_over_tau = time_step / tau;
     float x = x_[i];
-    x = (1.0f - dt_over_tau) * x + dt_over_tau * x_0;
+    float A = x_0 / tau;
+    float B = 1.0f / tau;
+    float e_minus_B_dt = exp(-B * dt);
+    x = x * e_minus_B_dt + A / B * (1.0 - e_minus_B_dt);
+    if (x < 0.0f) x = 0.0f;
+    if (x > 1.0f) x = 1.0f;
     x_[i] = x;
     particle_products_[particle_indices_[i]] *= pow(x, power_[i]);
   }
   // Atomically add current
   float* channel_current = parameters->current;
+  float* channel_reversal_current = parameters->reversal_current;
   ncs::sim::AtomicWriter<float> current_adder;
   for (size_t i = 0; i < num_channels_; ++i) {
     unsigned int neuron_plugin_id = neuron_plugin_ids_[i];
@@ -261,7 +267,10 @@ update(ChannelUpdateParameters* parameters) {
     float current = particle_products_[i] * 
                     conductance * 
                     (voltage - reversal_potential) * -1.0;
-    current_adder.write(channel_current + neuron_plugin_id, current);
+    float forward_current = particle_products_[i] * conductance;
+    current_adder.write(channel_current + neuron_plugin_id, forward_current);
+    float reversal_current = particle_products_[i] * conductance * reversal_potential;
+    current_adder.write(channel_reversal_current + neuron_plugin_id, reversal_current);
   }
   std::unique_lock<std::mutex> lock(*(parameters->write_lock));
   current_adder.commit(ncs::sim::AtomicWriter<float>::Add);
@@ -282,58 +291,59 @@ template<>
 bool NCSSimulator<ncs::sim::DeviceType::CPU>::
 update(ncs::sim::NeuronUpdateParameters* parameters) {
   using ncs::sim::Bit;
-  ncs::sim::Mailbox mailbox;
-  ChannelCurrentBuffer<ncs::sim::DeviceType::CPU>* channel_buffer = nullptr;
-  channel_current_subscription_->pull(&channel_buffer, &mailbox);
-  NeuronBuffer<ncs::sim::DeviceType::CPU>* state_buffer = nullptr;
-  state_subscription_->pull(&state_buffer, &mailbox);
-  if (!mailbox.wait(&channel_buffer, &state_buffer)) {
-    return true;
-  }
-  auto blank = this->getBlank();
-  const float* channel_current = channel_buffer->getCurrent();
-  const float* old_voltage = state_buffer->getVoltage();
-  const float* old_calcium = state_buffer->getCalcium();
-  const float* input_current = parameters->input_current;
-  const float* clamp_voltage_values = parameters->clamp_voltage_values;
-  const Bit::Word* voltage_clamp_bits = parameters->voltage_clamp_bits;
-  const float* synaptic_current = parameters->synaptic_current;
-  float* device_neuron_voltage = parameters->neuron_voltage;
-  float* new_calcium = blank->getCalcium();
-  float* new_voltage = blank->getVoltage();
-  Bit::Word* neuron_fire_bits = parameters->neuron_fire_bits;
-  unsigned int num_words = Bit::num_words(num_neurons_);
-  for (unsigned int i = 0; i < num_words; ++i) {
-    neuron_fire_bits[i] = 0;
-  }
-  for (unsigned int i = 0; i < num_neurons_; ++i) {
-    float previous_voltage = old_voltage[i];
-    float total_current = input_current[i] +
-                          synaptic_current[i] + 
-                          channel_current[i];
-    total_current -= leak_conductance_[i] * 
-                     (previous_voltage - leak_reversal_potential_[i]);
-    float resting_voltage = resting_potential_[i];
-    float dv = previous_voltage - resting_voltage;
-    float current_voltage = resting_voltage + 
-                        dv * voltage_persistence_[i] + 
-                        total_current * dt_capacitance_[i];
-    std::cout << dt_capacitance_[i] << std::endl;
-    float calcium = old_calcium[i];
-    float threshold = threshold_[i];
-    if (previous_voltage <= threshold && current_voltage > threshold) {
-      calcium += calcium_spike_increment_[i];
-      unsigned int word_index = Bit::word(i);
-      Bit::Word mask = Bit::mask(i);
-      neuron_fire_bits[word_index] |= mask;
+  float dt = simulation_parameters_->getTimeStep() * 1000.0f;
+  for (size_t i = 0; i < 2; ++i) {
+    ncs::sim::Mailbox mailbox;
+    ChannelCurrentBuffer<ncs::sim::DeviceType::CPU>* channel_buffer = nullptr;
+    channel_current_subscription_->pull(&channel_buffer, &mailbox);
+    NeuronBuffer<ncs::sim::DeviceType::CPU>* state_buffer = nullptr;
+    state_subscription_->pull(&state_buffer, &mailbox);
+    if (!mailbox.wait(&channel_buffer, &state_buffer)) {
+      return true;
     }
-    new_calcium[i] = calcium;
-    new_voltage[i] = current_voltage;
-    device_neuron_voltage[i] = current_voltage;
+    auto blank = this->getBlank();
+    const float* channel_current = channel_buffer->getCurrent();
+    const float* channel_reversal_current = channel_buffer->getReversalCurrent();
+    const float* old_voltage = state_buffer->getVoltage();
+    const float* old_calcium = state_buffer->getCalcium();
+    const float* input_current = parameters->input_current;
+    const float* clamp_voltage_values = parameters->clamp_voltage_values;
+    const Bit::Word* voltage_clamp_bits = parameters->voltage_clamp_bits;
+    const float* synaptic_current = parameters->synaptic_current;
+    float* device_neuron_voltage = parameters->neuron_voltage;
+    float* new_calcium = blank->getCalcium();
+    float* new_voltage = blank->getVoltage();
+    Bit::Word* neuron_fire_bits = parameters->neuron_fire_bits;
+    unsigned int num_words = Bit::num_words(num_neurons_);
+    for (unsigned int i = 0; i < num_words; ++i) {
+      neuron_fire_bits[i] = 0;
+    }
+    for (unsigned int i = 0; i < num_neurons_; ++i) {
+      float previous_voltage = old_voltage[i];
+      float external_current = input_current[i] + synaptic_current[i];
+      float reversal_current = channel_reversal_current[i];
+      float forward_current = channel_current[i];
+      float A = reversal_current + external_current;
+      float B = channel_current[i];
+      float e_minus_B_dt = exp(-B * dt * 0.5f);
+      float current_voltage = 
+        previous_voltage * e_minus_B_dt + A / B * (1.0 - e_minus_B_dt);
+      float calcium = old_calcium[i];
+      float threshold = threshold_[i];
+      if (previous_voltage <= threshold && current_voltage > threshold) {
+        calcium += calcium_spike_increment_[i];
+        unsigned int word_index = Bit::word(i);
+        Bit::Word mask = Bit::mask(i);
+        neuron_fire_bits[word_index] |= mask;
+      }
+      new_calcium[i] = calcium;
+      new_voltage[i] = current_voltage;
+      device_neuron_voltage[i] = current_voltage;
+    }
+    channel_buffer->release();
+    state_buffer->release();
+    this->publish(blank);
   }
-  channel_buffer->release();
-  state_buffer->release();
-  this->publish(blank);
   return true;
 }
 

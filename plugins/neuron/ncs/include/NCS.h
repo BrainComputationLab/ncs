@@ -57,9 +57,11 @@ public:
   bool init(size_t num_neurons);
   void clear();
   float* getCurrent();
+  float* getReversalCurrent();
   ~ChannelCurrentBuffer();
 private:
   float* current_;
+  float* reversal_current_;
   size_t num_neurons_;
 };
 
@@ -81,6 +83,7 @@ struct ChannelUpdateParameters {
   const float* calcium;
   const float* voltage;
   float* current;
+  float* reversal_current;
   float simulation_time;
   float time_step;
   std::mutex* write_lock;
@@ -194,6 +197,7 @@ private:
   ChannelUpdater<MType>* channel_updater_;
   typename ChannelUpdater<MType>::Subscription* channel_current_subscription_;
   typename  NCSSimulator<MType>::Subscription* state_subscription_;
+  const ncs::spec::SimulationParameters* simulation_parameters_;
 
   float* threshold_;
   float* resting_potential_;

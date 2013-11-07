@@ -2,14 +2,18 @@
 
 template<ncs::sim::DeviceType::Type MType>
 ChannelCurrentBuffer<MType>::ChannelCurrentBuffer() 
-  : current_(nullptr) {
+  : current_(nullptr),
+    reversal_current_(nullptr) {
 }
 
 template<ncs::sim::DeviceType::Type MType>
 bool ChannelCurrentBuffer<MType>::init(size_t num_neurons) {
   num_neurons_ = num_neurons;
   if (num_neurons_ > 0) {
-    return ncs::sim::Memory<MType>::malloc(current_, num_neurons_);
+    bool result = true;
+    result &= ncs::sim::Memory<MType>::malloc(current_, num_neurons_);
+    result &= ncs::sim::Memory<MType>::malloc(reversal_current_, num_neurons_);
+    return result;
   }
   return true;
 }
@@ -17,6 +21,7 @@ bool ChannelCurrentBuffer<MType>::init(size_t num_neurons) {
 template<ncs::sim::DeviceType::Type MType>
 void ChannelCurrentBuffer<MType>::clear() {
   ncs::sim::Memory<MType>::zero(current_, num_neurons_);
+  ncs::sim::Memory<MType>::zero(reversal_current_, num_neurons_);
 }
 
 template<ncs::sim::DeviceType::Type MType>
@@ -25,9 +30,17 @@ float* ChannelCurrentBuffer<MType>::getCurrent() {
 }
 
 template<ncs::sim::DeviceType::Type MType>
+float* ChannelCurrentBuffer<MType>::getReversalCurrent() {
+  return reversal_current_;
+}
+
+template<ncs::sim::DeviceType::Type MType>
 ChannelCurrentBuffer<MType>::~ChannelCurrentBuffer() {
   if (current_) {
     ncs::sim::Memory<MType>::free(current_);
+  }
+  if (reversal_current_) {
+    ncs::sim::Memory<MType>::free(reversal_current_);
   }
 }
 
@@ -367,6 +380,7 @@ bool ChannelUpdater<MType>::start() {
         parameters.calcium = synchronizer->neuron_buffer->getCalcium();
         parameters.voltage = synchronizer->neuron_buffer->getVoltage();
         parameters.current = synchronizer->channel_buffer->getCurrent();
+        parameters.reversal_current = synchronizer->channel_buffer->getReversalCurrent();
         parameters.simulation_time = synchronizer->simulation_time;
         parameters.time_step = synchronizer->time_step;
         parameters.write_lock = synchronizer->channel_buffer->getWriteLock();
@@ -421,6 +435,7 @@ bool NCSSimulator<MType>::addNeuron(ncs::sim::Neuron* neuron) {
 template<ncs::sim::DeviceType::Type MType>
 bool NCSSimulator<MType>::
 initialize(const ncs::spec::SimulationParameters* simulation_parameters) {
+  simulation_parameters_ = simulation_parameters;
   using ncs::sim::Memory;
   num_neurons_ = neurons_.size();
   bool result = true;
@@ -469,6 +484,7 @@ initialize(const ncs::spec::SimulationParameters* simulation_parameters) {
   }
   
   float time_step = simulation_parameters->getTimeStep();
+  time_step = 1.00f;
   float* voltage_persistence = new float[num_neurons_];
   float* dt_capacitance = new float[num_neurons_];
   for (size_t i = 0; i < num_neurons_; ++i) {
@@ -480,8 +496,8 @@ initialize(const ncs::spec::SimulationParameters* simulation_parameters) {
     }
     float resistance = r_membrane[i];
     if (resistance != 0.0f) {
-      float capacitance = tau / resistance;
-      dt_capacitance[i] = time_step / capacitance;
+      float capacitance = tau * 1000.0f / resistance;
+      dt_capacitance[i] = time_step * 1000.0f / capacitance;
     } else {
       dt_capacitance[i] = 0.0f;
     }
