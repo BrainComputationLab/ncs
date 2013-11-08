@@ -336,11 +336,11 @@ bool load(ncs::sim::FactoryMap<ncs::sim::NeuronSimulator>* plugin_map) {
   result &= 
     plugin_map->registerCPUProducer("hh", createSimulator<CPU>);
 
-#ifdef HH_CUDA
+#ifdef NCS_CUDA
   const auto CUDA = ncs::sim::DeviceType::CUDA;
   result &=
     plugin_map->registerCUDAProducer("hh", createSimulator<CUDA>);
-#endif // HH_CUDA
+#endif // NCS_CUDA
   return result;
 }
   
