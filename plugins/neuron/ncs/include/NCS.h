@@ -3,6 +3,8 @@
 #include <ncs/sim/NeuronSimulator.h>
 #include <ncs/spec/ModelParameters.h>
 
+#include "Channel.h"
+
 struct SpikeShape {
   std::vector<float> voltages;
 };
@@ -17,26 +19,11 @@ struct NCSNeuron {
   ncs::spec::Generator* tau_membrane;
   ncs::spec::Generator* r_membrane;
   SpikeShape* spike_shape;
+  std::vector<Channel*> channels;
   NCSNeuron();
   ~NCSNeuron();
   static void* instantiate(ncs::spec::ModelParameters* parameters);
 };
-
-template<ncs::sim::DeviceType::Type MType>
-class NeuronBuffer : public ncs::sim::DataBuffer {
-public:
-  NeuronBuffer();
-  bool init(size_t num_neurons);
-  float* getVoltage();
-  float* getCalcium();
-  int* getSpikeShapeState();
-  ~NeuronBuffer();
-private:
-  float* voltage_;
-  float* calcium_;
-  int* spike_shape_state_;
-};
-
 
 template<ncs::sim::DeviceType::Type MType>
 class NCSSimulator 
@@ -50,11 +37,11 @@ public:
   virtual bool update(ncs::sim::NeuronUpdateParameters* parameters);
   virtual ~NCSSimulator();
 private:
-  //std::vector<ChannelSimulator<MType>*> channel_simulators_;
+  std::vector<ChannelSimulator<MType>*> channel_simulators_;
   std::vector<ncs::sim::Neuron*> neurons_;
   size_t num_neurons_;
-  //ChannelUpdater<MType>* channel_updater_;
-  //typename ChannelUpdater<MType>::Subscription* channel_current_subscription_;
+  ChannelUpdater<MType>* channel_updater_;
+  typename ChannelUpdater<MType>::Subscription* channel_current_subscription_;
   typename NCSSimulator<MType>::Subscription* state_subscription_;
   const ncs::spec::SimulationParameters* simulation_parameters_;
 

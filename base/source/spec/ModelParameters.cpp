@@ -25,6 +25,18 @@ Generator* ModelParameters::getGenerator(const std::string& parameter_name) {
   return search_result->second;
 }
 
+bool ModelParameters::get(ncs::spec::Generator*& target,
+                          const std::string& parameter_name) {
+  auto generator = getGenerator(parameter_name);
+  target = generator;
+  if (!generator) {
+    std::cerr << getType() << " requires " << parameter_name << 
+      " to be defined." << std::endl;
+    return false;
+  }
+  return true;
+}
+
 } // namespace spec
 
 } // namespace ncs

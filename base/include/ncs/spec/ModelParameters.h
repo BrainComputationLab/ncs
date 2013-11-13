@@ -41,6 +41,8 @@ public:
     @return The corresponding Generator if there is one. Null otherwise.
   */
   Generator* getGenerator(const std::string& parameter_name);
+
+  bool get(ncs::spec::Generator*& target, const std::string& parameter_name);
 private:
   /// The model type
   std::string type_;

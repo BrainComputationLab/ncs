@@ -4,55 +4,6 @@
 #include <ncs/sim/Memory.h>
 
 template<ncs::sim::DeviceType::Type MType>
-NeuronBuffer<MType>::NeuronBuffer() {
-  calcium_ = nullptr;
-  voltage_ = nullptr;
-  spike_shape_state_ = nullptr;
-}
-
-template<ncs::sim::DeviceType::Type MType>
-bool NeuronBuffer<MType>::init(size_t num_neurons) {
-  using ncs::sim::Memory;
-  if (num_neurons > 0) {
-    bool result = true;
-    result &= Memory<MType>::malloc(calcium_, num_neurons);
-    result &= Memory<MType>::malloc(voltage_, num_neurons);
-    result &= Memory<MType>::malloc(spike_shape_state_, num_neurons);
-    return result;
-  }
-  return true;
-}
-
-template<ncs::sim::DeviceType::Type MType>
-float* NeuronBuffer<MType>::getVoltage() {
-  return voltage_;
-}
-
-template<ncs::sim::DeviceType::Type MType>
-float* NeuronBuffer<MType>::getCalcium() {
-  return calcium_;
-}
-
-template<ncs::sim::DeviceType::Type MType>
-int* NeuronBuffer<MType>::getSpikeShapeState() {
-  return spike_shape_state_;
-}
-
-template<ncs::sim::DeviceType::Type MType>
-NeuronBuffer<MType>::~NeuronBuffer() {
-  using ncs::sim::Memory;
-  if (voltage_) {
-    Memory<MType>::free(voltage_);
-  }
-  if (calcium_) {
-    Memory<MType>::free(calcium_);
-  }
-  if (spike_shape_state_) {
-    Memory<MType>::free(spike_shape_state_);
-  }
-}
-
-template<ncs::sim::DeviceType::Type MType>
 NCSSimulator<MType>::NCSSimulator() {
   threshold_ = nullptr;
   resting_potential_ = nullptr;
@@ -62,6 +13,8 @@ NCSSimulator<MType>::NCSSimulator() {
   leak_reversal_potential_ = nullptr;
   tau_membrane_ = nullptr;
   r_membrane_ = nullptr;
+  channel_simulators_.push_back(new VoltageGatedIonSimulator<MType>());
+  channel_updater_ = new ChannelUpdater<MType>();
 }
 
 template<ncs::sim::DeviceType::Type MType>
@@ -100,6 +53,11 @@ initialize(const ncs::spec::SimulationParameters* simulation_parameters) {
       n->leak_reversal_potential->generateDouble(&rng);
     tau_membrane[i] = n->tau_membrane->generateDouble(&rng);
     r_membrane[i] = n->r_membrane->generateDouble(&rng);
+    for (auto channel : n->channels) {
+      channel_simulators_[channel->type]->addChannel(channel,
+                                                     neurons_[i]->id.plugin,
+                                                     rng());
+    }
     SpikeShape* spike_shape = n->spike_shape;
     auto search_result = spike_shape_index_by_spike_shape.find(spike_shape);
     if (spike_shape_index_by_spike_shape.end() == search_result) {
@@ -185,6 +143,28 @@ initialize(const ncs::spec::SimulationParameters* simulation_parameters) {
     return false;
   }
 
+  for (auto simulator : channel_simulators_) {
+    if (!simulator->initialize()) {
+      std::cerr << "Failed to initialize channel simulator." << std::endl;
+      return false;
+    }
+  }
+
+  channel_current_subscription_ = channel_updater_->subscribe();
+  if (!channel_updater_->init(channel_simulators_,
+                              this,
+                              simulation_parameters,
+                              num_neurons_,
+                              ncs::sim::Constants::num_buffers)) {
+    std::cerr << "Failed to initialize ChannelUpdater." << std::endl;
+    return false;
+  }
+
+  if (!channel_updater_->start()) {
+    std::cerr << "Failed to start ChannelUpdater." << std::endl;
+    return false;
+  }
+
   for (size_t i = 0; i < ncs::sim::Constants::num_buffers; ++i) {
     auto blank = new NeuronBuffer<MType>();
     if (!blank->init(num_neurons_)) {
@@ -228,6 +208,12 @@ bool NCSSimulator<MType>::update(ncs::sim::NeuronUpdateParameters* parameters) {
 
 template<ncs::sim::DeviceType::Type MType>
 NCSSimulator<MType>::~NCSSimulator() {
+  if (state_subscription_) {
+    delete state_subscription_;
+  }
+  if (channel_current_subscription_) {
+    delete channel_current_subscription_;
+  }
   auto if_deletef = [](float* p) {
     if (p) {
       ncs::sim::Memory<MType>::free(p);

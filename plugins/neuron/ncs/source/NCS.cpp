@@ -69,6 +69,30 @@ void* NCSNeuron::instantiate(ncs::spec::ModelParameters* parameters) {
     delete n;
     return nullptr;
   }
+
+  auto channel_list_generator = parameters->getGenerator("channels");
+  if (channel_list_generator) {
+    auto channel_list = channel_list_generator->generateList(&rng);
+    Channel* channel = nullptr;
+    for (auto channel_generator : channel_list) {
+      auto channel_spec = channel_generator->generateParameters(&rng);
+      auto type = channel_spec->getType();
+      if (type == "voltage_gated_ion") {
+        channel = VoltageGatedIonChannel::instantiate(channel_spec);
+      } else if (type == "voltage_gated_calcium") {
+        // TODO(rvhoang): handle this
+      } else {
+        std::cerr << "Unrecognized Channel type " << type << std::endl;
+      }
+      if (nullptr == channel) {
+        std::cerr << "Failed to create channel." << std::endl;
+        delete n;
+        return nullptr;
+      }
+      n->channels.push_back(channel);
+    }
+
+  }
   return n;
 }
 
@@ -89,21 +113,25 @@ update(ncs::sim::NeuronUpdateParameters* parameters) {
   }
 
   ncs::sim::Mailbox mailbox;
-  //TODO(rvhoang): make those commented lines work
-  //ChannelCurrentBuffer<ncs::sim::DeviceType::CPU>* channel_buffer = nullptr;
-  //channel_current_subscription_->pull(&channel_buffer, &mailbox);
+  ChannelCurrentBuffer<ncs::sim::DeviceType::CPU>* channel_buffer = nullptr;
+  channel_current_subscription_->pull(&channel_buffer, &mailbox);
   NeuronBuffer<ncs::sim::DeviceType::CPU>* state_buffer = nullptr;
   state_subscription_->pull(&state_buffer, &mailbox);
-  if (!mailbox.wait(/*&channel_buffer,*/ &state_buffer)) {
+  if (!mailbox.wait(&channel_buffer, &state_buffer)) {
     state_subscription_->cancel();
+    channel_current_subscription_->cancel();
     if (state_buffer) {
       state_buffer->release();
+    }
+    if (channel_buffer) {
+      channel_buffer->release();
     }
     return true;
   }
   const float* old_voltage = state_buffer->getVoltage();
   const float* old_calcium = state_buffer->getCalcium();
   const int* old_spike_shape_state = state_buffer->getSpikeShapeState();
+  const float* channel_current = channel_buffer->getCurrent();
   auto blank = this->getBlank();
   float* new_voltage = blank->getVoltage();
   float* new_calcium = blank->getCalcium();
@@ -113,7 +141,7 @@ update(ncs::sim::NeuronUpdateParameters* parameters) {
     float voltage = old_voltage[i];
     float calcium = old_voltage[i];
     float total_current = input_current[i] + 
-                          synaptic_current[i] /* + channel_current[i]*/;
+                          synaptic_current[i] + channel_current[i];
     if (spike_shape_state < 0) { // Do real computations
       float resting_potential = resting_potential_[i];
       float dv = voltage - resting_potential;
@@ -139,6 +167,7 @@ update(ncs::sim::NeuronUpdateParameters* parameters) {
     device_neuron_voltage[i] = voltage;
   }
   state_buffer->release();
+  channel_buffer->release();
   this->publish(blank);
   return true;
 }
