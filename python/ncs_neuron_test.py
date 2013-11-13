@@ -17,12 +17,23 @@ def Run(argv):
     "r": 1.0 / 0.303,
     "conductance": 5 * 0.00015
   }
+  calcium_channel = {
+    "type": "calcium_dependent",
+    "m_initial": 0.0,
+    "reversal_potential": -80,
+    "m_power": 2,
+    "conductance": 6.0 * 0.0009,
+    "forward_scale": 0.000125,
+    "forward_exponent": 2,
+    "backwards_rate": 2.5,
+    "tau_scale": 0.01,
+  }
   ncs_cell = {
     "threshold": -50.0,
-    "resting_potential": ncs.Uniform(-62.0, -58.0),
-    "calcium": 0.0,
-    "calcium_spike_increment": 0.7,
-    "tau_calcium": 0.02,
+    "resting_potential": -60.0,
+    "calcium": 5.0,
+    "calcium_spike_increment": 100.0,
+    "tau_calcium": 0.07,
     "leak_reversal_potential": 0.0,
     "tau_membrane": 0.02,
     "r_membrane": 200.0,
@@ -31,7 +42,8 @@ def Run(argv):
     ],
     "capacitance": 1.0,
     "channels": [
-      voltage_channel
+      voltage_channel,
+      calcium_channel,
     ]
   }
 

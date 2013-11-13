@@ -1,4 +1,30 @@
 template<ncs::sim::DeviceType::Type MType>
+VoltageGatedIonBuffer<MType>::VoltageGatedIonBuffer() {
+  m_ = nullptr;
+}
+
+template<ncs::sim::DeviceType::Type MType>
+bool VoltageGatedIonBuffer<MType>::init(size_t num_channels) {
+  bool result = true;
+  if (num_channels > 0) {
+    result &= ncs::sim::Memory<MType>::malloc(m_, num_channels);
+  }
+  return result;
+}
+
+template<ncs::sim::DeviceType::Type MType>
+float* VoltageGatedIonBuffer<MType>::getM() {
+  return m_;
+}
+
+template<ncs::sim::DeviceType::Type MType>
+VoltageGatedIonBuffer<MType>::~VoltageGatedIonBuffer() {
+  if (m_) {
+    ncs::sim::Memory<MType>::free(m_);
+  }
+}
+
+template<ncs::sim::DeviceType::Type MType>
 VoltageGatedIonSimulator<MType>::VoltageGatedIonSimulator() {
   v_half_ = nullptr;
   tau_scale_factor_ = nullptr;

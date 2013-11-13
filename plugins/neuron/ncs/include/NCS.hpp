@@ -14,6 +14,7 @@ NCSSimulator<MType>::NCSSimulator() {
   tau_membrane_ = nullptr;
   r_membrane_ = nullptr;
   channel_simulators_.push_back(new VoltageGatedIonSimulator<MType>());
+  channel_simulators_.push_back(new CalciumDependentSimulator<MType>());
   channel_updater_ = new ChannelUpdater<MType>();
 }
 

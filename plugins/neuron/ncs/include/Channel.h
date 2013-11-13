@@ -10,7 +10,7 @@
 struct Channel {
   enum Type {
     VoltageGatedIon = 0,
-    VoltageGatedCalcium = 1
+    CalciumDependent = 1
   };
   Type type;
 };
@@ -29,6 +29,20 @@ struct VoltageGatedIonChannel : public Channel {
     instantiate(ncs::spec::ModelParameters* parameters);
 };
 
+struct CalciumDependentChannel : public Channel {
+  CalciumDependentChannel();
+  ncs::spec::Generator* m_initial;
+  ncs::spec::Generator* reversal_potential;
+  ncs::spec::Generator* conductance;
+  ncs::spec::Generator* backwards_rate;
+  ncs::spec::Generator* forward_scale;
+  ncs::spec::Generator* forward_exponent;
+  ncs::spec::Generator* tau_scale;
+  ncs::spec::Generator* m_power;
+  static CalciumDependentChannel*
+    instantiate(ncs::spec::ModelParameters* parameters);
+};
+
 template<ncs::sim::DeviceType::Type MType>
 class ChannelCurrentBuffer : public ncs::sim::DataBuffer {
 public:
@@ -44,6 +58,7 @@ private:
 
 struct ChannelUpdateParameters {
   const float* voltage;
+  const float* calcium;
   float* current;
   float simulation_time;
   float time_step;
@@ -111,6 +126,46 @@ bool VoltageGatedIonSimulator<ncs::sim::DeviceType::CUDA>::
 update(ChannelUpdateParameters* parameters);
 
 template<ncs::sim::DeviceType::Type MType>
+class CalciumDependentBuffer : public ncs::sim::DataBuffer {
+public:
+  CalciumDependentBuffer();
+  bool init(size_t num_channels);
+  float* getM();
+  ~CalciumDependentBuffer();
+private:
+  float* m_;
+};
+
+template<ncs::sim::DeviceType::Type MType>
+class CalciumDependentSimulator 
+  : public ChannelSimulator<MType>,
+    public ncs::sim::SpecificPublisher<CalciumDependentBuffer<MType>> {
+public:
+  CalciumDependentSimulator();
+  virtual bool update(ChannelUpdateParameters* parameters);
+  virtual ~CalciumDependentSimulator();
+private:
+  virtual bool init_();
+  float* reversal_potential_;
+  float* conductance_;
+  float* backwards_rate_;
+  float* forward_scale_;
+  float* forward_exponent_;
+  float* tau_scale_;
+  float* m_power_;
+  typedef ncs::sim::SpecificPublisher<CalciumDependentBuffer<MType>> Publisher;
+  typename Publisher::Subscription* state_subscription_;
+};
+
+template<>
+bool CalciumDependentSimulator<ncs::sim::DeviceType::CPU>::
+update(ChannelUpdateParameters* parameters);
+
+template<>
+bool CalciumDependentSimulator<ncs::sim::DeviceType::CUDA>::
+update(ChannelUpdateParameters* parameters);
+
+template<ncs::sim::DeviceType::Type MType>
 class ChannelUpdater 
   : public ncs::sim::SpecificPublisher<ChannelCurrentBuffer<MType>> {
 public:
@@ -134,3 +189,4 @@ private:
 
 #include "Channel.hpp"
 #include "VoltageGatedIonChannel.hpp"
+#include "CalciumDependentChannel.hpp"

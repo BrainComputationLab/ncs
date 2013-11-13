@@ -79,8 +79,8 @@ void* NCSNeuron::instantiate(ncs::spec::ModelParameters* parameters) {
       auto type = channel_spec->getType();
       if (type == "voltage_gated_ion") {
         channel = VoltageGatedIonChannel::instantiate(channel_spec);
-      } else if (type == "voltage_gated_calcium") {
-        // TODO(rvhoang): handle this
+      } else if (type == "calcium_dependent") {
+        channel = CalciumDependentChannel::instantiate(channel_spec);
       } else {
         std::cerr << "Unrecognized Channel type " << type << std::endl;
       }
@@ -91,7 +91,6 @@ void* NCSNeuron::instantiate(ncs::spec::ModelParameters* parameters) {
       }
       n->channels.push_back(channel);
     }
-
   }
   return n;
 }

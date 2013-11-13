@@ -1,30 +1,4 @@
 template<ncs::sim::DeviceType::Type MType>
-VoltageGatedIonBuffer<MType>::VoltageGatedIonBuffer() {
-  m_ = nullptr;
-}
-
-template<ncs::sim::DeviceType::Type MType>
-bool VoltageGatedIonBuffer<MType>::init(size_t num_channels) {
-  bool result = true;
-  if (num_channels > 0) {
-    result &= ncs::sim::Memory<MType>::malloc(m_, num_channels);
-  }
-  return result;
-}
-
-template<ncs::sim::DeviceType::Type MType>
-float* VoltageGatedIonBuffer<MType>::getM() {
-  return m_;
-}
-
-template<ncs::sim::DeviceType::Type MType>
-VoltageGatedIonBuffer<MType>::~VoltageGatedIonBuffer() {
-  if (m_) {
-    ncs::sim::Memory<MType>::free(m_);
-  }
-}
-
-template<ncs::sim::DeviceType::Type MType>
 ChannelCurrentBuffer<MType>::ChannelCurrentBuffer() 
   : current_(nullptr) {
 }
@@ -177,6 +151,7 @@ bool ChannelUpdater<MType>::start() {
         }
         ChannelUpdateParameters parameters;
         parameters.voltage = synchronizer->neuron_buffer->getVoltage();
+        parameters.calcium = synchronizer->neuron_buffer->getCalcium();
         parameters.current = synchronizer->channel_buffer->getCurrent();
         parameters.simulation_time = synchronizer->simulation_time;
         parameters.time_step = synchronizer->time_step;
