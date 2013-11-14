@@ -82,6 +82,7 @@ ClusterDescription::getThisCluster(Communicator* communicator,
                                                 DeviceType::UNKNOWN));
       }
       delete [] powers;
+      machines.push_back(new MachineDescription(devices));
     }
   }
   ClusterDescription* cluster = new ClusterDescription(machines);

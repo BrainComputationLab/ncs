@@ -62,13 +62,13 @@ def Run(argv):
     print "Failed to initialize simulation."
     return
 
-  sim.addInput("rectangular_current", { "amplitude": 0.1 }, group_1, 1.0, 0.0, 1.0)
+#sim.addInput("rectangular_current", { "amplitude": 0.1 }, group_1, 1.0, 0.0, 1.0)
 
-  voltage_report = sim.addReport("group_1", "neuron", "neuron_voltage", 1.0)
+#voltage_report = sim.addReport("group_1", "neuron", "neuron_voltage", 1.0)
 #voltage_report.toAsciiFile("/tmp/voltages.txt")
-  voltage_report.toStdOut()
+#voltage_report.toStdOut()
 
-  sim.step(100)
+  sim.step(10)
   del sim
   return
 

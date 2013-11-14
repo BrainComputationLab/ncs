@@ -29,9 +29,17 @@ public:
   bool initialize(int argc, char** argv);
   bool step();
   bool addInput(spec::InputGroup* input);
+  bool isMaster() const;
   DataSink* addReport(spec::Report* report);
   ~Simulator();
 private:
+  enum Command {
+    Shutdown = 0,
+    Step = 1,
+    AddInput = 2,
+    AddReport = 3
+  };
+  void workerFunction_();
   bool initializeSeeds_();
   bool gatherClusterData_(unsigned int enabled_device_types);
   bool gatherModelStatistics_();
@@ -92,6 +100,7 @@ private:
   int synapse_seed_;
 
   std::vector<DeviceBase*> devices_;
+  std::thread worker_thread_;
 };
 
 } // namespace sim

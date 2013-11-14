@@ -49,6 +49,10 @@ bool Simulation::shutdown() {
   return false;
 }
 
+bool Simulation::isMaster() const {
+  return simulator_->isMaster();
+}
+
 Simulation::~Simulation() {
   shutdown();
 }

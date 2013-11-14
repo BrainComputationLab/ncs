@@ -126,6 +126,11 @@ bool MPI::initialize(int argc, char** argv) {
   return true;
 }
 
+bool MPI::finalize() {
+  MPI_Finalize();
+  return true;
+};
+
 } // namespace sim
 
 } // namespace ncs

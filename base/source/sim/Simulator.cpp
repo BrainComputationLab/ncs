@@ -161,6 +161,9 @@ bool Simulator::initialize(int argc, char** argv) {
     std::cerr << "Failed to start GlobalVectorPublisher." << std::endl;
     return false;
   }
+  if (!isMaster()) {
+    worker_thread_ = std::thread([this](){ this->workerFunction_(); });
+  }
 
   std::clog << "Initialization complete..." << std::endl;
 
@@ -168,7 +171,10 @@ bool Simulator::initialize(int argc, char** argv) {
 }
 
 bool Simulator::step() {
-  // TODO(rvhoang): echo this step to the other machines
+  if (isMaster()) {
+    int command = Step;
+    communicator_->bcast(&command, 1, 0);
+  }
   return simulation_controller_->step();
 }
 
@@ -248,6 +254,10 @@ bool Simulator::addInput(spec::InputGroup* input) {
     device->threadDestroy();
   }
   return true;
+}
+
+bool Simulator::isMaster() const {
+  return 0 == communicator_->getRank();
 }
 
 DataSink* Simulator::addReport(spec::Report* report) {
@@ -493,6 +503,14 @@ DataSink* Simulator::addReport(spec::Report* report) {
 }
 
 Simulator::~Simulator() {
+  if (isMaster()) {
+    int command = Shutdown;
+    communicator_->bcast(&command, 1, 0);
+  }
+  if (worker_thread_.joinable()) {
+    std::cout << "waiting for worker" << std::endl;
+    worker_thread_.join();
+  }
   std::clog << "Shutting down simulation." << std::endl;
   ParallelDelete pd;
   pd.add(simulation_controller_, "SimulationController");
@@ -500,7 +518,25 @@ Simulator::~Simulator() {
   pd.add(global_vector_publisher_, "GlobalVectorPublisher");
   pd.add(devices_, "Device");
   pd.wait();
+  MPI::finalize();
   std::clog << "Shut down complete." << std::endl;
+}
+
+void Simulator::workerFunction_() {
+  int command = -1;
+  while (communicator_->bcast(&command, 1, 0)) {
+    switch(command) {
+      case Shutdown:
+        return;
+        break;
+      case Step:
+        step();
+        break;
+      default:
+        std::cerr << "Unrecognized command " << command << std::endl;
+        return;
+    };
+  }
 }
 
 bool Simulator::initializeSeeds_() {
@@ -927,8 +963,6 @@ bool Simulator::loadInputSimulatorPlugins_() {
 bool Simulator::initializeDevices_() {
   bool result = true;
   auto& my_devices = cluster_->getThisMachine()->getDevices();
-  std::clog << "Initializing " << my_devices.size() << " devices." <<
-    std::endl;
 
   // Instantiate all devices first
   for (size_t i = 0; i < my_devices.size(); ++i) {

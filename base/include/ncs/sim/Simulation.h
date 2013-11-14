@@ -18,6 +18,7 @@ public:
   bool addInput(spec::InputGroup* input);
   spec::DataSource* addReport(spec::Report* report);
   bool shutdown();
+  bool isMaster() const;
   ~Simulation();
 private:
   spec::ModelSpecification* model_specification_;

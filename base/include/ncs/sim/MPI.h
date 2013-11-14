@@ -30,6 +30,7 @@ public:
   static std::string errorString(int code);
   static bool ok(int code);
   static bool initialize(int argc, char** argv);
+  static bool finalize();
 private:
 };
 

@@ -147,7 +147,6 @@ update(ncs::sim::NeuronUpdateParameters* parameters) {
       voltage = resting_potential + 
                 dv * voltage_persistence_[i] + 
                 dt_over_capacitance_[i] * total_current;
-      std::cout << voltage << std::endl;
       if (voltage > threshold_[i]) {
         spike_shape_state = spike_shape_length_[i] - 1;
         calcium += calcium_spike_increment_[i];

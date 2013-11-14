@@ -312,8 +312,9 @@ class Simulation:
     return self.simulation.init(pyncs.string_list(argv))
 
   def step(self, steps = 1):
-    for i in range(0, steps):
-      self.simulation.step()
+    if self.simulation.isMaster():
+      for i in range(0, steps):
+        self.simulation.step()
 
   def getModelParameters(self, parameters):
     if isinstance(parameters, pyncs.ModelParameters):
@@ -348,7 +349,10 @@ class Simulation:
         return False
       for x in generators:
         x.thisown = False
-      return pyncs.ExactList(pyncs.generator_list(generators))
+      gen_list = pyncs.generator_list()
+      for g in generators:
+        gen_list.push_back(g)
+      return pyncs.ExactList(gen_list)
     elif isinstance(v, Uniform):
       return v.build()
     elif isinstance(v, Normal):
