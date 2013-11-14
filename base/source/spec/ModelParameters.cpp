@@ -2,6 +2,8 @@
 
 #include <ncs/spec/ModelParameters.h>
 
+#include "ModelParameters.pb.h"
+
 namespace ncs {
 
 namespace spec {
@@ -33,6 +35,16 @@ bool ModelParameters::get(ncs::spec::Generator*& target,
     std::cerr << getType() << " requires " << parameter_name << 
       " to be defined." << std::endl;
     return false;
+  }
+  return true;
+}
+
+bool ModelParameters::makeProtobuf(com::ModelParameters* parameters) const {
+  parameters->set_type(getType());
+  for (auto it : parameters_) {
+    auto mapping = parameters->add_mappings();
+    mapping->set_key(it.first);
+    it.second->makeProtobuf(mapping->mutable_value());
   }
   return true;
 }

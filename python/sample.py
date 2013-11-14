@@ -27,7 +27,7 @@ def Run(argv):
 
   flat_parameters = sim.addModelParameters("flat_synapse", 
                                            "flat", 
-                                           { "delay": [2,5],
+                                           { "delay": ncs.Uniform(2,5),
                                              "current": ncs.Normal(18.0,2.0)
                                            })
   all_to_all = sim.connect("all_to_all", all_cells, "all_2", 0.1, flat_parameters)

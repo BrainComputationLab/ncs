@@ -11,6 +11,10 @@
 
 namespace ncs {
 
+namespace com {
+struct Generator;
+}
+
 namespace spec {
 
 typedef std::mt19937 RNG;
@@ -71,6 +75,8 @@ public:
   inline Generator* base() {
     return this;
   }
+
+  virtual bool makeProtobuf(com::Generator* gen) const = 0;
 };
 
 } // namespace spec

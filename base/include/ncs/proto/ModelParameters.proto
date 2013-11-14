@@ -1,0 +1,44 @@
+package ncs.com;
+
+message Generator {
+  enum Distribution {
+    Exact = 0;
+    Uniform = 1;
+    Normal = 2;
+  };
+  required Distribution distribution = 1;
+  enum ValueType {
+    Integer = 0;
+    Double = 1;
+    String = 2;
+    List = 3;
+    Parameters = 4;
+  };
+  required ValueType value_type = 2;
+
+  // Exact types
+  optional int32 exact_integer = 3;
+  optional double exact_double = 4;
+  optional string exact_string = 5;
+  repeated Generator exact_list = 6;
+  optional ModelParameters exact_parameters = 7;
+
+  // Uniform types
+  optional int32 min_uniform_integer = 8;
+  optional int32 max_uniform_integer = 9;
+  optional double min_uniform_double = 10;
+  optional double max_uniform_double = 11;
+
+  // Normal types
+  optional double mean_normal_double = 12;
+  optional double stddev_normal_double = 13;
+}
+
+message ModelParameters {
+  required string type = 1;
+  message Mapping {
+    required string key = 1;
+    required Generator value = 2;
+  };
+  repeated Mapping mappings = 3;
+}

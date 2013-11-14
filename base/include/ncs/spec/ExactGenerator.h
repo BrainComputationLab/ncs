@@ -47,6 +47,8 @@ public:
     @return The name of this specific generator type.
   */
   virtual const std::string& name() const;
+
+  virtual bool makeProtobuf(com::Generator* gen) const;
 private:
   // The integer value to always generate.
   long value_;
@@ -79,6 +81,8 @@ public:
     @return The name of this specific generator type.
   */
   virtual const std::string& name() const;
+
+  virtual bool makeProtobuf(com::Generator* gen) const;
 private:
   // The floating point value to always generate.
   double value_;
@@ -110,6 +114,8 @@ public:
     @return The name of this specific generator type.
   */
   virtual const std::string& name() const;
+
+  virtual bool makeProtobuf(com::Generator* gen) const;
 private:
   // The string to always generate.
   std::string value_;
@@ -138,6 +144,8 @@ public:
     @return The name of this specific generator type.
   */
   virtual const std::string& name() const;
+
+  virtual bool makeProtobuf(com::Generator* gen) const;
 private:
   // The string to always generate.
   std::vector<Generator*> value_;
@@ -168,6 +176,8 @@ public:
   virtual const std::string& name() const;
 
   virtual ~ExactParameters();
+
+  virtual bool makeProtobuf(com::Generator* gen) const;
 private:
   // The string to always generate.
   ModelParameters* value_;

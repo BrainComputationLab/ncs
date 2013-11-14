@@ -1,4 +1,5 @@
 #include <ncs/spec/NormalGenerator.h>
+#include "ModelParameters.pb.h"
 
 namespace ncs {
 
@@ -17,6 +18,14 @@ double NormalDouble::generateDouble(RNG* rng) {
 const std::string& NormalDouble::name() const {
   static std::string n = "NormalDouble";
   return n;
+}
+
+bool NormalDouble::makeProtobuf(com::Generator* gen) const {
+  gen->set_distribution(com::Generator::Normal);
+  gen->set_value_type(com::Generator::Double);
+  gen->set_mean_normal_double(mean_);
+  gen->set_stddev_normal_double(std_dev_);
+  return true;
 }
 
 } // namespace spec

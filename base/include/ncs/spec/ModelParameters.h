@@ -6,7 +6,12 @@
 #endif // SWIG
 #include <ncs/spec/Generator.h>
 
+
 namespace ncs {
+
+namespace com {
+struct ModelParameters;
+}
 
 namespace spec {
 
@@ -43,6 +48,8 @@ public:
   Generator* getGenerator(const std::string& parameter_name);
 
   bool get(ncs::spec::Generator*& target, const std::string& parameter_name);
+
+  bool makeProtobuf(com::ModelParameters* mp) const;
 private:
   /// The model type
   std::string type_;

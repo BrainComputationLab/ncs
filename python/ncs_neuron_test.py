@@ -52,7 +52,7 @@ def Run(argv):
                                              "ncs",
                                              ncs_cell
                                             )
-  group_1 = sim.addCellGroup("group_1", 1, "ncs_neuron", None) # last param is geometry
+  group_1 = sim.addCellGroup("group_1", 100, "ncs_neuron", None) # last param is geometry
 
   all_cells = sim.addCellAlias("all_cells", [group_1])
   sim.addCellAlias("all", all_cells)

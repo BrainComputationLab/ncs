@@ -17,6 +17,7 @@ public:
   UniformInteger(long min, long max);
   virtual long generateInt(RNG* rng);
   virtual const std::string& name() const;
+  virtual bool makeProtobuf(com::Generator* gen) const;
 private:
   long min_value_;
   long max_value_;
@@ -27,6 +28,7 @@ public:
   UniformDouble(double min, double max);
   virtual double generateDouble(RNG* rng);
   virtual const std::string& name() const;
+  virtual bool makeProtobuf(com::Generator* gen) const;
 private:
   double min_value_;
   double max_value_;
