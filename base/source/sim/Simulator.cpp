@@ -19,6 +19,8 @@
 #include <ncs/sim/Signal.h>
 #include <ncs/sim/Simulator.h>
 
+#include "ModelParameters.pb.h"
+
 namespace ncs {
 
 namespace sim {
@@ -180,6 +182,16 @@ bool Simulator::step() {
 
 bool Simulator::addInput(spec::InputGroup* input) {
   // TODO(rvhoang): echo this spec to the other machines
+  simulation_controller_->idle();
+  if (isMaster()) {
+    int command = AddInput;
+    communicator_->bcast(&command, 1, 0);
+    com::InputGroup protobuffer;
+    input->toProtobuf(&protobuffer);
+    std::string buffer;
+    protobuffer.SerializeToString(&buffer);
+    communicator_->bcast(buffer, 0);
+  }
   std::vector<spec::NeuronAlias*> aliases;
   for (const auto& alias_name : input->getNeuronAliases()) {
     auto alias = getNeuronAlias_(alias_name);
@@ -531,6 +543,21 @@ void Simulator::workerFunction_() {
         break;
       case Step:
         step();
+        break;
+      case AddInput:
+        {
+          std::string buffer;
+          communicator_->bcast(buffer, 0);
+          std::cout << buffer.length() << std::endl;
+          com::InputGroup protobuffer;
+          protobuffer.ParseFromString(buffer);
+          spec::InputGroup* input_group = 
+            spec::InputGroup::fromProtobuf(&protobuffer);
+          addInput(input_group);
+        }
+        break;
+      case AddReport:
+        std::cout << "Got report" << std::endl;
         break;
       default:
         std::cerr << "Unrecognized command " << command << std::endl;

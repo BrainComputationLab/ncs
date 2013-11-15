@@ -50,6 +50,8 @@ public:
   bool get(ncs::spec::Generator*& target, const std::string& parameter_name);
 
   bool makeProtobuf(com::ModelParameters* mp) const;
+
+  static ModelParameters* fromProtobuf(com::ModelParameters* mp);
 private:
   /// The model type
   std::string type_;

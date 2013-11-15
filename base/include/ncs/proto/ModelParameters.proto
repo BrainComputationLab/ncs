@@ -42,3 +42,11 @@ message ModelParameters {
   };
   repeated Mapping mappings = 3;
 }
+
+message InputGroup {
+  repeated string neuron_alias = 1;
+  required ModelParameters model_parameters = 2;
+  required float probability = 3;
+  required float start_time = 4;
+  required float end_time = 5;
+}

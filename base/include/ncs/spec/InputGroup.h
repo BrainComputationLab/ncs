@@ -3,6 +3,10 @@
 
 namespace ncs {
 
+namespace com {
+  struct InputGroup;
+}
+
 namespace spec {
 
 class InputGroup {
@@ -21,6 +25,8 @@ public:
 
   float getStartTime() const;
   float getEndTime() const;
+  bool toProtobuf(com::InputGroup* input_group) const;
+  static InputGroup* fromProtobuf(com::InputGroup* input_group);
 private:
   std::vector<std::string> neuron_aliases_;
   ModelParameters* model_parameters_;

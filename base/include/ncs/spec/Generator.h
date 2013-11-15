@@ -77,6 +77,8 @@ public:
   }
 
   virtual bool makeProtobuf(com::Generator* gen) const = 0;
+
+  static Generator* fromProtobuf(com::Generator* gen);
 };
 
 } // namespace spec

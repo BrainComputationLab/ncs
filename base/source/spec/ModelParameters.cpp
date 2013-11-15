@@ -49,6 +49,17 @@ bool ModelParameters::makeProtobuf(com::ModelParameters* parameters) const {
   return true;
 }
 
+ModelParameters* ModelParameters::fromProtobuf(com::ModelParameters* mp) {
+  std::map<std::string, Generator*> parameters;
+  int num_mappings = mp->mappings_size();
+  for (int i = 0; i < num_mappings; ++i) {
+    com::ModelParameters::Mapping* mapping = mp->mutable_mappings(i);
+    Generator* gen = Generator::fromProtobuf(mapping->mutable_value());
+    parameters[mapping->key()] = gen;
+  }
+  return new ModelParameters(mp->type(), parameters);
+}
+
 } // namespace spec
 
 } // namespace ncs
