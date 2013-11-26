@@ -67,6 +67,142 @@ VectorExchangeController::~VectorExchangeController() {
   }
 }
 
+RemoteVectorExtractor::RemoteVectorExtractor() {
+  destination_subscription_ = nullptr;
+}
+
+bool RemoteVectorExtractor::init(size_t global_vector_offset,
+                                 size_t machine_vector_size,
+                                 Communicator* communicator, 
+                                 int source_rank,
+                                 DestinationPublisher* destination_publisher,
+                                 size_t num_buffers) {
+  num_buffers_ = num_buffers;
+  for (size_t i = 0; i < num_buffers_; ++i) {
+    auto blank = new Signal();
+    addBlank(blank);
+  }
+  global_vector_offset_ = global_vector_offset;
+  machine_vector_size_ = machine_vector_size;
+  communicator_ = communicator;
+  source_rank_ = source_rank;
+  destination_subscription_ = destination_publisher->subscribe();
+  return true;
+}
+
+bool RemoteVectorExtractor::start() {
+  auto thread_function = [this]() {
+    size_t word_offset = Bit::num_words(global_vector_offset_);
+    size_t num_words = Bit::num_words(machine_vector_size_);
+    while(true) {
+      auto destination_buffer = destination_subscription_->pull();
+      if (!communicator_->recv(destination_buffer->getData() + word_offset,
+                               num_words,
+                               source_rank_)) {
+        destination_buffer->release();
+        return;
+      }
+      auto signal = getBlank();
+      publish(signal);
+      destination_buffer->release();
+    }
+  };
+  thread_ = std::thread(thread_function);
+  return true;
+}
+
+RemoteVectorExtractor::~RemoteVectorExtractor() {
+  if (thread_.joinable()) {
+    thread_.join();
+  }
+  if (destination_subscription_) {
+    delete destination_subscription_;
+  }
+}
+
+RemoteVectorPublisher::RemoteVectorPublisher() {
+  source_subscription_ = nullptr;
+}
+
+bool RemoteVectorPublisher::
+init(size_t global_vector_offset,
+     size_t machine_vector_size,
+     Communicator* communicator,
+     int destination_rank,
+     SourcePublisher* source_publisher,
+     const std::vector<DependentPublisher*>& dependent_publishers) {
+  global_vector_offset_ = global_vector_offset;
+  machine_vector_size_ = machine_vector_size;
+  communicator_ = communicator;
+  destination_rank_ = destination_rank;
+  source_subscription_ = source_publisher->subscribe();
+  for (auto pub : dependent_publishers) {
+    dependent_subscriptions_.push_back(pub->subscribe());
+  }
+  return true;
+}
+
+bool RemoteVectorPublisher::start() {
+  auto thread_function = [this]() {
+    size_t word_offset = Bit::num_words(global_vector_offset_);
+    size_t num_words = Bit::num_words(machine_vector_size_);
+    Mailbox mailbox;
+    std::vector<Signal*> dependent_signals(dependent_subscriptions_.size());
+    while(true) {
+      VectorExchangeBuffer* source_buffer = nullptr;
+      source_subscription_->pull(&source_buffer, &mailbox);
+      for (size_t i = 0; i < dependent_subscriptions_.size(); ++i) {
+        dependent_signals[i] = nullptr;
+        dependent_subscriptions_[i]->pull(dependent_signals.data() + i,
+                                          &mailbox);
+      }
+      if (!mailbox.wait(&source_buffer, &dependent_signals)) {
+        source_subscription_->cancel();
+        for (auto sub : dependent_subscriptions_) {
+          sub->cancel();
+        }
+        if (source_buffer) {
+          source_buffer->release();
+        }
+        for (auto signal : dependent_signals) {
+          if (signal) {
+            signal->release();
+          }
+        }
+        break;
+      }
+      bool status = true;
+      for (auto signal : dependent_signals) {
+        status &= signal->getStatus();
+        signal->release();
+      }
+      if (!status) {
+        source_buffer->release();
+        break;
+      }
+      communicator_->send(source_buffer->getData() + word_offset,
+                          num_words,
+                          destination_rank_);
+      source_buffer->release();
+    }
+    communicator_->sendInvalid(destination_rank_);
+  };
+  thread_ = std::thread(thread_function);
+  return true;
+}
+
+RemoteVectorPublisher::~RemoteVectorPublisher() {
+  if (thread_.joinable()) {
+    thread_.join();
+  }
+  if (source_subscription_) {
+    delete source_subscription_;
+  }
+  for (auto sub : dependent_subscriptions_) {
+    delete sub;
+  }
+}
+
 GlobalVectorPublisher::GlobalVectorPublisher()
   : source_subscription_(nullptr),
     initialized_(false) {
@@ -106,6 +242,7 @@ bool GlobalVectorPublisher::start() {
       VectorExchangeBuffer* source_buffer = nullptr;
       source_subscription_->pull(&source_buffer, &mailbox);
       for (size_t i = 0; i < dependent_subscriptions_.size(); ++i) {
+        dependent_signals[i] = nullptr;
         dependent_subscriptions_[i]->pull(dependent_signals.data() + i,
                                           &mailbox);
       }

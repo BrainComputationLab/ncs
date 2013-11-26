@@ -50,3 +50,16 @@ message InputGroup {
   required float start_time = 4;
   required float end_time = 5;
 }
+
+message Report {
+  repeated string alias = 1;
+  enum Target {
+    Neuron = 0;
+    Synapse = 1;
+    Input = 2;
+    Unknown = 3;
+  };
+  required Target target = 2;
+  required string report_name = 3;
+  required float percentage = 4;
+}

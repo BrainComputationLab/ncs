@@ -7,6 +7,7 @@
 #include <ncs/sim/DeviceNeuronStateBuffer.h>
 #include <ncs/sim/GlobalNeuronStateBuffer.h>
 #include <ncs/sim/GlobalFireVectorBuffer.h>
+#include <ncs/sim/MPI.h>
 #include <ncs/sim/Signal.h>
 #include <ncs/sim/StepSignal.h>
 
@@ -54,6 +55,51 @@ private:
   size_t global_word_offset_;
   typename SourcePublisher::Subscription* source_subscription_;
   typename DestinationPublisher::Subscription* destination_subscription_;
+  std::thread thread_;
+};
+
+class RemoteVectorExtractor : public SpecificPublisher<Signal> {
+public:
+  typedef SpecificPublisher<VectorExchangeBuffer> DestinationPublisher;
+  RemoteVectorExtractor();
+  bool init(size_t global_vector_offset,
+            size_t machine_vector_size,
+            Communicator* communicator, 
+            int source_rank,
+            DestinationPublisher* destination_publisher,
+            size_t num_buffers);
+  bool start();
+  ~RemoteVectorExtractor();
+private:
+  size_t global_vector_offset_;
+  size_t machine_vector_size_;
+  Communicator* communicator_;
+  int source_rank_;
+  typename DestinationPublisher::Subscription* destination_subscription_;
+  size_t num_buffers_;
+  std::thread thread_;
+};
+
+class RemoteVectorPublisher {
+public:
+  typedef SpecificPublisher<VectorExchangeBuffer> SourcePublisher;
+  typedef SpecificPublisher<Signal> DependentPublisher;
+  RemoteVectorPublisher();
+  bool init(size_t global_vector_offset,
+            size_t machine_vector_size,
+            Communicator* communicator,
+            int destination_rank,
+            SourcePublisher* source_publisher,
+            const std::vector<DependentPublisher*>& dependent_publishers);
+  bool start();
+  ~RemoteVectorPublisher();
+private:
+  size_t global_vector_offset_;
+  size_t machine_vector_size_;
+  Communicator* communicator_;
+  int destination_rank_;
+  std::vector<DependentPublisher::Subscription*> dependent_subscriptions_;
+  typename SourcePublisher::Subscription* source_subscription_;
   std::thread thread_;
 };
 

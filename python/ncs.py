@@ -73,14 +73,22 @@ class Report:
   def toAsciiFile(self, path):
     if self.sink:
       print "Data source is already in use."
-      return False
+      return self
     self.sink = pyncs.AsciiFileSink(self.data_source, path)
+    return self
 
   def toStdOut(self):
     if self.sink:
       print "Data source is already in use."
-      return False
+      return self
     self.sink = pyncs.AsciiStreamSink(self.data_source)
+    return self
+
+class EmptyReport:
+  def toAsciiFile(self, path):
+    return self
+  def toStdOut(self):
+    return self
 
 class Simulation:
   def __init__(self):
@@ -147,6 +155,8 @@ class Simulation:
                probability, 
                start_time, 
                end_time):
+    if not self.simulation.isMaster():
+      return True
     group_list = None
     if isinstance(groups, list):
       group_list = list(groups)
@@ -190,6 +200,8 @@ class Simulation:
     return self.simulation.addInput(input_group)
 
   def addReport(self, targets, target_type, attribute, probability):
+    if not self.simulation.isMaster():
+      return EmptyReport() 
     target = pyncs.Report.Unknown
     target_list = None
     if isinstance(targets, list):

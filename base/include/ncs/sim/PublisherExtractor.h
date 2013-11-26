@@ -18,6 +18,8 @@ public:
             const std::string pin_name,
             Publisher* source_publisher,
             SpecificPublisher<ReportDataBuffer>* destination_publisher);
+  bool getStep(unsigned int& step);
+  bool syncStep(unsigned int step);
   bool start();
   virtual ~PublisherExtractor();
 private:
@@ -26,6 +28,7 @@ private:
   std::vector<unsigned int> indices_;
   Publisher* source_publisher_;
   Publisher::Subscription* source_subscription_;
+  DataBuffer* queued_buffer_;
   typename SpecificPublisher<ReportDataBuffer>::Subscription* 
     destination_subscription_;
   std::string pin_name_;

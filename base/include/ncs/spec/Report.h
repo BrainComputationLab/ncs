@@ -6,6 +6,10 @@
 
 namespace ncs {
 
+namespace com {
+  struct Report;
+}
+
 namespace spec {
 
 class Report {
@@ -25,6 +29,8 @@ public:
   const std::string& getReportName() const;
   float getPercentage() const;
   ~Report();
+  bool toProtobuf(com::Report* report) const;
+  static Report* fromProtobuf(com::Report* report);
 private:
   std::vector<std::string> aliases_;
   Target target_;

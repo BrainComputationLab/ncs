@@ -52,7 +52,7 @@ def Run(argv):
                                              "ncs",
                                              ncs_cell
                                             )
-  group_1 = sim.addCellGroup("group_1", 100, "ncs_neuron", None) # last param is geometry
+  group_1 = sim.addCellGroup("group_1", 2, "ncs_neuron", None) # last param is geometry
 
   all_cells = sim.addCellAlias("all_cells", [group_1])
   sim.addCellAlias("all", all_cells)
@@ -62,12 +62,14 @@ def Run(argv):
     print "Failed to initialize simulation."
     return
 
-  sim.addInput("rectangular_current", { "amplitude": 0.1 }, group_1, 1.0, 0.0, 1.0)
+  sim.addInput("rectangular_current", { "amplitude": 1.0 }, group_1, 0.0, 0.0, 1.0)
 
-#voltage_report = sim.addReport("group_1", "neuron", "neuron_voltage", 1.0)
+  #voltage_report = sim.addReport("group_1", "neuron", "neuron_voltage", 1.0)
+#voltage_report = sim.addReport("group_1", "neuron", "neuron_voltage", 1.0).toStdOut()
+  voltage_report = sim.addReport("group_1", "neuron", "neuron_voltage", 1.0).toAsciiFile("/tmp/voltages.txt")
 #voltage_report.toAsciiFile("/tmp/voltages.txt")
-#voltage_report.toStdOut()
 
+  print "Starting simulation"
   sim.step(10)
   del sim
   return

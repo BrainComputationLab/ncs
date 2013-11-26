@@ -46,11 +46,11 @@ AsciiFileSink::AsciiFileSink(DataSource* data_source,
 }
 
 AsciiFileSink::~AsciiFileSink() {
-  if (file_) {
-    file_.close();
-  }
   if (stream_) {
     delete stream_;
+  }
+  if (file_) {
+    file_.close();
   }
 }
 

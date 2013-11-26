@@ -16,6 +16,8 @@
 #include <ncs/sim/Parallel.h>
 #include <ncs/sim/PublisherExtractor.h>
 #include <ncs/sim/ReportController.h>
+#include <ncs/sim/ReportReceiver.h>
+#include <ncs/sim/ReportSyncer.h>
 #include <ncs/sim/Signal.h>
 #include <ncs/sim/Simulator.h>
 
@@ -30,6 +32,7 @@ Simulator::Simulator(spec::ModelSpecification* model_specification,
   : model_specification_(model_specification),
     simulation_parameters_(simulation_parameters),
     communicator_(nullptr),
+    vector_communicator_(nullptr),
     neurons_(nullptr),
     vector_exchange_controller_(new VectorExchangeController()),
     global_vector_publisher_(new GlobalVectorPublisher()),
@@ -62,6 +65,11 @@ bool Simulator::initialize(int argc, char** argv) {
   communicator_ = Communicator::global();
   if (!communicator_) {
     std::cerr << "Failed to create global communicator." << std::endl;
+    return false;
+  }
+  vector_communicator_ = Communicator::global();
+  if (!communicator_) {
+    std::cerr << "Failed to create vector communicator." << std::endl;
     return false;
   }
 
@@ -163,6 +171,18 @@ bool Simulator::initialize(int argc, char** argv) {
     std::cerr << "Failed to start GlobalVectorPublisher." << std::endl;
     return false;
   }
+  for (auto extractor : remote_extractors_) {
+    if (!extractor->start()) {
+      std::cerr << "Failed to start RemoteVectorExtractor." << std::endl;
+      return false;
+    }
+  }
+  for (auto publisher : remote_publishers_) {
+    if (!publisher->start()) {
+      std::cerr << "Failed to start RemoteVectorPublisher." << std::endl;
+      return false;
+    }
+  }
   if (!isMaster()) {
     worker_thread_ = std::thread([this](){ this->workerFunction_(); });
   }
@@ -181,7 +201,6 @@ bool Simulator::step() {
 }
 
 bool Simulator::addInput(spec::InputGroup* input) {
-  // TODO(rvhoang): echo this spec to the other machines
   simulation_controller_->idle();
   if (isMaster()) {
     int command = AddInput;
@@ -273,73 +292,161 @@ bool Simulator::isMaster() const {
 }
 
 DataSink* Simulator::addReport(spec::Report* report) {
+  // Transmit the report spec to all the other nodes
+  if (isMaster()) {
+    int command = AddReport;
+    communicator_->bcast(&command, 1, 0);
+    com::Report protobuffer;
+    report->toProtobuf(&protobuffer);
+    std::string buffer;
+    protobuffer.SerializeToString(&buffer);
+    communicator_->bcast(buffer, 0);
+  }
+  // Make a separate communicator for reporting
+  Communicator* communicator = Communicator::global();
+
   if (report->getTarget() == spec::Report::Neuron) {
-    // Make sure the report type is real
-    const auto neuron_manager = report_managers_->getNeuronManager();
-    const auto report_name = report->getReportName();
-    const auto data_description = neuron_manager->getDescription(report_name);
-    if (nullptr == data_description) {
-      std::cerr << "Report of name " << report_name << " not found." <<
-        std::endl;
-      return nullptr;
-    }
+    // Get all neuron aliases
     std::vector<spec::NeuronAlias*> aliases;
     for (const auto& alias_name : report->getAliases()) {
       auto alias = getNeuronAlias_(alias_name);
-      if (nullptr == alias) {
-        std::cerr << "Neuron alias " << alias_name << " not found." << 
-          std::endl;
-        return nullptr;
+      // We can't fail here. It might just be that the alias doesn't exist
+      // on this particular machine
+      if (alias) {
+        aliases.push_back(alias);
       }
-      aliases.push_back(alias);
     }
+    // Get all the groups in those aliases
     std::vector<spec::NeuronGroup*> potential_groups;
     for (auto alias : aliases) {
       for (auto group : alias->getGroups()) {
         potential_groups.push_back(group);
       }
     }
+    // Expand all neuron groups into a list of potential neurons 
+    // Again, we can't fail out here, we might just have no neurons
     std::vector<Neuron*> potential_neurons;
-    if (!getNeuronsInGroups_(potential_groups, &potential_neurons)) {
-      std::cerr << "Failed to expand all neuron aliases." << std::endl;
-      return nullptr;
-    }
-
+    getNeuronsInGroups_(potential_groups, &potential_neurons);
+    // Shuffle the potential
     // TODO(rvhoang): seed this
     ncs::spec::RNG rng(0);
     auto gen = [&](unsigned int i) {
       return std::uniform_int_distribution<unsigned int>(0, i - 1)(rng);
     };
-#if 0
     std::random_shuffle(potential_neurons.begin(),
                         potential_neurons.end(),
                         gen);
-#endif
+    // Take only as many as we need
     size_t num_to_select =
       potential_neurons.size() * report->getPercentage();
-    if (num_to_select <= 0) {
-      std::cerr << "Not enough neurons to report on." << std::endl;
-      return nullptr;
-    }
     num_to_select = std::min(num_to_select, potential_neurons.size());
     potential_neurons.resize(num_to_select);
+
+    // Make sure the report type is real
+    int my_machine_index = cluster_->getThisMachineIndex();
+    const auto neuron_manager = report_managers_->getNeuronManager();
+    const auto report_name = report->getReportName();
+    const auto data_description = neuron_manager->getDescription(report_name);
+    bool status = true;
+    if (nullptr == data_description) {
+      // If the report doesn't exist on this machine, then we need to be
+      // sure that none of the selected neurons exist on this machine as
+      // well; otherwise, this is erroneous.
+      // A global scope report will be available on every machine despite only
+      // the master handling it
+      for (auto neuron : potential_neurons) {
+        if (neuron->location.machine == my_machine_index) {
+          std::cerr << "Report of name " << report_name << " was not found " <<
+            "on a machine that requires it." << std::endl;
+          status = false;
+        }
+      }
+    } else {
+      // If the dataspace is global, clear all neurons as the master will
+      // handle it
+      if (data_description->getDataSpace() == DataSpace::Global) {
+        if (!isMaster()) {
+          potential_neurons.clear();
+        }
+      } else { // Remove all neurons not on this machine
+        auto not_on_machine = [my_machine_index](Neuron* n) {
+          return n->location.machine != my_machine_index;
+        };
+        auto new_end = std::remove_if(potential_neurons.begin(),
+                                      potential_neurons.end(),
+                                      not_on_machine);
+        potential_neurons.erase(new_end, potential_neurons.end());
+      }
+    }
+
+    DataSpace::Space data_space = DataSpace::Unknown;
+    DataType::Type data_type = DataType::Unknown;
+    if (data_description) {
+      data_space = data_description->getDataSpace();
+      data_type = data_description->getDataType();
+    }
+    int space = data_space;
+    int type = data_type;
+    if (isMaster()) {
+      // Get the final data description from all nodes and make sure they're
+      // either unknown or the same value
+      for (int i = 1; i < communicator->getNumProcesses(); ++i) {
+        int remote_space = DataSpace::Unknown;
+        int remote_type = DataType::Unknown;
+        communicator->recv(remote_space, i);
+        communicator->recv(remote_type, i);
+        if (space == DataSpace::Unknown) {
+          space = remote_space;
+        }
+        if (type == DataType::Unknown) {
+          type = remote_type;
+        }
+      }
+    } else {
+      communicator->send(space, 0);
+      communicator->send(type, 0);
+    }
+    communicator->bcast(space, 0);
+    communicator->bcast(type, 0);
+    if (data_space != DataSpace::Unknown &&
+        data_space != space) {
+      std::cerr << "Mismatched data spaces." << std::endl;
+      status = false;
+    }
+    if (data_type != DataType::Unknown &&
+        data_type != type) {
+      std::cerr << "Mismatched data types." << std::endl;
+      status = false;
+    }
+    data_space = static_cast<DataSpace::Space>(space);
+    data_type = static_cast<DataType::Type>(type);
+
+    // Make sure we're all good here
+    if (!communicator->syncState(status)) {
+      std::cerr << "An error occurred setting up this report." << std::endl;
+      delete communicator;
+      return nullptr;
+    }
+
+    // Sort neurons by their location
     auto CompareNeuronLocation = [=](const Neuron* a, const Neuron* b) {
       return a->location < b->location;
     };
     std::sort(potential_neurons.begin(),
               potential_neurons.end(),
               CompareNeuronLocation);
+
+    // Construct a set of accessors based on the dataspace
     std::function<bool(Neuron* a, Neuron* b)> same_location;
     std::function<Location(Neuron* n)> relevant_location;
     std::function<unsigned int(Neuron*)> get_index;
-    int my_machine_index = cluster_->getThisMachineIndex();
-    switch(data_description->getDataSpace()) {
+    switch(data_space) {
       case DataSpace::Global:
         same_location = [](Neuron* a, Neuron* b) {
           return true;
         };
-        relevant_location = [my_machine_index](Neuron* a) {
-          return Location(my_machine_index, -1, -1);
+        relevant_location = [](Neuron* a) {
+          return Location(0, -1, -1);
         };
         get_index = [](Neuron* n) {
           return n->id.global;
@@ -383,8 +490,17 @@ DataSink* Simulator::addReport(spec::Report* report) {
         break;
       default:
         std::cerr << "Invalid data space." << std::endl;
-        return nullptr;
+        status = false;
     }
+
+    if (!communicator->syncState(status)) {
+      std::cerr << "Invalid data space." << std::endl;
+      delete communicator;
+      return nullptr;
+    }
+
+    // Partition neurons by their relevant location
+    // By this point, all Locations are those that reside on this machine
     std::map<Location, std::vector<Neuron*>> neurons_by_location;
     {
       auto it = potential_neurons.begin();
@@ -401,112 +517,166 @@ DataSink* Simulator::addReport(spec::Report* report) {
         it = segment_end;
       }
     }
-    DataType::Type datatype = data_description->getDataType();
-    size_t num_total_elements = 0;
-    size_t num_real_elements = 0;
-    std::map<Location, size_t> bytes_per_location;
-    for (auto it : neurons_by_location) {
-      size_t num_bytes = DataType::num_bytes(it.second.size(), datatype);
-      num_total_elements += DataType::num_padded_elements(it.second.size(),
-                                                          datatype);
-      num_real_elements += it.second.size();
-      bytes_per_location[it.first] = num_bytes;
-    }
-    size_t buffer_size = 0;
-    std::map<int, size_t> bytes_per_machine;
-    for (auto it : bytes_per_location) {
-      bytes_per_machine[it.first.machine] = 0;
-    }
-    std::map<Location, size_t> byte_offset_per_location;
-    {
-      size_t offset = 0;
-      for (auto it : bytes_per_location) {
-        bytes_per_machine[it.first.machine] += it.second;
-        buffer_size += it.second;
-        byte_offset_per_location[it.first] = offset;
-        offset += it.second;
-      }
-    }
-    std::map<int, size_t> byte_offset_per_machine;
-    {
-      size_t offset = 0;
-      for (auto it : bytes_per_machine) {
-        byte_offset_per_machine[it.first] = offset;
-        offset += it.second;
-      }
-    }
-    std::map<int, std::vector<Location>> locations_by_machine;
-    for (auto it : neurons_by_location) {
-      Location location = it.first;
-      locations_by_machine[location.machine].push_back(location);
-    }
-    std::vector<Location> my_locations;
-    size_t my_machine_offset = 0;
-    if (locations_by_machine.count(my_machine_index)) {
-      my_locations = locations_by_machine[my_machine_index];
-      my_machine_offset = byte_offset_per_machine[my_machine_offset];
-    }
 
+    std::vector<Location> locations;
+    for (auto it : neurons_by_location) {
+      locations.push_back(it.first);
+    }
+    unsigned int machine_total_bytes = 0;
+    unsigned int num_total_elements = 0;
+    unsigned int num_real_elements = 0;
     ReportController* report_controller = new ReportController();
-    if (!report_controller->init(buffer_size,
-                                 Constants::num_buffers)) {
-      std::cerr << "Failed to initialize ReportController." << std::endl;
-      delete report_controller;
-      return nullptr;
-    }
-
-    std::vector<SpecificPublisher<Signal>*> extractors;
     std::vector<PublisherExtractor*> publisher_extractors;
-    // TODO(rvhoang): relay this information out to other nodes
-    for (auto& location : my_locations) {
+    for (size_t i = 0; i < locations.size(); ++i) {
+      size_t byte_offset = machine_total_bytes;
+      Location& l = locations[i];
+      std::vector<Neuron*>& n = neurons_by_location[l];
+      size_t num_neurons = n.size();
+      num_real_elements += num_neurons;
+      num_total_elements += DataType::num_padded_elements(num_neurons,
+                                                          data_type);
+      size_t num_bytes = DataType::num_bytes(num_neurons, data_type);
+      machine_total_bytes += num_bytes;
       auto publisher = neuron_manager->getSource(report_name,
-                                                 location.machine,
-                                                 location.device,
-                                                 location.plugin);
+                                                 l.machine,
+                                                 l.device,
+                                                 l.plugin);
       if (!publisher) {
         std::cerr << "Failed to find a publisher for report " <<
           report_name << std::endl;
-        return nullptr;
+        status = false;
+        continue;
       }
       std::vector<unsigned int> indices;
-      const auto& location_neurons = neurons_by_location[location];
-      for (auto neuron : location_neurons) {
+      for (auto neuron : n) {
         indices.push_back(get_index(neuron));
       }
       PublisherExtractor* extractor = new PublisherExtractor();
-      if (!extractor->init(byte_offset_per_location[location],
-                           datatype,
+      if (!extractor->init(byte_offset,
+                           data_type,
                            indices,
                            report_name,
                            publisher,
                            report_controller)) {
         std::cerr << "Failed to initialize PublisherExtractor." << std::endl;
-        for (auto extractor : extractors) {
-          delete extractor;
-        }
-        delete report_controller;
-        return nullptr;
+        status = false;
+        continue;
       }
       publisher_extractors.push_back(extractor);
-      extractors.push_back(extractor);
     }
-    DataSink* data_sink = new DataSink(data_description,
-                                       num_total_elements - num_real_elements,
-                                       num_real_elements,
-                                       Constants::num_buffers);
-    if (!data_sink->init(extractors, report_controller)) {
-      std::cerr << "Failed to initialize data sink." << std::endl;
-      delete report_controller;
-      for (auto extractor : extractors) {
+    if (!communicator->syncState(status)) {
+      for (auto extractor : publisher_extractors) {
         delete extractor;
       }
-      delete data_sink;
+      delete report_controller;
+      delete communicator;
       return nullptr;
     }
-    for (auto extractor : publisher_extractors) {
-      extractor->start();
+    if (isMaster()) {
+      std::vector<SpecificPublisher<Signal>*> dependents;
+      for (auto extractor : publisher_extractors) {
+        dependents.push_back(extractor);
+      }
+      std::vector<ReportReceiver*> report_receivers;
+      for (size_t i = 1; i < communicator->getNumProcesses(); ++i) {
+        size_t byte_offset = machine_total_bytes;
+        unsigned int remote_num_real_elements = 0;
+        unsigned int remote_num_total_elements = 0;
+        unsigned int remote_num_bytes = 0; 
+        communicator->recv(remote_num_real_elements, i);
+        communicator->recv(remote_num_total_elements, i);
+        communicator->recv(remote_num_bytes, i);
+        num_real_elements += remote_num_real_elements;
+        num_total_elements += remote_num_total_elements;
+        machine_total_bytes += remote_num_bytes;
+        ReportReceiver* receiver = new ReportReceiver();
+        if (!receiver->init(byte_offset,
+                            remote_num_bytes,
+                            communicator,
+                            i,
+                            report_controller,
+                            Constants::num_buffers)) {
+          std::cerr << "Failed to initialize ReportReceiver." << std::endl;
+          delete receiver;
+          status = false;
+          continue;
+        }
+        report_receivers.push_back(receiver);
+        dependents.push_back(receiver);
+      }
+      if (!report_controller->init(machine_total_bytes,
+                                   Constants::num_buffers)) {
+        std::cerr << "Failed to initialize ReportController." << std::endl;
+        status = false;
+      }
+      MasterReportSyncer* syncer = new MasterReportSyncer();
+      if (!syncer->init(publisher_extractors,
+                        report_receivers,
+                        communicator,
+                        report_controller)) {
+        std::cerr << "Failed to initialize MasterReportSyncer." << std::endl;
+        status = false;
+      }
+      DataSink* data_sink = new DataSink(DataDescription(data_space, data_type),
+                                         num_total_elements - num_real_elements,
+                                         num_real_elements,
+                                         Constants::num_buffers);
+      if (!data_sink->init(dependents,
+                           report_controller,
+                           syncer)) {
+        std::cerr << "Failed to initialize DataSink." << std::endl;
+        status = false;
+      }
+
+      if (!communicator->syncState(status)) {
+        std::cerr << "Report communication failed to initialize." << std::endl;
+        delete data_sink;
+        return nullptr;
+      }
+      return data_sink;
+    } else {
+      // Send the master the number of elements we're responsible for 
+      communicator->send(num_real_elements, 0);
+      communicator->send(num_total_elements, 0);
+      communicator->send(machine_total_bytes, 0);
+      std::vector<SpecificPublisher<Signal>*> dependents;
+      for (auto extractor : publisher_extractors) {
+        dependents.push_back(extractor);
+      }
+      ReportSender* sender = new ReportSender();
+      if (!sender->init(communicator,
+                        0,
+                        dependents,
+                        report_controller)) {
+        std::cerr << "Failed to initialize ReportSender." << std::endl;
+        status = false;
+      }
+      WorkerReportSyncer* syncer = new WorkerReportSyncer();
+      if (!syncer->init(publisher_extractors,
+                        communicator,
+                        report_controller,
+                        sender)) {
+        std::cerr << "Failed to initialize WorkerReportSyncer." << std::endl;
+        status = false;
+      }
+      if (!report_controller->init(machine_total_bytes,
+                                   Constants::num_buffers)) {
+        std::cerr << "Failed to initialize ReportController." << std::endl;
+        status = false;
+      }
+      if (!communicator->syncState(status)) {
+        std::cerr << "Report communication failed to initialize." << std::endl;
+        delete syncer;
+        return false;
+      }
+      auto thread_function = [syncer]() {
+        syncer->run();
+        delete syncer;
+      };
+      std::thread thread(thread_function);
+      thread.detach();
+      return nullptr;
     }
-    return data_sink;
   } else if (report->getTarget() == spec::Report::Synapse) {
     // TODO(rvhoang): this is more complicated since synapse information only
     // exists on the machine the synapse resides on
@@ -520,7 +690,6 @@ Simulator::~Simulator() {
     communicator_->bcast(&command, 1, 0);
   }
   if (worker_thread_.joinable()) {
-    std::cout << "waiting for worker" << std::endl;
     worker_thread_.join();
   }
   std::clog << "Shutting down simulation." << std::endl;
@@ -529,7 +698,15 @@ Simulator::~Simulator() {
   pd.add(vector_exchange_controller_, "VectorExchangeController");
   pd.add(global_vector_publisher_, "GlobalVectorPublisher");
   pd.add(devices_, "Device");
+  pd.add(remote_publishers_, "RemoteVectorPublisher");
+  pd.add(remote_extractors_, "RemoteVectorExtractor");
   pd.wait();
+  if (communicator_) {
+    delete communicator_;
+  }
+  if (vector_communicator_) {
+    delete vector_communicator_;
+  }
   MPI::finalize();
   std::clog << "Shut down complete." << std::endl;
 }
@@ -548,7 +725,6 @@ void Simulator::workerFunction_() {
         {
           std::string buffer;
           communicator_->bcast(buffer, 0);
-          std::cout << buffer.length() << std::endl;
           com::InputGroup protobuffer;
           protobuffer.ParseFromString(buffer);
           spec::InputGroup* input_group = 
@@ -557,7 +733,14 @@ void Simulator::workerFunction_() {
         }
         break;
       case AddReport:
-        std::cout << "Got report" << std::endl;
+        {
+          std::string buffer;
+          communicator_->bcast(buffer, 0);
+          com::Report protobuffer;
+          protobuffer.ParseFromString(buffer);
+          spec::Report* report = spec::Report::fromProtobuf(&protobuffer);
+          addReport(report);
+        }
         break;
       default:
         std::cerr << "Unrecognized command " << command << std::endl;
@@ -798,6 +981,9 @@ bool Simulator::assignNeuronIDs_() {
         global_id = Bit::pad(global_id);
       }
     }
+    size_t machine_vector_size = 
+      global_id - neuron_global_id_offsets_per_machine_[machine_index];
+    neuron_vector_size_per_machine_.push_back(machine_vector_size);
   }
   global_neuron_vector_size_ = global_id;
   return true;
@@ -931,16 +1117,77 @@ bool Simulator::initializeVectorExchanger_() {
     return false;
   }
   // Get the vector extractor for each device
-  std::vector<SpecificPublisher<Signal>*> vector_extractors;
+  std::vector<SpecificPublisher<Signal>*> device_vector_extractors;
   for (auto device : devices_) {
-    vector_extractors.push_back(device->getVectorExtractor());
+    device_vector_extractors.push_back(device->getVectorExtractor());
   }
-  if (!global_vector_publisher_->init(global_neuron_vector_size_,
-                                      Constants::num_buffers,
-                                      vector_extractors,
-                                      vector_exchange_controller_)) {
-    std::cerr << "Failed to initialize GlobalVectorPublisher." << std::endl;
-    return false;
+
+  // Set up a publisher for each remote machine
+  {
+    unsigned int this_machine_index = cluster_->getThisMachineIndex();
+    size_t vector_size = neuron_vector_size_per_machine_[this_machine_index];
+    size_t vector_offset = 
+      neuron_global_id_offsets_per_machine_[this_machine_index];
+    for (size_t i = 0; i < vector_communicator_->getNumProcesses(); ++i) {
+      if (this_machine_index == i) {
+        continue;
+      }
+      auto remote_publisher = new RemoteVectorPublisher();
+      if (!remote_publisher->init(vector_offset,
+                                  vector_size,
+                                  vector_communicator_,
+                                  i,
+                                  vector_exchange_controller_,
+                                  device_vector_extractors)) {
+        std::cerr << "Failed to initialize RemoteVectorPublisher." <<
+          std::endl;
+        delete remote_publisher;
+        return false;
+      }
+      remote_publishers_.push_back(remote_publisher);
+    }
+  }
+
+  // Set up an extractor for each remote machine
+  {
+    unsigned int this_machine_index = cluster_->getThisMachineIndex();
+    for (size_t i = 0; i < vector_communicator_->getNumProcesses(); ++i) {
+      if (i == this_machine_index) {
+        continue;
+      }
+      size_t vector_size = neuron_vector_size_per_machine_[i];
+      size_t vector_offset = neuron_global_id_offsets_per_machine_[i];
+      auto remote_extractor = new RemoteVectorExtractor();
+      if (!remote_extractor->init(vector_offset,
+                                  vector_size,
+                                  vector_communicator_,
+                                  i,
+                                  vector_exchange_controller_,
+                                  Constants::num_buffers)) {
+        std::cerr << "Failed to initialize RemoteVectorExtractor." <<
+          std::endl;
+        delete remote_extractor;
+        return false;
+      }
+      remote_extractors_.push_back(remote_extractor);
+    }
+  }
+  // Setup the global vector publisher
+  {
+    std::vector<SpecificPublisher<Signal>*> dependents;
+    for (auto device_extractor : device_vector_extractors) {
+      dependents.push_back(device_extractor);
+    }
+    for (auto remote_extractor : remote_extractors_) {
+      dependents.push_back(remote_extractor);
+    }
+    if (!global_vector_publisher_->init(global_neuron_vector_size_,
+                                        Constants::num_buffers,
+                                        dependents,
+                                        vector_exchange_controller_)) {
+      std::cerr << "Failed to initialize GlobalVectorPublisher." << std::endl;
+      return false;
+    }
   }
   return true;
 }
@@ -1082,19 +1329,17 @@ getSynapseAlias_(const std::string& alias) const {
 bool Simulator::
 getNeuronsInGroups_(const std::vector<spec::NeuronGroup*>& groups,
                     std::vector<Neuron*>* neurons) const {
+  bool result = true;
   for (auto group : groups) {
-    if (!getNeuronsInGroup_(group, neurons)) {
-      return false;
-    }
+    result &= getNeuronsInGroup_(group, neurons);
   }
-  return true;
+  return result;
 }
 
 bool Simulator::getNeuronsInGroup_(spec::NeuronGroup* group, 
                           std::vector<Neuron*>* neurons) const {
   auto search_result = neurons_by_group_.find(group);
   if (neurons_by_group_.end() == search_result) {
-    std::cerr << "Failed to find a neuron_group." << std::endl;
     return false;
   }
   const auto& neuron_list = search_result->second;

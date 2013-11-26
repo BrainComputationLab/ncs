@@ -25,6 +25,8 @@ AsciiStream<T>::AsciiStream(std::ostream& stream,
       stream_ << std::endl;
       data_source_->release();
     }
+    delete data_source_;
+    data_source_ = nullptr;
   };
   thread_ = std::thread(thread_function);
 }

@@ -19,22 +19,27 @@ const void* DataSinkBuffer::getData() const {
 DataSinkBuffer::~DataSinkBuffer() {
 }
 
-DataSink::DataSink(const DataDescription* data_description,
+DataSink::DataSink(const DataDescription& data_description,
                    size_t num_padding_elements,
                    size_t num_real_elements,
                    size_t num_buffers)
-  : data_description_(new DataDescription(*data_description)),
+  : data_description_(data_description),
     num_padding_elements_(num_padding_elements),
     num_real_elements_(num_real_elements),
     num_buffers_(num_buffers),
     source_subscription_(nullptr) {
   num_total_elements_ = num_padding_elements_ + num_real_elements_;
+  report_syncer_ = nullptr;
 }
 
 bool DataSink::init(const std::vector<SpecificPublisher<Signal>*> dependents,
-                    ReportController* report_controller) {
+                    ReportController* report_controller,
+                    MasterReportSyncer* report_syncer) {
+  report_syncer_ = report_syncer;
+  report_controller_ = report_controller;
+  source_subscription_ = report_controller->subscribe();
   size_t data_size = DataType::num_bytes(num_total_elements_,
-                                         data_description_->getDataType());
+                                         data_description_.getDataType());
   if (data_size <= 0) {
     std::cerr << "No data is actually collected in this sink." << std::endl;
     return false;
@@ -52,18 +57,18 @@ bool DataSink::init(const std::vector<SpecificPublisher<Signal>*> dependents,
   for (auto dependent : dependent_publishers_) {
     dependent_subscriptions_.push_back(dependent->subscribe());
   }
-  report_controller_ = report_controller;
-  source_subscription_ = report_controller->subscribe();
   return true;
 }
 
 bool DataSink::start() {
-  // start the report controller since by this point everyone that should have
-  // subscribed to it already has
-  if (!report_controller_->start()) {
-    std::cerr << "Failed to start ReportController." << std::endl;
-    return false;
-  }
+  auto syncer_function = [report_syncer_]() {
+    report_syncer_->run();
+    delete report_syncer_;
+  };
+  std::thread thread(syncer_function);
+  thread.detach();
+  report_syncer_ = nullptr;
+
   auto thread_function = [this]() {
     Mailbox mailbox;
     std::vector<Signal*> dependent_signals;
@@ -72,6 +77,7 @@ bool DataSink::start() {
       ReportDataBuffer* data_buffer = nullptr;
       source_subscription_->pull(&data_buffer, &mailbox);
       for (size_t i= 0; i < dependent_subscriptions_.size(); ++i) {
+        dependent_signals[i] = nullptr;
         dependent_subscriptions_[i]->pull(dependent_signals.data() + i,
                                           &mailbox);
       }
@@ -119,7 +125,7 @@ bool DataSink::start() {
   return true;
 }
 
-const DataDescription* DataSink::getDataDescription() const {
+const DataDescription& DataSink::getDataDescription() const {
   return data_description_;
 }
 
@@ -139,20 +145,14 @@ DataSink::~DataSink() {
   if (thread_.joinable()) {
     thread_.join();
   }
-  if (data_description_) {
-    delete data_description_;
-  }
   if (source_subscription_) {
     delete source_subscription_;
   }
   for (auto sub : dependent_subscriptions_) {
     delete sub;
   }
-  for (auto dependent : dependent_publishers_) {
-    delete dependent;
-  }
-  if (report_controller_) {
-    delete report_controller_;
+  if (report_syncer_) {
+    delete report_syncer_;
   }
 }
 

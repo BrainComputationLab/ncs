@@ -6,6 +6,10 @@ namespace ncs {
 
 namespace sim {
 
+int MPI::dependent_count_ = 0;
+std::condition_variable MPI::state_changed_;
+std::mutex MPI::mutex_;
+
 Communicator* Communicator::global() {
   MPI_Group global_group;
   MPI_Comm new_comm;
@@ -87,6 +91,67 @@ template<> bool Communicator::bcast(std::string& v, int origin_rank) {
   return true;
 }
 
+bool Communicator::sendInvalid(int rank) {
+  int result = MPI_Send(nullptr,
+                        0,
+                        MPI_CHAR,
+                        rank,
+                        Invalid,
+                        mpi_communicator_);
+  if (!MPI::ok(result)) {
+    std::cerr << "Failed to send invalid tag: " << MPI::errorString(result) <<
+      std::endl;
+    return false;
+  }
+  return true;
+}
+
+bool Communicator::sendValid(int rank) {
+  int result = MPI_Send(nullptr,
+                        0,
+                        MPI_CHAR,
+                        rank,
+                        Valid,
+                        mpi_communicator_);
+  if (!MPI::ok(result)) {
+    std::cerr << "Failed to send valid tag: " << MPI::errorString(result) <<
+      std::endl;
+    return false;
+  }
+  return true;
+}
+
+bool Communicator::recvState(int rank) {
+  MPI_Status status;
+  int result = MPI_Recv(nullptr,
+                        0,
+                        MPI_CHAR,
+                        rank,
+                        MPI_ANY_TAG,
+                        mpi_communicator_,
+                        &status);
+  if (!MPI::ok(result)) {
+    std::cerr << "Failed to recv data: " << MPI::errorString(result) <<
+      std::endl;
+    return false;
+  }
+  return status.MPI_TAG == Valid;
+}
+
+bool Communicator::syncState(bool my_state) {
+  bool result = my_state;
+  if (getRank() == 0) {
+    for (int i = 1; i < getNumProcesses(); ++i) {
+      result &= recvState(i);
+    }
+  } else if (my_state) {
+    sendValid(0);
+  } else {
+    sendInvalid(0);
+  }
+  bcast(result, 0);
+  return result;
+}
 
 int Communicator::getRank() const {
   return rank_;
@@ -100,6 +165,12 @@ Communicator::Communicator(MPI_Comm comm)
   : mpi_communicator_(comm) {
   MPI_Comm_rank(mpi_communicator_, &rank_);
   MPI_Comm_size(mpi_communicator_, &num_processes_);
+  MPI::addDependent();
+}
+
+Communicator::~Communicator() {
+  MPI_Comm_free(&mpi_communicator_);
+  MPI::removeDependent();
 }
 
 std::string MPI::errorString(int code) {
@@ -127,9 +198,27 @@ bool MPI::initialize(int argc, char** argv) {
 }
 
 bool MPI::finalize() {
+  std::unique_lock<std::mutex> lock(mutex_);
+  while (dependent_count_ > 0) {
+    state_changed_.wait(lock);
+  }
   MPI_Finalize();
   return true;
 };
+
+bool MPI::addDependent() {
+  std::unique_lock<std::mutex> lock(mutex_);
+  dependent_count_++;
+  state_changed_.notify_all();
+  return true;
+}
+
+bool MPI::removeDependent() {
+  std::unique_lock<std::mutex> lock(mutex_);
+  dependent_count_--;
+  state_changed_.notify_all();
+  return true;
+}
 
 } // namespace sim
 

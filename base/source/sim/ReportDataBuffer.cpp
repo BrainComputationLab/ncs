@@ -21,6 +21,10 @@ void* ReportDataBuffer::getData() const {
   return data_;
 }
 
+size_t ReportDataBuffer::getSize() const {
+  return data_size_;
+}
+
 ReportDataBuffer::~ReportDataBuffer() {
   if (data_) {
     char* p = (char*)data_;

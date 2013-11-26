@@ -1,4 +1,5 @@
 #pragma once
+#include <random>
 #include <ncs/sim/Location.h>
 
 namespace ncs {

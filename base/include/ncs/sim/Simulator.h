@@ -72,6 +72,7 @@ private:
   spec::SimulationParameters* simulation_parameters_;
   ModelStatistics* model_statistics_;
   Communicator* communicator_;
+  Communicator* vector_communicator_;
   ClusterDescription* cluster_;
 
   FactoryMap<NeuronSimulator>* neuron_simulator_generators_;
@@ -79,6 +80,7 @@ private:
   std::map<spec::NeuronGroup*, void*> neuron_instantiators_by_group_;
   std::vector<size_t> neuron_global_id_offsets_per_machine_;
   std::vector<size_t> neuron_global_id_offsets_per_my_devices_;
+  std::vector<size_t> neuron_vector_size_per_machine_;
   size_t global_neuron_vector_size_;
   Neuron* neurons_;
   unsigned int num_neurons_;
@@ -90,6 +92,8 @@ private:
   FactoryMap<InputSimulator>* input_simulator_generators_;
 
   VectorExchangeController* vector_exchange_controller_;
+  std::vector<RemoteVectorPublisher*> remote_publishers_;
+  std::vector<RemoteVectorExtractor*> remote_extractors_;
   GlobalVectorPublisher* global_vector_publisher_;
 
   SimulationController* simulation_controller_;

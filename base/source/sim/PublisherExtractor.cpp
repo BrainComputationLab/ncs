@@ -12,6 +12,7 @@ PublisherExtractor::PublisherExtractor()
     datatype_(DataType::Unknown),
     source_subscription_(nullptr),
     destination_subscription_(nullptr) {
+  queued_buffer_ = nullptr;
 }
 
 bool PublisherExtractor::
@@ -34,6 +35,28 @@ init(size_t output_offset,
   return true;
 }
 
+bool PublisherExtractor::getStep(unsigned int& step) {
+  queued_buffer_ = source_subscription_->pull();
+  if (nullptr == queued_buffer_) {
+    return false;
+  }
+  step = queued_buffer_->simulation_step;
+  return true;
+}
+
+bool PublisherExtractor::syncStep(unsigned int step) {
+  unsigned int current_step = queued_buffer_->simulation_step;
+  while (current_step < step) {
+    queued_buffer_->release();
+    queued_buffer_ = source_subscription_->pull();
+    if (nullptr == queued_buffer_) {
+      return false;
+    }
+    current_step = queued_buffer_->simulation_step;
+  }
+  return true;
+}
+
 bool PublisherExtractor::start() {
   auto thread_function = [this]() {
     MemoryExtractor* extractor = nullptr;
@@ -44,7 +67,12 @@ bool PublisherExtractor::start() {
     while(true) {
       Mailbox mailbox;
       DataBuffer* source_buffer = nullptr;
-      source_subscription_->pull(&source_buffer, &mailbox);
+      if (queued_buffer_) {
+        source_buffer = queued_buffer_;
+        queued_buffer_ = nullptr;
+      } else {
+        source_subscription_->pull(&source_buffer, &mailbox);
+      }
       ReportDataBuffer* destination_buffer = nullptr;
       destination_subscription_->pull(&destination_buffer, &mailbox);
       if (!mailbox.wait(&source_buffer, &destination_buffer)) {
@@ -113,6 +141,9 @@ bool PublisherExtractor::start() {
 PublisherExtractor::~PublisherExtractor() {
   if (thread_.joinable()) {
     thread_.join();
+  }
+  if (queued_buffer_) {
+    queued_buffer_->release();
   }
   if (source_subscription_) {
     delete source_subscription_;

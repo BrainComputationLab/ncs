@@ -24,9 +24,9 @@ bool ParallelDelete::add(const std::vector<T*>& pointers,
   for (size_t i = 0; i < pointers.size(); ++i) {
     T* pointer = pointers[i];
     auto thread_function = [pointer, i, name]() {
-      std::clog << "Deleting " << name << "[" << i << "]" << std::endl;
+      //std::clog << "Deleting " << name << "[" << i << "]" << std::endl;
       delete pointer;
-      std::clog << "Deleted " << name << "[" << i << "]" << std::endl;
+      //std::clog << "Deleted " << name << "[" << i << "]" << std::endl;
     };
     threads_.push_back(std::thread(thread_function));
   }

@@ -10,10 +10,10 @@ namespace sim {
 class DataType {
 public:
   enum Type {
-    Bit,
-    Float,
-    Integer,
-    Unknown
+    Bit = 0,
+    Float = 1,
+    Integer = 2,
+    Unknown = 3
   };
   static size_t num_bytes(std::size_t count, Type t);
   static size_t num_padded_elements(std::size_t count, Type t);

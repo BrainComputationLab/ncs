@@ -44,7 +44,7 @@ size_t DataSource::getNumberOfRealElements() const {
 }
 
 sim::DataType::Type DataSource::getDataType() const {
-  return data_sink_->getDataDescription()->getDataType();
+  return data_sink_->getDataDescription().getDataType();
 }
 
 const void* DataSource::pull() {
@@ -69,6 +69,9 @@ DataSource::~DataSource() {
   }
   if (subscription_) {
     delete subscription_;
+  }
+  if (data_sink_) {
+    delete data_sink_;
   }
 }
 

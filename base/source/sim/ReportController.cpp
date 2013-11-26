@@ -38,7 +38,6 @@ bool ReportController::start() {
 }
 
 ReportController::~ReportController() {
-  std::cout << "~ReportController()" << std::endl;
   if (thread_.joinable()) {
     thread_.join();
   }

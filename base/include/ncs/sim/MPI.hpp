@@ -15,7 +15,7 @@ bool Communicator::send(const T* v, int count, int rank) {
                         sizeof(T) * count,
                         MPI_CHAR,
                         rank,
-                        0,
+                        Valid,
                         mpi_communicator_);
   if (!MPI::ok(result)) {
     std::cerr << "Failed to send data: " << MPI::errorString(result) <<
@@ -34,19 +34,20 @@ bool Communicator::recv(T& v, int rank) {
 
 template<typename T>
 bool Communicator::recv(T* v, int count, int rank) {
+  MPI_Status status;
   int result = MPI_Recv((void*)v,
                         sizeof(T) * count,
                         MPI_CHAR,
                         rank,
-                        0,
+                        MPI_ANY_TAG,
                         mpi_communicator_,
-                        nullptr);
+                        &status);
   if (!MPI::ok(result)) {
     std::cerr << "Failed to recv data: " << MPI::errorString(result) <<
       std::endl;
     return false;
   }
-  return true;
+  return status.MPI_TAG == Valid;
 }
 
 template<> bool Communicator::recv(std::string& v, int rank);
