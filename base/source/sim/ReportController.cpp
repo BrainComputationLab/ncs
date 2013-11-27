@@ -25,12 +25,15 @@ bool ReportController::init(size_t buffer_size,
 
 bool ReportController::start() {
   auto thread_function = [this]() {
+    unsigned int simulation_step = 0;
     while(true) {
       auto blank = this->getBlank();
+      blank->simulation_step = simulation_step;
       auto num_subscribers = this->publish(blank);
       if (0 == num_subscribers) {
         return;
       }
+      ++simulation_step;
     }
   };
   thread_ = std::thread(thread_function);

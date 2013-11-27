@@ -54,18 +54,6 @@ init(SpecificPublisher<StepSignal>* signal_publisher,
 }
 
 template<DeviceType::Type MType>
-bool InputUpdater<MType>::step() {
-  auto step_signal = step_subscription_->pull();
-  if (nullptr == step_signal) {
-    return false;
-  }
-  auto buffer = this->getBlank();
-  this->publish(buffer);
-  step_signal->release();
-  return true;
-}
-
-template<DeviceType::Type MType>
 bool InputUpdater<MType>::addInputs(const std::vector<Input*>& inputs,
                                     void* instantiator,
                                     const std::string& type,
@@ -99,6 +87,7 @@ bool InputUpdater<MType>::start() {
   auto master_function = [this, synchronizer_publisher]() {
     float simulation_time = 0.0f;
     float time_step = simulation_parameters_->getTimeStep();
+    unsigned int simulation_step = 0;
     while(true) {
       auto step_signal = this->step_subscription_->pull();
       if (nullptr == step_signal) {
@@ -107,6 +96,7 @@ bool InputUpdater<MType>::start() {
       }
       auto input_buffer = this->getBlank();
       input_buffer->clear();
+      input_buffer->simulation_step = simulation_step;
       auto synchronizer = synchronizer_publisher->getBlank();
       synchronizer->input_buffer = input_buffer;
       synchronizer->time_step = time_step;
@@ -118,6 +108,7 @@ bool InputUpdater<MType>::start() {
       synchronizer->setPrereleaseFunction(prerelease_function);
       synchronizer_publisher->publish(synchronizer);
       simulation_time += time_step;
+      ++simulation_step;
     }
   };
   master_thread_ = std::thread(master_function);

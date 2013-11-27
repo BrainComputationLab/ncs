@@ -59,6 +59,7 @@ bool NeuronSimulatorUpdater<MType>::start() {
       return false;
     }
   }
+  buffer->simulation_step = 0;
   this->publish(buffer);
 
   struct Synchronizer : public DataBuffer {
@@ -74,6 +75,7 @@ bool NeuronSimulatorUpdater<MType>::start() {
   NeuronSimulatorUpdater<MType>* self = this;
   auto master_function = [self, synchronizer_publisher]() {
     Mailbox mailbox;
+    unsigned int simulation_step = 1;
     while(true) {
       InputBuffer<MType>* input_buffer = nullptr;
       self->input_subscription_->pull(&input_buffer, &mailbox);
@@ -102,6 +104,7 @@ bool NeuronSimulatorUpdater<MType>::start() {
       }
       auto synchronizer = synchronizer_publisher->getBlank();
       auto current_neuron_state = self->getBlank();
+      current_neuron_state->simulation_step = simulation_step;
       synchronizer->current_neuron_state = current_neuron_state;
       synchronizer->input = input_buffer;
       synchronizer->previous_neuron_state = previous_state_buffer;
@@ -114,6 +117,7 @@ bool NeuronSimulatorUpdater<MType>::start() {
       };
       synchronizer->setPrereleaseFunction(prerelease_function);
       synchronizer_publisher->publish(synchronizer);
+      ++simulation_step;
     }
   };
   master_thread_ = std::thread(master_function);

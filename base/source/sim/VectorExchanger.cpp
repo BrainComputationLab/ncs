@@ -49,12 +49,15 @@ bool VectorExchangeController::start() {
     return false;
   }
   auto thread_function = [this]() {
+    unsigned int simulation_step = 0;
     while(true) {
       auto blank = this->getBlank();
+      blank->simulation_step = simulation_step;
       auto num_subscribers = this->publish(blank);
       if (0 == num_subscribers) {
         return;
       }
+      ++simulation_step;
     }
   };
   thread_ = std::thread(thread_function);
@@ -238,6 +241,7 @@ bool GlobalVectorPublisher::start() {
     Mailbox mailbox;
     std::vector<Signal*> dependent_signals;
     dependent_signals.resize(dependent_subscriptions_.size());
+    unsigned int simulation_step = 0;
     while(true) {
       VectorExchangeBuffer* source_buffer = nullptr;
       source_subscription_->pull(&source_buffer, &mailbox);
@@ -272,6 +276,7 @@ bool GlobalVectorPublisher::start() {
       }
 
       auto blank = this->getBlank();
+      blank->simulation_step = simulation_step;
       blank->setFireBits(source_buffer->getData());
       auto prerelease_function = [source_buffer]() {
         source_buffer->release();
@@ -281,6 +286,7 @@ bool GlobalVectorPublisher::start() {
       if (0 == num_subscribers) {
         break;
       }
+      ++simulation_step;
     }
   };
   thread_ = std::thread(thread_function);

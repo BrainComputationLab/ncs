@@ -84,6 +84,7 @@ bool FireTableUpdater<MType>::start() {
     for (unsigned int i = 0; i < min_delay; ++i) {
       auto blank = this->getBlank();
       blank->setData(fire_table_->getRow(i));
+      blank->simulation_step = i;
       auto prerelease_function = [fire_table_, i]() {
         fire_table_->releaseRow(i);
       };
@@ -110,6 +111,7 @@ bool FireTableUpdater<MType>::start() {
       unsigned int publishable_row = step + min_delay;
       auto blank = this->getBlank();
       blank->setData(fire_table_->getRow(publishable_row));
+      blank->simulation_step = publishable_row;
       auto prerelease_function = [fire_table_, publishable_row]() {
         fire_table_->releaseRow(publishable_row);
       };

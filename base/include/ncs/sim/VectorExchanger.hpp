@@ -115,12 +115,14 @@ bool GlobalVectorInjector<MType>::start() {
     return false;
   }
   auto thread_function = [this]() {
+    unsigned int simulation_step = 0;
     while(true) {
       auto source_buffer = source_subscription_->pull();
       if (nullptr == source_buffer) {
         break;
       }
       auto blank = this->getBlank();
+      blank->simulation_step = simulation_step;
       auto dest = blank->getFireBits();
       auto src = source_buffer->getFireBits();
       if (!mem::copy<MType, DeviceType::CPU>(dest, src, global_word_size_)) {
@@ -131,6 +133,7 @@ bool GlobalVectorInjector<MType>::start() {
       if (0 == num_subscribers) {
         break;
       }
+      ++simulation_step;
     }
   };
   thread_ = std::thread(thread_function);

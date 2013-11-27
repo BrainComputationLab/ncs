@@ -22,7 +22,6 @@ public:
             size_t device_neuron_vector_size,
             FactoryMap<InputSimulator>* input_plugins,
             const spec::SimulationParameters* simulation_parameters);
-  bool step();
   bool addInputs(const std::vector<Input*>& inputs,
                  void* instantiator,
                  const std::string& type,

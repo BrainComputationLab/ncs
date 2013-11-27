@@ -27,6 +27,7 @@ init(size_t byte_offset,
 
 bool ReportReceiver::start() {
   auto thread_function = [this]() {
+    unsigned int simulation_step = 0;
     while(true) {
       auto destination_buffer = destination_subscription_->pull();
       if (!destination_buffer) {
@@ -39,6 +40,7 @@ bool ReportReceiver::start() {
       bool remote_status = communicator_->recv(dest, num_bytes_, source_rank_);
       destination_buffer->release();
       auto blank = getBlank();
+      blank->simulation_step = simulation_step;
       if (!remote_status) {
         blank->setStatus(false);
         this->publish(blank);
@@ -48,6 +50,7 @@ bool ReportReceiver::start() {
         communicator_->sendInvalid(source_rank_);
         break;
       }
+      ++simulation_step;
     }
     delete destination_subscription_;
     destination_subscription_ = nullptr;

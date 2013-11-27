@@ -78,6 +78,7 @@ bool SynapseSimulatorUpdater<MType>::start() {
   auto master_function = [this, synchronizer_publisher]() {
     float simulation_time = 0.0f;
     float time_step = simulation_parameters_->getTimeStep();
+    unsigned int simulation_step = 0;
     Mailbox mailbox;
     while(true) {
       DeviceNeuronStateBuffer<MType>* neuron_state = nullptr;
@@ -98,6 +99,7 @@ bool SynapseSimulatorUpdater<MType>::start() {
       }
       auto synchronizer = synchronizer_publisher->getBlank();
       auto synaptic_current = this->getBlank();
+      synaptic_current->simulation_step = simulation_step;
       if (!synaptic_current->clear()) {
         std::cerr << "Failed to clear SynapticCurrentBuffer." <<
           std::endl;
@@ -115,6 +117,7 @@ bool SynapseSimulatorUpdater<MType>::start() {
       synchronizer->setPrereleaseFunction(prerelease_function);
       synchronizer_publisher->publish(synchronizer);
       simulation_time += time_step;
+      ++simulation_step;
     }
   };
   master_thread_ = std::thread(master_function);

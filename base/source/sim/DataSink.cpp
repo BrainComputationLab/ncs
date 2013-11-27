@@ -73,6 +73,7 @@ bool DataSink::start() {
     Mailbox mailbox;
     std::vector<Signal*> dependent_signals;
     dependent_signals.resize(dependent_subscriptions_.size());
+    unsigned int simulation_step = 0;
     while(true) {
       ReportDataBuffer* data_buffer = nullptr;
       source_subscription_->pull(&data_buffer, &mailbox);
@@ -107,6 +108,7 @@ bool DataSink::start() {
       }
       
       auto blank = this->getBlank();
+      blank->simulation_step = simulation_step;
       blank->setData(data_buffer->getData());
       auto prerelease_function = [data_buffer]() {
         data_buffer->release();
@@ -116,6 +118,7 @@ bool DataSink::start() {
       if (0 == num_subscribers) {
         break;
       }
+      ++simulation_step;
       // data_buffer will be automatically released upon publishing if zero
       // subscribers are listening, so don't release it here
     }
