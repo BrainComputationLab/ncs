@@ -107,10 +107,21 @@ bool PublisherExtractor::start() {
                 break;
             }
             break;
+#ifdef NCS_CUDA
           case DeviceType::CUDA:
-            std::cerr << "STUB: CUDAExtractor()" << std::endl;
-            return;
+            switch(datatype_) {
+              case DataType::Float:
+                extractor = new CUDAExtractor<float>(indices_);
+                break;
+              case DataType::Integer:
+                extractor = new CUDAExtractor<int>(indices_);
+                break;
+              case DataType::Bit:
+                extractor = new CUDAExtractor<Bit>(indices_);
+                break;
+            }
             break;
+#endif // NCS_CUDA
           default:
             break;
         }

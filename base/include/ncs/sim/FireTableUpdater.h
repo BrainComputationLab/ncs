@@ -20,7 +20,8 @@ public:
   bool init(FireTable<MType>* table,
             SpecificPublisher<GlobalNeuronStateBuffer<MType>>* publisher,
             const std::vector<Synapse*> synapse_vector);
-  bool start();
+  bool start(std::function<bool()> thread_init,
+             std::function<bool()> thread_destroy);
   ~FireTableUpdater();
 private:
   bool update_(GlobalNeuronStateBuffer<MType>* neuron_state,

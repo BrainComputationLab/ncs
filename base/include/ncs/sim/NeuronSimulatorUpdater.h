@@ -25,7 +25,8 @@ public:
             const std::vector<size_t>& device_id_offsets,
             size_t neuron_device_vector_size,
             size_t num_buffers);
-  bool start();
+  bool start(std::function<bool()> thread_init,
+             std::function<bool()> thread_destroy);
   virtual ~NeuronSimulatorUpdater();
 private:
   typename NeuronStatePublisher::Subscription* neuron_state_subscription_;

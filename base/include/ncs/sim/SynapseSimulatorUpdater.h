@@ -26,7 +26,8 @@ public:
             const spec::SimulationParameters* simulation_parameters,
             size_t neuron_device_vector_size,
             size_t num_buffers);
-  bool start();
+  bool start(std::function<bool()> thread_init,
+             std::function<bool()> thread_destroy);
   ~SynapseSimulatorUpdater();
 private:
   typename FireVectorPublisher::Subscription* fire_subscription_;

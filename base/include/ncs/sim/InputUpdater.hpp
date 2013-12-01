@@ -73,7 +73,8 @@ bool InputUpdater<MType>::addInputs(const std::vector<Input*>& inputs,
 }
 
 template<DeviceType::Type MType>
-bool InputUpdater<MType>::start() {
+bool InputUpdater<MType>::start(std::function<bool()> thread_init,
+                                std::function<bool()> thread_destroy) {
   struct Synchronizer : public DataBuffer {
     InputBuffer<MType>* input_buffer;
     float simulation_time;
@@ -84,7 +85,11 @@ bool InputUpdater<MType>::start() {
     auto blank = new Synchronizer();
     synchronizer_publisher->addBlank(blank);
   }
-  auto master_function = [this, synchronizer_publisher]() {
+  auto master_function = [this, 
+                          synchronizer_publisher,
+                          thread_init,
+                          thread_destroy]() {
+    thread_init();
     float simulation_time = 0.0f;
     float time_step = simulation_parameters_->getTimeStep();
     unsigned int simulation_step = 0;
@@ -92,7 +97,7 @@ bool InputUpdater<MType>::start() {
       auto step_signal = this->step_subscription_->pull();
       if (nullptr == step_signal) {
         delete synchronizer_publisher;
-        return;
+        break;
       }
       auto input_buffer = this->getBlank();
       input_buffer->clear();
@@ -110,12 +115,17 @@ bool InputUpdater<MType>::start() {
       simulation_time += time_step;
       ++simulation_step;
     }
+    thread_destroy();
   };
   master_thread_ = std::thread(master_function);
   
   for (auto simulator : simulators_) {
     auto subscription = synchronizer_publisher->subscribe();
-    auto worker_function = [subscription, simulator]() {
+    auto worker_function = [subscription,
+                            simulator,
+                            thread_init,
+                            thread_destroy]() {
+      thread_init();
       while(true) {
         auto synchronizer = subscription->pull();
         if (nullptr == synchronizer) {
@@ -136,6 +146,7 @@ bool InputUpdater<MType>::start() {
         }
         synchronizer->release();
       }
+      thread_destroy();
     };
     worker_threads_.push_back(std::thread(worker_function));
   }

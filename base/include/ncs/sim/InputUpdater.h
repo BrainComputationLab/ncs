@@ -27,7 +27,8 @@ public:
                  const std::string& type,
                  float start_time,
                  float end_time);
-  bool start();
+  bool start(std::function<bool()> thread_init,
+             std::function<bool()> thread_destroy);
   ~InputUpdater();
 private:
   typename SpecificPublisher<StepSignal>::Subscription* step_subscription_;

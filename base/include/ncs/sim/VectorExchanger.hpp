@@ -26,12 +26,15 @@ bool DeviceVectorExtractor<MType>::init(size_t global_vector_offset,
 }
 
 template<DeviceType::Type MType>
-bool DeviceVectorExtractor<MType>::start() {
+bool DeviceVectorExtractor<MType>::
+start(std::function<bool()> thread_init,
+      std::function<bool()> thread_destroy) {
   if (thread_.joinable()) {
     std::cerr << "DeviceVectorExtractor already started." << std::endl;
     return false;
   }
-  auto thread_function = [this]() {
+  auto thread_function = [this, thread_init, thread_destroy]() {
+    thread_init();
     while(true) {
       Mailbox mailbox;
       SourceBuffer* source_buffer = nullptr;
@@ -65,6 +68,7 @@ bool DeviceVectorExtractor<MType>::start() {
         break;
       }
     }
+    thread_destroy();
   };
   thread_ = std::thread(thread_function);
   return true;
@@ -109,12 +113,14 @@ init(SpecificPublisher<GlobalFireVectorBuffer>* source_publisher,
 }
 
 template<DeviceType::Type MType>
-bool GlobalVectorInjector<MType>::start() {
+bool GlobalVectorInjector<MType>::start(std::function<bool()> thread_init,
+                                        std::function<bool()> thread_destroy) {
   if (thread_.joinable()) {
     std::cerr << "GlobalVectorInjector<MType> already started." << std::endl;
     return false;
   }
-  auto thread_function = [this]() {
+  auto thread_function = [this, thread_init, thread_destroy]() {
+    thread_init();
     unsigned int simulation_step = 0;
     while(true) {
       auto source_buffer = source_subscription_->pull();
@@ -135,6 +141,7 @@ bool GlobalVectorInjector<MType>::start() {
       }
       ++simulation_step;
     }
+    thread_destroy();
   };
   thread_ = std::thread(thread_function);
   return true;

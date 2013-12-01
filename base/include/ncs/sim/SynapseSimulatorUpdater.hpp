@@ -63,7 +63,9 @@ init(const std::vector<SynapseSimulator<MType>*>& simulators,
 }
 
 template<DeviceType::Type MType>
-bool SynapseSimulatorUpdater<MType>::start() {
+bool SynapseSimulatorUpdater<MType>::
+start(std::function<bool()> thread_init,
+      std::function<bool()> thread_destroy) {
   struct Synchronizer : public DataBuffer {
     DeviceNeuronStateBuffer<MType>* neuron_state;
     SynapticFireVectorBuffer<MType>* synaptic_fire;
@@ -75,7 +77,11 @@ bool SynapseSimulatorUpdater<MType>::start() {
   for (size_t i = 0; i < num_buffers_; ++i) {
     synchronizer_publisher->addBlank(new Synchronizer());
   }
-  auto master_function = [this, synchronizer_publisher]() {
+  auto master_function = [this,
+                          synchronizer_publisher,
+                          thread_init,
+                          thread_destroy]() {
+    thread_init();
     float simulation_time = 0.0f;
     float time_step = simulation_parameters_->getTimeStep();
     unsigned int simulation_step = 0;
@@ -95,7 +101,7 @@ bool SynapseSimulatorUpdater<MType>::start() {
           synaptic_fire->release();
         }
         delete synchronizer_publisher;
-        return;
+        break;
       }
       auto synchronizer = synchronizer_publisher->getBlank();
       auto synaptic_current = this->getBlank();
@@ -119,6 +125,7 @@ bool SynapseSimulatorUpdater<MType>::start() {
       simulation_time += time_step;
       ++simulation_step;
     }
+    thread_destroy();
   };
   master_thread_ = std::thread(master_function);
 
@@ -126,13 +133,18 @@ bool SynapseSimulatorUpdater<MType>::start() {
     auto simulator = simulators_[i];
     auto unit_offset = device_synaptic_vector_offsets_[i];
     auto subscription = synchronizer_publisher->subscribe();
-    auto worker_function = [subscription, simulator, unit_offset]() {
+    auto worker_function = [subscription, 
+                            simulator, 
+                            unit_offset,
+                            thread_init,
+                            thread_destroy]() {
+      thread_init();
       auto word_offset = Bit::num_words(unit_offset);
       while (true) {
         auto synchronizer = subscription->pull();
         if (nullptr == synchronizer) {
           delete subscription;
-          return;
+          break;
         }
         SynapseUpdateParameters parameters;
         parameters.synaptic_fire =
@@ -151,6 +163,7 @@ bool SynapseSimulatorUpdater<MType>::start() {
         }
         synchronizer->release();
       }
+      thread_destroy();
     };
     worker_threads_.push_back(std::thread(worker_function));
   }
@@ -172,7 +185,6 @@ SynapseSimulatorUpdater<MType>::~SynapseSimulatorUpdater() {
     delete neuron_state_subscription_;
   }
 }
-
 
 } // namespace sim
 

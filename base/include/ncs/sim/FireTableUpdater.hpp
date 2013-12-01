@@ -70,8 +70,10 @@ init(FireTable<MType>* table,
 }
 
 template<DeviceType::Type MType>
-bool FireTableUpdater<MType>::start() {
-  auto thread_function = [this]() {
+bool FireTableUpdater<MType>::start(std::function<bool()> thread_init,
+                                    std::function<bool()> thread_destroy) {
+  auto thread_function = [this, thread_init, thread_destroy]() {
+    thread_init();
     unsigned int min_delay = fire_table_->getMinDelay();
     unsigned int max_delay = fire_table_->getMaxDelay();
     for (unsigned int i = 0; i < max_delay; ++i) {
@@ -95,7 +97,7 @@ bool FireTableUpdater<MType>::start() {
     while (true) {
       auto neuron_fire_buffer = subscription_->pull();
       if (nullptr == neuron_fire_buffer) {
-        return;
+        break;
       }
       unsigned int max_row = step + max_delay;
       fire_table_->lockRow(max_row);
@@ -120,6 +122,7 @@ bool FireTableUpdater<MType>::start() {
       neuron_fire_buffer->release();
       ++step;
     }
+    thread_destroy();
   };
   thread_ = std::thread(thread_function);
   return true;

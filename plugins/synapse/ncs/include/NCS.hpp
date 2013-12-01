@@ -2,6 +2,37 @@
 #include <ncs/sim/Memory.h>
 
 template<ncs::sim::DeviceType::Type MType>
+NCSDataBuffer<MType>::NCSDataBuffer() {
+  maximum_size = 0;
+  current_size = 0;
+  device_current_size = nullptr;
+  fire_time = nullptr;
+  fire_index = nullptr;
+  psg_max = nullptr;
+}
+
+template<ncs::sim::DeviceType::Type MType>
+bool NCSDataBuffer<MType>::init(size_t num_synapses) {
+  maximum_size = num_synapses;
+  using ncs::sim::Memory;
+  bool result = true;
+  result &= Memory<MType>::malloc(device_current_size, 1);
+  result &= Memory<MType>::malloc(fire_time, maximum_size);
+  result &= Memory<MType>::malloc(fire_index, maximum_size);
+  result &= Memory<MType>::malloc(psg_max, maximum_size);
+  return result;
+}
+
+template<ncs::sim::DeviceType::Type MType>
+NCSDataBuffer<MType>::~NCSDataBuffer() {
+  using ncs::sim::Memory;
+  Memory<MType>::free(device_current_size);
+  Memory<MType>::free(fire_time);
+  Memory<MType>::free(fire_index);
+  Memory<MType>::free(psg_max);
+}
+
+template<ncs::sim::DeviceType::Type MType>
 NCSSimulator<MType>::NCSSimulator() {
   self_subscription_ = nullptr;
   utilization_ = nullptr;
@@ -150,8 +181,8 @@ bool NCSSimulator<MType>::initialize() {
   synapses_.clear();
   std::vector<ncs::sim::Synapse*>().swap(synapses_);
   for (size_t i = 0; i < ncs::sim::Constants::num_buffers; ++i) {
-    auto blank = new NCSDataBuffer<MType>(num_synapses_); 
-    if (!blank->init()) {
+    auto blank = new NCSDataBuffer<MType>(); 
+    if (!blank->init(num_synapses_)) {
       delete blank;
       std::cerr << "Failed to initialize NCSDataBuffer." << std::endl;
       return false;

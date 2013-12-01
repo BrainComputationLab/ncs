@@ -9,25 +9,39 @@ IF(NCS_CUDA)
   IF (CUDA_FOUND)
     ADD_DEFINITIONS(-DNCS_CUDA)
     INCLUDE_DIRECTORIES(${CUDA_INCLUDE_DIRS})
-    SET(ADDITIONAL_LIBS ${ADDITIONAL_LIBS} ${CUDA_LIBRARIES})
+    IF(NCS_OCELOT)
+      SET(ADDITIONAL_LIBS ${ADDITIONAL_LIBS} ocelot)
+    ELSE(NCS_OCELOT)
+      SET(ADDITIONAL_LIBS ${ADDITIONAL_LIBS} ${CUDA_LIBRARIES})
+    ENDIF(NCS_OCELOT)
   ENDIF (CUDA_FOUND)
 ENDIF(NCS_CUDA)
 
+INCLUDE_DIRECTORIES("include" ${MPI_INCLUDE_PATH} "${CMAKE_CURRENT_BINARY_DIR}")
+
+#compile CUDA stuff before adding C++11 stuff
+IF(CUDA_FOUND AND NCS_CUDA)
+  INCLUDE_DIRECTORIES(${CUDA_INCLUDE_DIRS})
+  CUDA_COMPILE(cuda_objects
+               "source/cuda/MemoryExtractor.cu"
+               OPTIONS ${CUDA_OPTIONS} --compiler-options '-fPIC')
+  SET(sim_source ${sim_source} ${cuda_objects})
+ENDIF(CUDA_FOUND AND NCS_CUDA)
 
 SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXX11_FLAGS}")
 
-INCLUDE_DIRECTORIES("include" ${MPI_INCLUDE_PATH} "${CMAKE_CURRENT_BINARY_DIR}")
 FILE(GLOB proto_files "include/ncs/proto/*.proto")
 PROTOBUF_GENERATE_CPP(proto_sources proto_headers ${proto_files})
 
-AUX_SOURCE_DIRECTORY("source/spec" specSource)
-ADD_LIBRARY(ncs_spec SHARED ${specSource} ${proto_headers})
+AUX_SOURCE_DIRECTORY("source/spec" spec_source)
+ADD_LIBRARY(ncs_spec SHARED ${spec_source} ${proto_headers})
 TARGET_LINK_LIBRARIES(ncs_spec ${PROTOBUF_LIBRARIES})
 SET_TARGET_PROPERTIES(ncs_spec PROPERTIES LINKER_LANGUAGE CXX)
 
-AUX_SOURCE_DIRECTORY("source/sim" simSource)
-ADD_LIBRARY(ncs_sim SHARED ${simSource} ${proto_sources})
+AUX_SOURCE_DIRECTORY("source/sim" sim_source)
+
+ADD_LIBRARY(ncs_sim SHARED ${sim_source} ${proto_sources})
 SET_TARGET_PROPERTIES(ncs_sim PROPERTIES LINKER_LANGUAGE CXX)
 TARGET_LINK_LIBRARIES(ncs_sim ncs_spec)
 

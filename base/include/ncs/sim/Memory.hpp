@@ -48,6 +48,9 @@ bool Memory<DeviceType::CUDA>::free(T* addr) {
 template<>
 template<typename T>
 bool Memory<DeviceType::CUDA>::zero(T* addr, size_t count) {
+  if (0 == count) {
+    return true;
+  }
   cudaError_t result = cudaMemsetAsync(addr,
                                        0,
                                        sizeof(T) * count,

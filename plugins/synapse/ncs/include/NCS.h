@@ -23,13 +23,22 @@ struct Instantiator {
 template<ncs::sim::DeviceType::Type MType>
 class NCSDataBuffer : public ncs::sim::DataBuffer {
 public:
+  NCSDataBuffer();
+  bool init(size_t num_synapses);
+  unsigned int maximum_size;
+  unsigned int current_size;
+  unsigned int* device_current_size;
+  float* fire_time;
+  unsigned int* fire_index;
+  float* psg_max;
+  virtual ~NCSDataBuffer();
 };
 
 template<>
 class NCSDataBuffer<ncs::sim::DeviceType::CPU> : public ncs::sim::DataBuffer {
 public:
-  NCSDataBuffer(size_t num_synapses);
-  bool init();
+  NCSDataBuffer();
+  bool init(size_t num_synapses);
   std::vector<float> fire_time;
   std::vector<unsigned int> fire_index;
   std::vector<float> psg_max;

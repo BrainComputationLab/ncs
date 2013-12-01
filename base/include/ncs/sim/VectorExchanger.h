@@ -49,7 +49,8 @@ public:
             size_t num_buffers,
             SourcePublisher* source_publisher,
             DestinationPublisher* destination_publisher);
-  bool start();
+  bool start(std::function<bool()> thread_init,
+             std::function<bool()> thread_destroy);
   ~DeviceVectorExtractor();
 private:
   size_t global_word_offset_;
@@ -129,7 +130,8 @@ public:
   bool init(SpecificPublisher<GlobalFireVectorBuffer>* source_publisher,
             size_t global_neuron_vector_size,
             size_t num_buffers);
-  bool start();
+  bool start(std::function<bool()> thread_init,
+             std::function<bool()> thread_destroy);
   ~GlobalVectorInjector();
 private:
   SpecificPublisher<GlobalFireVectorBuffer>::Subscription*

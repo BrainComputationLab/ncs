@@ -40,7 +40,10 @@ init(InputPublisher* input_publisher,
 }
 
 template<DeviceType::Type MType>
-bool NeuronSimulatorUpdater<MType>::start() {
+bool NeuronSimulatorUpdater<MType>::
+start(std::function<bool()> thread_init,
+      std::function<bool()> thread_destroy) {
+  thread_init();
   // Initialize the first voltage vector
   auto buffer = this->getBlank();
   if (!Memory<MType>::zero(buffer->getFireBits(),
@@ -61,6 +64,7 @@ bool NeuronSimulatorUpdater<MType>::start() {
   }
   buffer->simulation_step = 0;
   this->publish(buffer);
+  thread_destroy();
 
   struct Synchronizer : public DataBuffer {
     DeviceNeuronStateBuffer<MType>* previous_neuron_state;
@@ -73,7 +77,11 @@ bool NeuronSimulatorUpdater<MType>::start() {
     synchronizer_publisher->addBlank(new Synchronizer());
   }
   NeuronSimulatorUpdater<MType>* self = this;
-  auto master_function = [self, synchronizer_publisher]() {
+  auto master_function = [self, 
+                          synchronizer_publisher,
+                          thread_init,
+                          thread_destroy]() {
+    thread_init();
     Mailbox mailbox;
     unsigned int simulation_step = 1;
     while(true) {
@@ -100,7 +108,7 @@ bool NeuronSimulatorUpdater<MType>::start() {
           synaptic_current_buffer->release();
         }
         delete synchronizer_publisher;
-        return;
+        break;
       }
       auto synchronizer = synchronizer_publisher->getBlank();
       auto current_neuron_state = self->getBlank();
@@ -119,6 +127,7 @@ bool NeuronSimulatorUpdater<MType>::start() {
       synchronizer_publisher->publish(synchronizer);
       ++simulation_step;
     }
+    thread_destroy();
   };
   master_thread_ = std::thread(master_function);
 
@@ -126,7 +135,12 @@ bool NeuronSimulatorUpdater<MType>::start() {
     auto simulator = neuron_simulators_[i];
     auto unit_offset = device_id_offsets_[i];
     auto subscription = synchronizer_publisher->subscribe();
-    auto worker_function = [subscription, simulator, unit_offset]() {
+    auto worker_function = [subscription,
+                            simulator, 
+                            unit_offset,
+                            thread_init,
+                            thread_destroy]() {
+      thread_init();
       while(true) {
         auto synchronizer = subscription->pull();
         auto word_offset = Bit::num_words(unit_offset);
@@ -157,12 +171,12 @@ bool NeuronSimulatorUpdater<MType>::start() {
         }
         synchronizer->release();
       }
+      thread_destroy();
     };
     worker_threads_.push_back(std::thread(worker_function));
   }
   return true;
 }
-
 
 template<DeviceType::Type MType>
 NeuronSimulatorUpdater<MType>::~NeuronSimulatorUpdater() {

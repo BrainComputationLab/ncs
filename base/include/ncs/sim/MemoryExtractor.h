@@ -1,9 +1,9 @@
 #pragma once
 #include <vector>
 
-#include <ncs/sim/Bit.h>
 #include <ncs/sim/DataType.h>
 #include <ncs/sim/DeviceType.h>
+#include <ncs/sim/Storage.h>
 
 namespace ncs {
 
@@ -28,6 +28,26 @@ private:
 
 template<>
 bool CPUExtractor<Bit>::extract(const void* source, void* destination);
+
+#ifdef NCS_CUDA
+
+template<typename T>
+class CUDAExtractor : public MemoryExtractor {
+public:
+  CUDAExtractor(const std::vector<unsigned int>& indices);
+  virtual bool extract(const void* source, void* destination);
+  virtual ~CUDAExtractor();
+private:
+  unsigned int* indices_;
+  size_t num_indices_;
+  typename Storage<T>::type* device_buffer_;
+  size_t buffer_size_;
+};
+
+template<>
+bool CUDAExtractor<Bit>::extract(const void* source, void* destination);
+
+#endif // NCS_CUDA
 
 } // namespace sim
 

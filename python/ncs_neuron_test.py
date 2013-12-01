@@ -65,12 +65,13 @@ def Run(argv):
   sim.addInput("rectangular_current", { "amplitude": 1.0 }, group_1, 0.0, 0.0, 1.0)
 
   #voltage_report = sim.addReport("group_1", "neuron", "neuron_voltage", 1.0)
-#voltage_report = sim.addReport("group_1", "neuron", "neuron_voltage", 1.0).toStdOut()
-  voltage_report = sim.addReport("group_1", "neuron", "neuron_voltage", 1.0).toAsciiFile("/tmp/voltages.txt")
+  voltage_report = sim.addReport("group_1", "neuron", "neuron_voltage", 1.0).toStdOut()
+#  voltage_report = sim.addReport("group_1", "neuron", "neuron_voltage", 1.0).toAsciiFile("/tmp/voltages.txt")
 #voltage_report.toAsciiFile("/tmp/voltages.txt")
 
   print "Starting simulation"
   sim.step(10)
+  print "Deleting simulation"
   del sim
   return
 

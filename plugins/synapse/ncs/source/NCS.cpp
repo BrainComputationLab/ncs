@@ -3,10 +3,10 @@
 
 #include "NCS.h"
 
-NCSDataBuffer<ncs::sim::DeviceType::CPU>::NCSDataBuffer(size_t num_synapses) {
+NCSDataBuffer<ncs::sim::DeviceType::CPU>::NCSDataBuffer() {
 }
 
-bool NCSDataBuffer<ncs::sim::DeviceType::CPU>::init() {
+bool NCSDataBuffer<ncs::sim::DeviceType::CPU>::init(size_t num_synapses) {
   return true;
 }
 

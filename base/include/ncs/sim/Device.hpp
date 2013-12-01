@@ -34,68 +34,57 @@ initialize(DeviceDescription* description,
            SpecificPublisher<StepSignal>* signal_publisher,
            const spec::SimulationParameters* simulation_parameters) {
   simulation_parameters_ = simulation_parameters;
-  std::clog << "Allocating updaters..." << std::endl;
   if (!allocateUpdaters_()) {
     std::cerr << "Failed to allocate updaters." << std::endl;
     return false;
   }
 
-  std::clog << "Initializing neurons..." << std::endl;
   if (!initializeNeurons_(description, neuron_plugins)) {
     std::cerr << "Failed to initialize neurons." << std::endl;
     return false;
   }
 
-  std::clog << "Initializing NeuronSimulatorUpdater..." << std::endl;
   if (!initializeNeuronUpdater_()) {
     std::cerr << "Failed to initialize NeuronSimulatorUpdater." << std::endl;
     return false;
   }
 
-  std::clog << "Initializing DeviceVectorExtractor..." << std::endl;
   if (!initializeVectorExtractor_(vector_exchange_controller,
                                    global_neuron_vector_offset)) {
     std::cerr << "Failed to initialize DeviceVectorExtractor." << std::endl;
     return false;
   }
 
-  std::clog << "Initializing GlobalVectorInjector..." << std::endl;
   if (!this->initializeVectorInjector_(global_vector_publisher,
                                        global_neuron_vector_size)) {
     std::cerr << "Failed to initialize GlobalVectorInjector." << std::endl;
     return false;
   }
 
-  std::clog << "Initializing synapses..." << std::endl;
   if (!initializeSynapses_(description, synapse_plugins)) {
     std::cerr << "Failed to initialize synapses." << std::endl;
     return false;
   }
 
-  std::clog << "Initializing SynapseSimulatorUpdater..." << std::endl;
   if (!initializeSynapseUpdater_()) {
     std::cerr << "Failed to initialize SynapseSimulatorUpdater." << std::endl;
     return false;
   }
 
-  std::clog << "Initializing FireTable..." << std::endl;
   if (!initializeFireTable_()) {
     std::cerr << "Failed to initialize fire table." << std::endl;
     return false;
   }
 
-  std::clog << "Initializing FireTableUpdater..." << std::endl;
   if (!initializeFireTableUpdater_(description)) {
     std::cerr << "Failed to initialize FireTableUpdater." << std::endl;
     return false;
   }
 
-  std::clog << "Initializing InputUpdater..." << std::endl;
   if (!initializeInputUpdater_(signal_publisher, input_plugins)) {
     std::cerr << "Failed to initialize InputUpdater." << std::endl;
     return false;
   }
-
   return true;
 }
 
@@ -160,38 +149,39 @@ bool Device<MType>::threadDestroy() {
 
 template<DeviceType::Type MType>
 bool Device<MType>::start() {
-  std::clog << "Starting InputUpdater..." << std::endl;
-  if (!input_updater_->start()) {
+  std::function<bool()> thread_init = [this]() {
+    return this->threadInit();
+  };
+  std::function<bool()> thread_destroy = [this]() {
+    return this->threadDestroy();
+  };
+  if (!input_updater_->start(thread_init, thread_destroy)) {
     std::cerr << "Failed to start InputUpdater." << std::endl;
     return false;
   }
 
-  std::clog << "Starting NeuronSimulatorUpdater..." << std::endl;
-  if (!neuron_simulator_updater_->start()) {
+  if (!neuron_simulator_updater_->start(thread_init,
+                                        thread_destroy)) {
     std::cerr << "Failed to start NeuronSimulatorUpdater." << std::endl;
     return false;
   }
 
-  std::clog << "Starting DeviceVectorExtractor..." << std::endl;
-  if (!fire_vector_extractor_->start()) {
+  if (!fire_vector_extractor_->start(thread_init, thread_destroy)) {
     std::cerr << "Failed to start DeviceVectorExtractor." << std::endl;
     return false;
   }
 
-  std::clog << "Starting GlobalVectorInjector..." << std::endl;
-  if (!global_vector_injector_->start()) {
+  if (!global_vector_injector_->start(thread_init, thread_destroy)) {
     std::cerr << "Failed to start GlobalVectorInjector." << std::endl;
     return false;
   }
 
-  std::clog << "Starting FireTableUpdater..." << std::endl;
-  if (!fire_table_updater_->start()) {
+  if (!fire_table_updater_->start(thread_init, thread_destroy)) {
     std::cerr << "Failed to start FireTableUpdater." << std::endl;
     return false;
   }
 
-  std::clog << "Starting SynapseSimulatorUpdater..." << std::endl;
-  if (!synapse_simulator_updater_->start()) {
+  if (!synapse_simulator_updater_->start(thread_init, thread_destroy)) {
     std::cerr << "Failed to start SynapseSimulatorUpdater." << std::endl;
     return false;
   }
@@ -231,11 +221,17 @@ Device<MType>::~Device() {
 template<DeviceType::Type MType>
 bool Device<MType>::allocateUpdaters_() {
   input_updater_ = new InputUpdater<MType>();
+  input_updater_->setDevice(this);
   neuron_simulator_updater_ = new NeuronSimulatorUpdater<MType>();
+  neuron_simulator_updater_->setDevice(this);
   fire_table_updater_ = new FireTableUpdater<MType>();
+  fire_table_updater_->setDevice(this);
   synapse_simulator_updater_ = new SynapseSimulatorUpdater<MType>();
+  synapse_simulator_updater_->setDevice(this);
   fire_vector_extractor_ = new DeviceVectorExtractor<MType>();
+  fire_vector_extractor_->setDevice(this);
   global_vector_injector_ = new GlobalVectorInjector<MType>();
+  global_vector_injector_->setDevice(this);
   return true;
 }
 
