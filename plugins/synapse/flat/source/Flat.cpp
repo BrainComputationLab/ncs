@@ -2,6 +2,9 @@
 #include <ncs/sim/FactoryMap.h>
 
 #include "Flat.h"
+#ifdef NCS_CUDA
+#include "Flat.cuh"
+#endif
 
 bool set(ncs::spec::Generator*& target,
          const std::string& parameter,
@@ -55,7 +58,14 @@ update(ncs::sim::SynapseUpdateParameters* parameters) {
 template<>
 bool FlatSimulator<ncs::sim::DeviceType::CUDA>::
 update(ncs::sim::SynapseUpdateParameters* parameters) {
-  std::cout << "STUB: FlatSimulator<CUDA>::update()" << std::endl;
+  using ncs::sim::Bit;
+  const Bit::Word* synaptic_fire = parameters->synaptic_fire;
+  float* synaptic_current = parameters->synaptic_current;
+  cuda::updateFlat(synaptic_fire,
+                   device_neuron_device_ids_,
+                   device_current_,
+                   synaptic_current,
+                   num_synapses_);
   return true;
 }
 

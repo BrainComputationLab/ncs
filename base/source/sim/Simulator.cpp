@@ -544,6 +544,7 @@ DataSink* Simulator::addReport(spec::Report* report) {
                                                  l.machine,
                                                  l.device,
                                                  l.plugin);
+
       if (!publisher) {
         std::cerr << "Failed to find a publisher for report " <<
           report_name << std::endl;
@@ -1056,8 +1057,8 @@ bool Simulator::distributeSynapses_() {
         synapse->instantiator = instantiator;
         synapse->presynaptic_neuron = presynaptic_neuron;
         synapse->postsynaptic_neuron = postsynaptic_neuron;
-        synapse->location.device = presynaptic_neuron->location.device;
-        synapse->location.machine = presynaptic_neuron->location.machine;
+        synapse->location.device = postsynaptic_neuron->location.device;
+        synapse->location.machine = postsynaptic_neuron->location.machine;
         synapses.push_back(synapse);
       } else {
         // We don't care about synapses that don't affect our neurons
