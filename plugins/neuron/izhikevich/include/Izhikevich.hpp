@@ -1,13 +1,41 @@
+#include <ncs/sim/Constants.h>
 #include <ncs/sim/Memory.h>
 
 template<ncs::sim::DeviceType::Type MType>
+IzhikevichBuffer<MType>::IzhikevichBuffer() {
+  u_ = nullptr;
+}
+
+template<ncs::sim::DeviceType::Type MType>
+bool IzhikevichBuffer<MType>::init(size_t num_neurons) {
+  if (0 == num_neurons) {
+    return true;
+  }
+  bool result = true;
+  result &= ncs::sim::Memory<MType>::malloc(u_, num_neurons);
+  return result;
+}
+
+template<ncs::sim::DeviceType::Type MType>
+float* IzhikevichBuffer<MType>::getU() {
+  return u_;
+}
+
+template<ncs::sim::DeviceType::Type MType>
+IzhikevichBuffer<MType>::~IzhikevichBuffer() {
+  if (u_) {
+    ncs::sim::Memory<MType>::free(u_);
+  }
+}
+
+template<ncs::sim::DeviceType::Type MType>
 IzhikevichSimulator<MType>::IzhikevichSimulator() {
+  subscription_ = nullptr;
   buffers_ = new Buffers();
   a_ = nullptr;
   b_ = nullptr;
   c_ = nullptr;
   d_ = nullptr;
-  u_ = nullptr;
   v_ = nullptr;
   threshold_ = nullptr;
   step_dt_ = 0.5f;
@@ -34,32 +62,37 @@ initialize(const ncs::spec::SimulationParameters* simulation_parameters) {
   using ncs::sim::Memory;
   num_neurons_ = buffers_->a.size();
   bool result = true;
-  result &= Memory<MType>::malloc(a_, num_neurons_);
-  result &= Memory<MType>::malloc(b_, num_neurons_);
-  result &= Memory<MType>::malloc(c_, num_neurons_);
-  result &= Memory<MType>::malloc(d_, num_neurons_);
-  result &= Memory<MType>::malloc(u_, num_neurons_);
-  result &= Memory<MType>::malloc(v_, num_neurons_);
-  result &= Memory<MType>::malloc(threshold_, num_neurons_);
-  if (!result) {
-    std::cerr << "Memory allocation failed." << std::endl;
-    return false;
-  }
-  const auto CPU = ncs::sim::DeviceType::CPU;
-  result &= Memory<CPU>::To<MType>::copy(buffers_->a.data(), a_, num_neurons_);
-  result &= Memory<CPU>::To<MType>::copy(buffers_->b.data(), b_, num_neurons_);
-  result &= Memory<CPU>::To<MType>::copy(buffers_->c.data(), c_, num_neurons_);
-  result &= Memory<CPU>::To<MType>::copy(buffers_->d.data(), d_, num_neurons_);
-  result &= Memory<CPU>::To<MType>::copy(buffers_->u.data(), u_, num_neurons_);
-  result &= Memory<CPU>::To<MType>::copy(buffers_->v.data(), v_, num_neurons_);
-  result &= Memory<CPU>::To<MType>::copy(buffers_->threshold.data(),
-                                         threshold_,
-                                         num_neurons_);
+  result &= ncs::sim::mem::clone<MType>(a_, buffers_->a);
+  result &= ncs::sim::mem::clone<MType>(b_, buffers_->b);
+  result &= ncs::sim::mem::clone<MType>(c_, buffers_->c);
+  result &= ncs::sim::mem::clone<MType>(d_, buffers_->d);
+  result &= ncs::sim::mem::clone<MType>(v_, buffers_->v);
+  result &= ncs::sim::mem::clone<MType>(threshold_, buffers_->threshold);
   if (!result) {
     std::cerr << "Failed to copy data to device." << std::endl;
     return false;
   }
 
+  for (size_t i = 0; i < ncs::sim::Constants::num_buffers; ++i) {
+    auto blank = new IzhikevichBuffer<MType>();
+    if (!blank->init(num_neurons_)) {
+      std::cerr << "Faield to initialize IzhikevichBuffer." << std::endl;
+      delete blank;
+      return false;
+    }
+    addBlank(blank);
+  }
+  subscription_ = this->subscribe();
+  auto blank = this->getBlank();
+  using ncs::sim::mem::copy;
+  if (!copy<MType, ncs::sim::DeviceType::CPU>(blank->getU(),
+                                              buffers_->u.data(),
+                                              buffers_->u.size())) {
+    std::cerr << "Failed to transfer U." << std::endl;
+    this->publish(blank);
+    return false;
+  }
+  this->publish(blank);
   delete buffers_;
   buffers_ = nullptr;
   return true;
@@ -92,6 +125,8 @@ IzhikevichSimulator<MType>::~IzhikevichSimulator() {
   ncs::sim::Memory<MType>::free(b_);
   ncs::sim::Memory<MType>::free(c_);
   ncs::sim::Memory<MType>::free(d_);
-  ncs::sim::Memory<MType>::free(u_);
   ncs::sim::Memory<MType>::free(v_);
+  if (subscription_) {
+    delete subscription_;
+  }
 }

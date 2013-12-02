@@ -89,7 +89,7 @@ update(ChannelUpdateParameters* parameters) {
   return true;
 }
 
-
+#ifdef NCS_CUDA
 template<>
 bool VoltageGatedIonSimulator<ncs::sim::DeviceType::CUDA>::
 update(ChannelUpdateParameters* parameters) {
@@ -118,6 +118,7 @@ update(ChannelUpdateParameters* parameters) {
   this->publish(new_state_buffer);
   return true;
 }
+#endif // NCS_CUDA
 
 template<>
 bool CalciumDependentSimulator<ncs::sim::DeviceType::CPU>::
@@ -158,6 +159,7 @@ update(ChannelUpdateParameters* parameters) {
   return true;
 }
 
+#ifdef NCS_CUDA
 template<>
 bool CalciumDependentSimulator<ncs::sim::DeviceType::CUDA>::
 update(ChannelUpdateParameters* parameters) {
@@ -188,4 +190,5 @@ update(ChannelUpdateParameters* parameters) {
   this->publish(new_state_buffer);
   return true;
 }
+#endif // NCS_CUDA
 

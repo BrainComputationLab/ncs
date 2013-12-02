@@ -121,9 +121,11 @@ template<>
 bool VoltageGatedIonSimulator<ncs::sim::DeviceType::CPU>::
 update(ChannelUpdateParameters* parameters);
 
+#ifdef NCS_CUDA
 template<>
 bool VoltageGatedIonSimulator<ncs::sim::DeviceType::CUDA>::
 update(ChannelUpdateParameters* parameters);
+#endif // NCS_CUDA
 
 template<ncs::sim::DeviceType::Type MType>
 class CalciumDependentBuffer : public ncs::sim::DataBuffer {
@@ -161,9 +163,11 @@ template<>
 bool CalciumDependentSimulator<ncs::sim::DeviceType::CPU>::
 update(ChannelUpdateParameters* parameters);
 
+#ifdef NCS_CUDA
 template<>
 bool CalciumDependentSimulator<ncs::sim::DeviceType::CUDA>::
 update(ChannelUpdateParameters* parameters);
+#endif // NCS_CUDA
 
 template<ncs::sim::DeviceType::Type MType>
 class ChannelUpdater 

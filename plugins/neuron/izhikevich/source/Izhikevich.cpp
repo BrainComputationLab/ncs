@@ -1,6 +1,9 @@
 #include <ncs/sim/FactoryMap.h>
 
 #include "Izhikevich.h"
+#ifdef NCS_CUDA
+#include "Izhikevich.cuh"
+#endif // NCS_CUDA
 
 template<>
 bool IzhikevichSimulator<ncs::sim::DeviceType::CPU>::
@@ -9,10 +12,14 @@ update(ncs::sim::NeuronUpdateParameters* parameters) {
   const float* input_current = parameters->input_current;
   const float* clamp_voltage_values = parameters->clamp_voltage_values;
   const Bit::Word* voltage_clamp_bits = parameters->voltage_clamp_bits;
-  const float* previous_neuron_voltage = parameters->previous_neuron_voltage;
+  const float* old_v = parameters->previous_neuron_voltage;
   const float* synaptic_current = parameters->synaptic_current;
-  float* neuron_voltage = parameters->neuron_voltage;
+  float* new_v = parameters->neuron_voltage;
   Bit::Word* neuron_fire_bits = parameters->neuron_fire_bits;
+  auto old_state = subscription_->pull();
+  const float* old_u = old_state->getU();
+  auto new_state = this->getBlank();
+  float* new_u = new_state->getU();
 
   // Zero out all the fire bits for our neurons
   unsigned int num_words = Bit::num_words(num_neurons_);
@@ -30,8 +37,8 @@ update(ncs::sim::NeuronUpdateParameters* parameters) {
     float b = b_[i];
     float c = c_[i];
     float d = d_[i];
-    float u = u_[i];
-    float v = previous_neuron_voltage[i];
+    float u = old_u[i];
+    float v = old_v[i];
     float threshold = threshold_[i];
     float current = input_current[i] + synaptic_current[i];
     if (v >= threshold) {
@@ -41,27 +48,58 @@ update(ncs::sim::NeuronUpdateParameters* parameters) {
       Bit::Word mask = Bit::mask(i);
       neuron_fire_bits[word_index] |= mask;
     }
-    float new_v = v + step_dt_ * dvdt(v, u, current);
-    float new_u = u + step_dt_ * dudt(v, u, a, b);
-    v = new_v;
-    u = new_u;
-    new_v = v + step_dt_ * dvdt(v, u, current);
-    new_u = u + step_dt_ * dudt(v, u, a, b);
-    v = new_v;
-    u = new_u;
+    float step_v = v + step_dt_ * dvdt(v, u, current);
+    float step_u = u + step_dt_ * dudt(v, u, a, b);
+    v = step_v;
+    u = step_u;
+    step_v = v + step_dt_ * dvdt(v, u, current);
+    step_u = u + step_dt_ * dudt(v, u, a, b);
+    v = step_v;
+    u = step_u;
     if (v >= threshold) {
       v = threshold;
     }
-    neuron_voltage[i] = v;
-    u_[i] = u;
+    new_v[i] = v;
+    new_u[i] = u;
   }
+  old_state->release();
+  this->publish(new_state);
   return true;
 }
 
 template<>
 bool IzhikevichSimulator<ncs::sim::DeviceType::CUDA>::
 update(ncs::sim::NeuronUpdateParameters* parameters) {
-  std::clog << "STUB: IzhikevichSimulator<CUDA>::update()" << std::endl;
+  using ncs::sim::Bit;
+  const float* input_current = parameters->input_current;
+  const float* clamp_voltage_values = parameters->clamp_voltage_values;
+  const Bit::Word* voltage_clamp_bits = parameters->voltage_clamp_bits;
+  const float* old_v = parameters->previous_neuron_voltage;
+  const float* synaptic_current = parameters->synaptic_current;
+  float* new_v = parameters->neuron_voltage;
+  Bit::Word* neuron_fire_bits = parameters->neuron_fire_bits;
+  auto old_state = subscription_->pull();
+  const float* old_u = old_state->getU();
+  auto new_state = this->getBlank();
+  float* new_u = new_state->getU();
+
+  cuda::updateNeurons(a_,
+                      b_,
+                      c_,
+                      d_,
+                      threshold_,
+                      synaptic_current,
+                      input_current,
+                      old_u,
+                      old_v,
+                      new_u,
+                      new_v,
+                      neuron_fire_bits,
+                      step_dt_,
+                      num_neurons_);
+
+  old_state->release();
+  this->publish(new_state);
   return true;
 }
 

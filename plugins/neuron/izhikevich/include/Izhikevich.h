@@ -1,4 +1,5 @@
 #pragma once
+#include <ncs/sim/DataBuffer.h>
 #include <ncs/sim/NeuronSimulator.h>
 #include <ncs/spec/Generator.h>
 
@@ -15,7 +16,20 @@ struct Instantiator {
 };
 
 template<ncs::sim::DeviceType::Type MType>
-class IzhikevichSimulator : public ncs::sim::NeuronSimulator<MType> {
+class IzhikevichBuffer : public ncs::sim::DataBuffer {
+public:
+  IzhikevichBuffer();
+  bool init(size_t num_neurons);
+  float* getU();
+  ~IzhikevichBuffer();
+private:
+  float* u_;
+};
+
+template<ncs::sim::DeviceType::Type MType>
+class IzhikevichSimulator 
+  : public ncs::sim::NeuronSimulator<MType>,
+    public ncs::sim::SpecificPublisher<IzhikevichBuffer<MType>> {
 public:
   IzhikevichSimulator();
   virtual bool addNeuron(ncs::sim::Neuron* neuron);
@@ -38,11 +52,12 @@ private:
   float* b_;
   float* c_;
   float* d_;
-  float* u_;
   float* v_;
   float* threshold_;
   unsigned int num_neurons_;
   float step_dt_;
+  typename ncs::sim::SpecificPublisher<IzhikevichBuffer<MType>>::Subscription* 
+    subscription_;
 };
 
 template<>

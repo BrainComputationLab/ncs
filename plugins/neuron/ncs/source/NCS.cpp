@@ -173,6 +173,7 @@ update(ncs::sim::NeuronUpdateParameters* parameters) {
   return true;
 }
 
+#ifdef NCS_CUDA
 template<>
 bool NCSSimulator<ncs::sim::DeviceType::CUDA>::
 update(ncs::sim::NeuronUpdateParameters* parameters) {
@@ -233,6 +234,7 @@ update(ncs::sim::NeuronUpdateParameters* parameters) {
   this->publish(blank);
   return true;
 }
+#endif // NCS_CUDA 
 
 template<ncs::sim::DeviceType::Type MType>
 ncs::sim::NeuronSimulator<MType>* createSimulator() {

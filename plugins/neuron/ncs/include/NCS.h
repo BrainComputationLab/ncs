@@ -67,7 +67,9 @@ template<>
 bool NCSSimulator<ncs::sim::DeviceType::CPU>::
 update(ncs::sim::NeuronUpdateParameters* parameters);
 
+#ifdef NCS_CUDA
 template<>
 bool NCSSimulator<ncs::sim::DeviceType::CUDA>::
 update(ncs::sim::NeuronUpdateParameters* parameters);
+#endif // NCS_CUDA
 #include "NCS.hpp"
