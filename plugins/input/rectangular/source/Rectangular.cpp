@@ -1,6 +1,7 @@
 #include <ncs/sim/FactoryMap.h>
 
 #include "Rectangular.h"
+#include "Rectangular.cuh"
 
 bool set(ncs::spec::Generator*& target,
          const std::string& parameter,
@@ -59,8 +60,16 @@ update_(ncs::sim::InputUpdateParameters* parameters) {
 template<>
 bool RectangularSimulator<ncs::sim::DeviceType::CUDA, InputType::Voltage>::
 update_(ncs::sim::InputUpdateParameters* parameters) {
-  std::cout << "STUB: RectangularSimulator<CUDA, Voltage>::update_()" <<
-    std::endl;
+  float* clamp_voltage_values = parameters->clamp_voltage_values;
+  ncs::sim::Bit::Word* voltage_clamp_bits = parameters->voltage_clamp_bits;
+  for (auto batch : active_batches_) {
+    setVoltageClamp(batch->amplitude,
+                    batch->device_neuron_id,
+                    clamp_voltage_values,
+                    voltage_clamp_bits,
+                    batch->count);
+  }
+  ncs::sim::CUDA::synchronize();
   return true;
 }
 
@@ -89,8 +98,14 @@ update_(ncs::sim::InputUpdateParameters* parameters) {
 template<>
 bool RectangularSimulator<ncs::sim::DeviceType::CUDA, InputType::Current>::
 update_(ncs::sim::InputUpdateParameters* parameters) {
-  std::cout << "STUB: RectangularSimulator<CUDA, Current>::update_()" <<
-    std::endl;
+  float* input_current = parameters->input_current;
+  for (auto batch : active_batches_) {
+    addCurrent(batch->amplitude,
+               batch->device_neuron_id,
+               input_current,
+               batch->count);
+  }
+  ncs::sim::CUDA::synchronize();
   return true;
 }
 

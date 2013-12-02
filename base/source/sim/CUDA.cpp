@@ -60,6 +60,15 @@ bool CUDA::endStream() {
   return true;
 }
 
+unsigned int CUDA::getThreadsPerBlock(size_t num_elements) {
+  return 512;
+}
+
+unsigned int CUDA::getNumberOfBlocks(size_t num_elements) {
+  unsigned int threads_per_block = getThreadsPerBlock(num_elements);
+  return (num_elements + threads_per_block - 1) / threads_per_block;
+}
+
 } // namespace sim
 
 } // namespace ncs

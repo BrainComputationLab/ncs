@@ -15,6 +15,8 @@ public:
   static cudaStream_t& getStream();
   static bool synchronize();
   static bool endStream();
+  static unsigned int getThreadsPerBlock(size_t num_elements);
+  static unsigned int getNumberOfBlocks(size_t num_elements);
 private:
 	static __thread cudaStream_t stream_;
 };

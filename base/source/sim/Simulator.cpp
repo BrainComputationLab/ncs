@@ -275,6 +275,9 @@ bool Simulator::addInput(spec::InputGroup* input) {
 
   // TODO(rvhoang): thread this
   for (size_t i = 0; i < devices_.size(); ++i) {
+    if (inputs_per_device[i].empty()) {
+      continue;
+    }
     auto device = devices_[i];
     device->threadInit();
     bool result = device->addInput(inputs_per_device[i],

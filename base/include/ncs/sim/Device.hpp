@@ -194,11 +194,13 @@ bool Device<MType>::addInput(const std::vector<Input*>& inputs,
                              const std::string& type,
                              float start_time,
                              float end_time) {
+  threadInit();
   return input_updater_->addInputs(inputs,
                                    instantiator,
                                    type,
                                    start_time,
                                    end_time);
+  threadDestroy();
 }
 
 template<DeviceType::Type MType>

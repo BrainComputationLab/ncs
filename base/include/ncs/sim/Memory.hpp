@@ -173,9 +173,12 @@ bool copy(T* dst, const T* src, size_t count) {
 template<DeviceType::Type DestType, typename T>
 bool clone(T*& dst, const std::vector<T>& src) {
   if (!Memory<DestType>::malloc(dst, src.size())) {
+    std::cerr << "Failed to allocate memory for clone." << std::endl;
+    std::cerr << "Size: " << src.size() << std::endl;
     return false;
   }
   if (!copy<DestType, DeviceType::CPU>(dst, src.data(), src.size())) {
+    std::cerr << "Failed to copy for clone." << std::endl;
     Memory<DestType>::free(dst);
     return false;
   }
