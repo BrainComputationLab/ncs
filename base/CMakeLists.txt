@@ -24,6 +24,7 @@ IF(CUDA_FOUND AND NCS_CUDA)
   INCLUDE_DIRECTORIES(${CUDA_INCLUDE_DIRS})
   CUDA_COMPILE(cuda_objects
                "source/cuda/MemoryExtractor.cu"
+               "source/cuda/FireTableUpdater.cu"
                OPTIONS ${CUDA_OPTIONS} --compiler-options '-fPIC')
   SET(sim_source ${sim_source} ${cuda_objects})
 ENDIF(CUDA_FOUND AND NCS_CUDA)

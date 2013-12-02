@@ -49,15 +49,17 @@ bool RectangularSimulator<ncs::sim::DeviceType::CPU, InputType::Voltage>::
 update_(ncs::sim::InputUpdateParameters* parameters);
 
 template<>
-bool RectangularSimulator<ncs::sim::DeviceType::CUDA, InputType::Voltage>::
+bool RectangularSimulator<ncs::sim::DeviceType::CPU, InputType::Current>::
 update_(ncs::sim::InputUpdateParameters* parameters);
 
+#ifdef NCS_CUDA
 template<>
-bool RectangularSimulator<ncs::sim::DeviceType::CPU, InputType::Current>::
+bool RectangularSimulator<ncs::sim::DeviceType::CUDA, InputType::Voltage>::
 update_(ncs::sim::InputUpdateParameters* parameters);
 
 template<>
 bool RectangularSimulator<ncs::sim::DeviceType::CUDA, InputType::Current>::
 update_(ncs::sim::InputUpdateParameters* parameters);
+#endif // NCS_CUDA
 
 #include "Rectangular.hpp"

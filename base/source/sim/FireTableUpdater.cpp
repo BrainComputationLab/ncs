@@ -1,4 +1,7 @@
 #include <ncs/sim/FireTableUpdater.h>
+#ifdef NCS_CUDA
+#include <ncs/cuda/FireTableUpdater.cuh>
+#endif // NCS_CUDA
 
 namespace ncs {
 
@@ -27,12 +30,18 @@ update_(GlobalNeuronStateBuffer<DeviceType::CPU>* neuron_state,
   return true;
 }
 
-
 template<>
 bool FireTableUpdater<DeviceType::CUDA>::
 update_(GlobalNeuronStateBuffer<DeviceType::CUDA>* neuron_state,
         unsigned int step) {
-  std::cout << "STUB: FireTableUpdater<CUDA>::update_()" << std::endl;
+  cuda::updateFireTable(neuron_state->getFireBits(),
+                        fire_table_->getTable(),
+                        fire_table_->getWordsPerVector(),
+                        step % fire_table_->getNumberOfRows(),
+                        fire_table_->getNumberOfRows(),
+                        global_presynaptic_neuron_ids_,
+                        synaptic_delays_,
+                        device_synaptic_vector_size_);
   return true;
 }
 

@@ -1,7 +1,10 @@
 #include <ncs/sim/FactoryMap.h>
 
 #include "Rectangular.h"
+
+#ifdef NCS_CUDA
 #include "Rectangular.cuh"
+#endif // NCS_CUDA
 
 bool set(ncs::spec::Generator*& target,
          const std::string& parameter,
@@ -56,6 +59,7 @@ update_(ncs::sim::InputUpdateParameters* parameters) {
   return true;
 }
 
+#ifdef NCS_CUDA
 
 template<>
 bool RectangularSimulator<ncs::sim::DeviceType::CUDA, InputType::Voltage>::
@@ -73,6 +77,7 @@ update_(ncs::sim::InputUpdateParameters* parameters) {
   return true;
 }
 
+#endif // NCS_CUDA
 
 template<>
 bool RectangularSimulator<ncs::sim::DeviceType::CPU, InputType::Current>::
@@ -94,6 +99,7 @@ update_(ncs::sim::InputUpdateParameters* parameters) {
   return true;
 }
 
+#ifdef NCS_CUDA
 
 template<>
 bool RectangularSimulator<ncs::sim::DeviceType::CUDA, InputType::Current>::
@@ -109,6 +115,7 @@ update_(ncs::sim::InputUpdateParameters* parameters) {
   return true;
 }
 
+#endif // NCS_CUDA
 
 template<ncs::sim::DeviceType::Type MType, InputType IType>
 ncs::sim::InputSimulator<MType>* createSimulator() {
