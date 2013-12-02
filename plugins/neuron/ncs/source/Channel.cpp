@@ -161,7 +161,31 @@ update(ChannelUpdateParameters* parameters) {
 template<>
 bool CalciumDependentSimulator<ncs::sim::DeviceType::CUDA>::
 update(ChannelUpdateParameters* parameters) {
-  std::cout << "STUB: CalciumDependentSimulator<CUDA>::update" << std::endl;
+  auto old_state_buffer = state_subscription_->pull();
+  const float* neuron_voltages = parameters->voltage;
+  const float* neuron_calcium = parameters->calcium;
+  const float* old_m = old_state_buffer->getM();
+  auto new_state_buffer = this->getBlank();
+  float* channel_current = parameters->current;
+  float* new_m = new_state_buffer->getM();
+  float dt = parameters->time_step;
+  cuda::updateCalciumDependent(neuron_plugin_ids_,
+                               neuron_voltages,
+                               neuron_calcium,
+                               forward_scale_,
+                               forward_exponent_,
+                               backwards_rate_,
+                               tau_scale_,
+                               m_power_,
+                               conductance_,
+                               reversal_potential_,
+                               old_m,
+                               new_m,
+                               channel_current,
+                               dt,
+                               num_channels_);
+  old_state_buffer->release();
+  this->publish(new_state_buffer);
   return true;
 }
 

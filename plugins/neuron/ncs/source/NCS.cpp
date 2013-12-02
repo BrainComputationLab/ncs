@@ -141,7 +141,7 @@ update(ncs::sim::NeuronUpdateParameters* parameters) {
   for (size_t i = 0; i < num_neurons_; ++i) {
     int spike_shape_state = old_spike_shape_state[i];
     float voltage = old_voltage[i];
-    float calcium = old_voltage[i];
+    float calcium = old_calcium[i];
     float total_current = input_current[i] + 
                           synaptic_current[i] + channel_current[i];
     if (spike_shape_state < 0) { // Do real computations
