@@ -1,6 +1,9 @@
 #include <ncs/sim/FactoryMap.h>
 
 #include "NCS.h"
+#ifdef NCS_CUDA
+#include "NCS.cuh"
+#endif // NCS_CUDA
 
 bool set(ncs::spec::Generator*& target,
          const std::string& parameter,
@@ -164,6 +167,67 @@ update(ncs::sim::NeuronUpdateParameters* parameters) {
     new_calcium[i] = calcium;
     device_neuron_voltage[i] = voltage;
   }
+  state_buffer->release();
+  channel_buffer->release();
+  this->publish(blank);
+  return true;
+}
+
+template<>
+bool NCSSimulator<ncs::sim::DeviceType::CUDA>::
+update(ncs::sim::NeuronUpdateParameters* parameters) {
+  using ncs::sim::Bit;
+  const float* input_current = parameters->input_current;
+  const float* clamp_voltage_values = parameters->clamp_voltage_values;
+  const Bit::Word* voltage_clamp_bits = parameters->voltage_clamp_bits;
+  const float* synaptic_current = parameters->synaptic_current;
+  float* device_neuron_voltage = parameters->neuron_voltage;
+  Bit::Word* neuron_fire_bits = parameters->neuron_fire_bits;
+
+  ncs::sim::Mailbox mailbox;
+  ChannelCurrentBuffer<ncs::sim::DeviceType::CUDA>* channel_buffer = nullptr;
+  channel_current_subscription_->pull(&channel_buffer, &mailbox);
+  NeuronBuffer<ncs::sim::DeviceType::CUDA>* state_buffer = nullptr;
+  state_subscription_->pull(&state_buffer, &mailbox);
+  if (!mailbox.wait(&channel_buffer, &state_buffer)) {
+    state_subscription_->cancel();
+    channel_current_subscription_->cancel();
+    if (state_buffer) {
+      state_buffer->release();
+    }
+    if (channel_buffer) {
+      channel_buffer->release();
+    }
+    return true;
+  }
+  const float* old_voltage = state_buffer->getVoltage();
+  const float* old_calcium = state_buffer->getCalcium();
+  const int* old_spike_shape_state = state_buffer->getSpikeShapeState();
+  const float* channel_current = channel_buffer->getCurrent();
+  auto blank = this->getBlank();
+  float* new_voltage = blank->getVoltage();
+  float* new_calcium = blank->getCalcium();
+  int* new_spike_shape_state = blank->getSpikeShapeState();
+  cuda::updateNeurons(old_spike_shape_state,
+                      old_voltage,
+                      old_calcium,
+                      input_current,
+                      synaptic_current,
+                      channel_current,
+                      resting_potential_,
+                      voltage_persistence_,
+                      dt_over_capacitance_,
+                      spike_shape_length_,
+                      calcium_spike_increment_,
+                      spike_shape_,
+                      threshold_,
+                      neuron_fire_bits,
+                      new_voltage,
+                      new_spike_shape_state,
+                      new_calcium,
+                      device_neuron_voltage,
+                      num_neurons_);
+
   state_buffer->release();
   channel_buffer->release();
   this->publish(blank);
