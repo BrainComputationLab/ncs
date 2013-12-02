@@ -1,6 +1,9 @@
 #include <ncs/sim/AtomicWriter.h>
 
 #include "Channel.h"
+#ifdef NCS_CUDA
+#include "Channel.cuh"
+#endif // NCS_CUDA
 
 VoltageGatedIonChannel::VoltageGatedIonChannel() {
   type = Channel::VoltageGatedIon;
@@ -90,7 +93,29 @@ update(ChannelUpdateParameters* parameters) {
 template<>
 bool VoltageGatedIonSimulator<ncs::sim::DeviceType::CUDA>::
 update(ChannelUpdateParameters* parameters) {
-  std::cout << "STUB: VoltageGatedIonSimulator<CUDA>::update" << std::endl;
+  auto old_state_buffer = state_subscription_->pull();
+  const float* neuron_voltages = parameters->voltage;
+  const float* old_m = old_state_buffer->getM();
+  auto new_state_buffer = this->getBlank();
+  float* channel_current = parameters->current;
+  float* new_m = new_state_buffer->getM();
+  float dt = parameters->time_step;
+  cuda::updateVoltageGatedIon(neuron_plugin_ids_,
+                              neuron_voltages,
+                              v_half_,
+                              deactivation_scale_,
+                              activation_scale_,
+                              equilibrium_scale_,
+                              tau_scale_factor_,
+                              old_m,
+                              reversal_potential_,
+                              conductance_,
+                              new_m,
+                              channel_current,
+                              dt,
+                              num_channels_);
+  old_state_buffer->release();
+  this->publish(new_state_buffer);
   return true;
 }
 

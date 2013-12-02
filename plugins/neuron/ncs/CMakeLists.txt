@@ -7,6 +7,7 @@ IF(CUDA_FOUND AND NCS_CUDA)
 	INCLUDE_DIRECTORIES(${CUDA_INCLUDE_DIRS})
 	CUDA_COMPILE(cuda_source 
                "source/NCS.cu" 
+               "source/Channel.cu"
                OPTIONS ${CUDA_OPTIONS} 
                --compiler-options '-fPIC')
 	SET(source ${source} ${cuda_source})
