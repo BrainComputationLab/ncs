@@ -15,6 +15,10 @@ namespace sim {
 template<DeviceType::Type MType>
 template<typename T>
 bool Memory<MType>::malloc(T*& addr, size_t count) {
+  if (0 == count) {
+    addr = nullptr;
+    return true;
+  }
   addr = Memory<MType>::template malloc<T>(count);
   return addr != nullptr;
 }
@@ -23,6 +27,9 @@ bool Memory<MType>::malloc(T*& addr, size_t count) {
 template<>
 template<typename T>
 T* Memory<DeviceType::CUDA>::malloc(size_t count) {
+  if (0 == count) {
+    return nullptr;
+  }
   char* result = nullptr;
   if (cudaMalloc((void**)&result, sizeof(T) * count) != cudaSuccess) {
     std::cerr << "cudaMalloc failed: " <<
@@ -67,6 +74,9 @@ bool Memory<DeviceType::CUDA>::zero(T* addr, size_t count) {
 template<>
 template<typename T>
 T* Memory<DeviceType::CPU>::malloc(size_t count) {
+  if (0 == count) {
+    return nullptr;
+  }
   return new T[count];
 }
 
