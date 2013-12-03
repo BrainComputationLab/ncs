@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import math
 import sys
 
 import ncs
@@ -21,10 +22,12 @@ def run(argv):
 		print "failed to initialize simulation."
 		return
 
-	sim.addInput("linear_current",
+	sim.addInput("sine_current",
                {
-                 "starting_amplitude":10,
-                 "ending_amplitude":20,
+                 "amplitude_scale":10,
+                 "time_scale": 200.0 / math.pi,
+                 "phase": 0.0,
+                 "amplitude_shift":10
                },
                group_1,
                1,
