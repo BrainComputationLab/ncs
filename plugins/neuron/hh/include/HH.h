@@ -61,7 +61,34 @@ struct ParticleConstants {
 };
 
 template<ncs::sim::DeviceType::Type MType>
-class VoltageGatedChannelSimulator : public ChannelSimulator<MType> {
+struct ParticleSet {
+  ParticleSet();
+  ~ParticleSet();
+  bool init(size_t count);
+  template<ncs::sim::DeviceType::Type SType>
+  bool copyFrom(ParticleSet<SType>* source);
+  ParticleConstants<MType> alpha;
+  ParticleConstants<MType> beta;
+  unsigned int* particle_indices;
+  unsigned int* neuron_ids;
+  float* power;
+  float* x_initial;
+  size_t size;
+};
+
+template<ncs::sim::DeviceType::Type MType>
+struct VoltageGatedBuffer : public ncs::sim::DataBuffer {
+  VoltageGatedBuffer();
+  bool init(const std::vector<size_t>& counts_per_level);
+  ~VoltageGatedBuffer();
+  std::vector<float*> x_per_level;
+  std::vector<size_t> size_per_level;
+};
+
+template<ncs::sim::DeviceType::Type MType>
+class VoltageGatedChannelSimulator 
+  : public ChannelSimulator<MType>,
+    public ncs::sim::SpecificPublisher<VoltageGatedBuffer<MType>> {
 public:
   VoltageGatedChannelSimulator();
   virtual bool update(ChannelUpdateParameters* parameters);
@@ -69,15 +96,9 @@ public:
 protected:
   virtual bool init_();
 private:
-  size_t num_particles_;
-  ParticleConstants<MType> alpha_;
-  ParticleConstants<MType> beta_;
-  unsigned int* particle_indices_;
-  unsigned int* neuron_id_by_particle_;
-
-  // num_particles_ in size
-  float* x_;
-  float* power_;
+  std::vector<ParticleSet<MType>*> particle_sets_;
+  typedef ncs::sim::SpecificPublisher<VoltageGatedBuffer<MType>> Self;
+  typename Self::Subscription* self_subscription_;
 
   // num_channels_ in size
   float* particle_products_;

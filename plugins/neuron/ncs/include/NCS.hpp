@@ -203,7 +203,7 @@ bool NCSSimulator<MType>::initializeVoltages(float* plugin_voltages) {
 
 template<ncs::sim::DeviceType::Type MType>
 bool NCSSimulator<MType>::update(ncs::sim::NeuronUpdateParameters* parameters) {
-  std::cout << "STUB: NCSSimulator<MType>::update" << std::endl;
+  std::cerr << "NCSSimulator<MType>::update is not implemented." << std::endl;
   return true;
 }
 

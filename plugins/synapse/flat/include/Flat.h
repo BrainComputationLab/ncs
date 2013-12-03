@@ -25,8 +25,10 @@ template<>
 bool FlatSimulator<ncs::sim::DeviceType::CPU>::
 update(ncs::sim::SynapseUpdateParameters* parameters);
 
+#ifdef NCS_CUDA
 template<>
 bool FlatSimulator<ncs::sim::DeviceType::CUDA>::
 update(ncs::sim::SynapseUpdateParameters* parameters);
+#endif // NCS_CUDA
 
 #include "Flat.hpp"

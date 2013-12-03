@@ -137,7 +137,7 @@ def Run(argv):
                                              "hh",
                                              hh_cell
                                             )
-  group_1 = sim.addCellGroup("group_1", 1, "hh_neuron", None) # last param is geometry
+  group_1 = sim.addCellGroup("group_1", 2, "hh_neuron", None) # last param is geometry
 
   all_cells = sim.addCellAlias("all_cells", [group_1])
   sim.addCellAlias("all", all_cells)

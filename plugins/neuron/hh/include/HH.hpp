@@ -2,14 +2,17 @@
 
 template<ncs::sim::DeviceType::Type MType>
 VoltageGatedChannelSimulator<MType>::VoltageGatedChannelSimulator() {
-  particle_indices_ = nullptr;
   particle_products_ = nullptr;
+  self_subscription_ = nullptr;
 }
 
 template<ncs::sim::DeviceType::Type MType>
 VoltageGatedChannelSimulator<MType>::~VoltageGatedChannelSimulator() {
-  if (particle_indices_) {
-    ncs::sim::Memory<MType>::free(particle_indices_);
+  if (self_subscription_) {
+    delete self_subscription_;
+  }
+  for (auto particle_set : particle_sets_) {
+    delete particle_set;
   }
   if (particle_products_) {
     ncs::sim::Memory<MType>::free(particle_products_);
@@ -26,38 +29,45 @@ update(ChannelUpdateParameters* parameters) {
 
 template<ncs::sim::DeviceType::Type MType>
 bool VoltageGatedChannelSimulator<MType>::init_() {
-  num_particles_ = 0;
+  if (this->instantiators_.empty()) {
+    return true;
+  }
+
+  size_t max_particles_per_channel = 0;
   for (auto i : this->instantiators_) {
     auto instantiator = (VoltageGatedInstantiator*)i;
-    num_particles_ += instantiator->particles.size();
+    max_particles_per_channel = std::max(max_particles_per_channel,
+                                         instantiator->particles.size());
   }
-  const auto CPU = ncs::sim::DeviceType::CPU;
-  ParticleConstants<CPU> alpha;
-  ParticleConstants<CPU> beta;
-  if (!alpha.init(num_particles_) ||
-      !beta.init(num_particles_)) {
-    std::cerr << "Failed to allocate CPU particle buffer." << std::endl;
-    return false;
+
+  std::vector<size_t> num_particles_per_level(max_particles_per_channel, 0);
+  for (auto i : this->instantiators_) {
+    auto instantiator = (VoltageGatedInstantiator*)i;
+    num_particles_per_level[instantiator->particles.size() - 1]++;
   }
-  if (!alpha_.init(num_particles_) || !beta_.init(num_particles_)) {
-    std::cerr << "Failed to allocate MType particle buffer." << std::endl;
-    return false;
+  for (size_t i = max_particles_per_channel - 1; i > 0; --i) {
+    num_particles_per_level[i - 1] += num_particles_per_level[i];
   }
+
   bool result = true;
-  result &= ncs::sim::Memory<MType>::malloc(conductance_, this->num_channels_);
-  result &= ncs::sim::Memory<MType>::malloc(reversal_potential_, 
-                                            this->num_channels_);
-  result &= ncs::sim::Memory<MType>::malloc(particle_products_, 
-                                            this->num_channels_);
-  result &= ncs::sim::Memory<MType>::malloc(x_, num_particles_);
-  result &= ncs::sim::Memory<MType>::malloc(power_, num_particles_);
-  result &= ncs::sim::Memory<MType>::malloc(particle_indices_, num_particles_);
-  result &= ncs::sim::Memory<MType>::malloc(neuron_id_by_particle_,
-                                            num_particles_);
+  const auto CPU = ncs::sim::DeviceType::CPU;
+  std::vector<ParticleSet<CPU>> particle_sets(max_particles_per_channel);
+  particle_sets_.resize(max_particles_per_channel);
+  for (size_t i = 0; i < max_particles_per_channel; ++i) {
+    if (!particle_sets[i].init(num_particles_per_level[i])) {
+      std::cerr << "Failed to allocate CPU particle buffer." << std::endl;
+      result = false;
+    }
+    particle_sets_[i] = new ParticleSet<MType>();
+    if (!particle_sets_[i]->init(num_particles_per_level[i])) {
+      std::cerr << "Failed to allocate MType particle buffer." << std::endl;
+      result = false;
+    }
+  }
   if (!result) {
-    std::cerr << "Failed to allocate MType memory." << std::endl;
     return false;
   }
+
   auto generate_particle = [=](ParticleConstants<CPU>& p,
                                void* instantiator,
                                ncs::spec::RNG* rng,
@@ -70,52 +80,61 @@ bool VoltageGatedChannelSimulator<MType>::init_() {
     p.f[index] = pci->f->generateDouble(rng);
     p.h[index] = pci->h->generateDouble(rng);
   };
-  float* conductance = new float[this->num_channels_];
-  float* reversal_potential = new float[this->num_channels_];
-  float* x = new float[num_particles_];
-  float* power = new float[num_particles_];
-  unsigned int* particle_indices = new unsigned int[num_particles_];
-  unsigned int* neuron_id_by_particle = new unsigned int[num_particles_];
-  for (size_t i = 0, particle_index = 0; i < this->num_channels_; ++i) {
+  size_t num_channels = this->num_channels_;
+  std::vector<float> conductance(num_channels);
+  std::vector<float> reversal_potential(num_channels);
+  std::vector<size_t> particles_used_per_level(max_particles_per_channel, 0);
+  for (size_t i = 0; i < num_channels; ++i) {
     auto ci = (VoltageGatedInstantiator*)(this->instantiators_[i]);
     auto seed = this->seeds_[i];
     ncs::spec::RNG rng(seed);
     conductance[i] = ci->conductance->generateDouble(&rng);
     reversal_potential[i] = ci->reversal_potential->generateDouble(&rng);
-    for (auto particle_instantiator : ci->particles) {
-      auto vpi = (VoltageParticleInstantiator*)particle_instantiator;
-      power[particle_index] = vpi->power->generateDouble(&rng);
-      x[particle_index] = vpi->x_initial->generateDouble(&rng);
-      generate_particle(alpha, vpi->alpha, &rng, particle_index);
-      generate_particle(beta, vpi->beta, &rng, particle_index);
-      particle_indices[particle_index] = i;
-      neuron_id_by_particle[particle_index] = this->cpu_neuron_plugin_ids_[i];
-      ++particle_index;
+    for (size_t j = 0; j < ci->particles.size(); ++j) {
+      auto vpi = (VoltageParticleInstantiator*)(ci->particles[j]);
+      size_t k = particles_used_per_level[j];
+      particle_sets[j].power[k] = vpi->power->generateDouble(&rng);
+      particle_sets[j].x_initial[k] = vpi->x_initial->generateDouble(&rng);
+      generate_particle(particle_sets[j].alpha, vpi->alpha, &rng, k);
+      generate_particle(particle_sets[j].beta, vpi->beta, &rng, k);
+      particle_sets[j].particle_indices[k] = i;
+      particle_sets[j].neuron_ids[k] = this->cpu_neuron_plugin_ids_[i];
+      particles_used_per_level[j]++;
     }
   }
-
-  using ncs::sim::mem::copy;
-  result &= copy<MType, CPU>(conductance_, conductance, this->num_channels_);
-  result &= copy<MType, CPU>(reversal_potential_, 
-                             reversal_potential, 
-                             this->num_channels_);
-  result &= copy<MType, CPU>(x_, x, num_particles_);
-  result &= copy<MType, CPU>(power_, power, num_particles_);
-  result &= copy<MType, CPU>(particle_indices_,
-                             particle_indices, 
-                             num_particles_);
-  result &= copy<MType, CPU>(neuron_id_by_particle_,
-                             neuron_id_by_particle,
-                             num_particles_);
-  result &= alpha_.copyFrom(&alpha, num_particles_);
-  result &= beta_.copyFrom(&beta, num_particles_);
-  delete [] conductance;
-  delete [] x;
-  delete [] power;
-  delete [] particle_indices;
-  delete [] neuron_id_by_particle;
+  result &= ncs::sim::Memory<MType>::malloc(particle_products_, 
+                                            this->num_channels_);
+  using ncs::sim::mem::clone;
+  result &= clone<MType>(conductance_, conductance);
+  result &= clone<MType>(reversal_potential_, reversal_potential);
+  for (size_t i = 0; i < max_particles_per_channel; ++i) {
+    result &= particle_sets_[i]->copyFrom(particle_sets.data() + i);
+  }
   if (!result) {
     std::cerr << "Failed to transfer data to device." << std::endl;
+    return false;
+  }
+
+  for (size_t i = 0; i < ncs::sim::Constants::num_buffers; ++i) {
+    auto blank = new VoltageGatedBuffer<MType>();
+    if (!blank->init(num_particles_per_level)) {
+      std::cerr << "Failed to initialize VoltageGatedBuffer." << std::endl;
+      delete blank;
+      return false;
+    }
+    this->addBlank(blank);
+  }
+  self_subscription_ = this->subscribe();
+  auto blank = this->getBlank();
+  using ncs::sim::mem::copy;
+  for (size_t i = 0; i < particle_sets_.size(); ++i) {
+    result &= copy<MType, MType>(blank->x_per_level[i],
+                                 particle_sets_[i]->x_initial, 
+                                 particle_sets_[i]->size);
+  }
+  this->publish(blank);
+  if (!result) {
+    std::cerr << "Failed to transfer initial particle data." << std::endl;
     return false;
   }
 
@@ -177,6 +196,84 @@ ParticleConstants<MType>::~ParticleConstants() {
   }
   if (h) {
     ncs::sim::Memory<MType>::free(h);
+  }
+}
+
+template<ncs::sim::DeviceType::Type MType>
+ParticleSet<MType>::ParticleSet() {
+  particle_indices = nullptr;
+  power = nullptr;
+  x_initial = nullptr;
+  neuron_ids = nullptr;
+  size = 0;
+}
+
+template<ncs::sim::DeviceType::Type MType>
+bool ParticleSet<MType>::init(size_t count) {
+  size = count;
+  bool result = true;
+  result &= alpha.init(count);
+  result &= beta.init(count);
+  result &= ncs::sim::Memory<MType>::malloc(particle_indices, size);
+  result &= ncs::sim::Memory<MType>::malloc(power, size);
+  result &= ncs::sim::Memory<MType>::malloc(x_initial, size);
+  result &= ncs::sim::Memory<MType>::malloc(neuron_ids, size);
+  return result;
+}
+
+template<ncs::sim::DeviceType::Type MType>
+template<ncs::sim::DeviceType::Type SType>
+bool ParticleSet<MType>::copyFrom(ParticleSet<SType>* s) {
+  using ncs::sim::mem::copy;
+  bool result = true;
+  result &= alpha.copyFrom(&(s->alpha), size);
+  result &= beta.copyFrom(&(s->beta), size);
+  result &= copy<MType, SType>(particle_indices, s->particle_indices, size);
+  result &= copy<MType, SType>(neuron_ids, s->neuron_ids, size);
+  result &= copy<MType, SType>(power, s->power, size);
+  result &= copy<MType, SType>(x_initial, s->x_initial, size);
+  return result;
+}
+
+template<ncs::sim::DeviceType::Type MType>
+ParticleSet<MType>::~ParticleSet() {
+  if (particle_indices) {
+    ncs::sim::Memory<MType>::free(particle_indices);
+  }
+  if (power) {
+    ncs::sim::Memory<MType>::free(power);
+  }
+  if (x_initial) {
+    ncs::sim::Memory<MType>::free(x_initial);
+  }
+  if (neuron_ids) {
+    ncs::sim::Memory<MType>::free(neuron_ids);
+  }
+}
+
+template<ncs::sim::DeviceType::Type MType>
+VoltageGatedBuffer<MType>::VoltageGatedBuffer() {
+}
+
+template<ncs::sim::DeviceType::Type MType>
+bool VoltageGatedBuffer<MType>::init(const std::vector<size_t>& counts_per_level) {
+  size_per_level = counts_per_level;
+  bool result = true;
+  for (size_t i = 0; i < size_per_level.size(); ++i) {
+    size_t size = size_per_level[i];
+    float* x = nullptr;
+    result &= ncs::sim::Memory<MType>::malloc(x, size);
+    if (result) {
+      x_per_level.push_back(x);
+    }
+  }
+  return result;
+}
+
+template<ncs::sim::DeviceType::Type MType>
+VoltageGatedBuffer<MType>::~VoltageGatedBuffer() {
+  for (auto x : x_per_level) {
+    ncs::sim::Memory<MType>::free(x);
   }
 }
 

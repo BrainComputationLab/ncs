@@ -45,6 +45,7 @@ bool FlatSimulator<MType>::initialize() {
 template<ncs::sim::DeviceType::Type MType>
 bool FlatSimulator<MType>::
 update(ncs::sim::SynapseUpdateParameters* parameters) {
-  std::clog << "STUB: FlatSimulator::update()" << std::endl;
+  std::cerr << "FlatSimulator<MType>::update is not implemeneted." <<
+    std::endl;
   return true;
 }
