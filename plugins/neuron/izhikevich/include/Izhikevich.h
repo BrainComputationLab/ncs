@@ -64,9 +64,11 @@ template<>
 bool IzhikevichSimulator<ncs::sim::DeviceType::CPU>::
 update(ncs::sim::NeuronUpdateParameters* parameters);
 
+#ifdef NCS_CUDA
 template<>
 bool IzhikevichSimulator<ncs::sim::DeviceType::CUDA>::
 update(ncs::sim::NeuronUpdateParameters* parameters);
+#endif // NCS_CUDA
 
 
 #include "Izhikevich.hpp"

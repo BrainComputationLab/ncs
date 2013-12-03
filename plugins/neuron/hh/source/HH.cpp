@@ -260,7 +260,7 @@ update(ChannelUpdateParameters* parameters) {
   return true;
 }
 
-
+#ifdef NCS_CUDA
 template<>
 bool VoltageGatedChannelSimulator<ncs::sim::DeviceType::CUDA>::
 update(ChannelUpdateParameters* parameters) {
@@ -309,6 +309,7 @@ update(ChannelUpdateParameters* parameters) {
   this->publish(new_state);
   return true;
 }
+#endif // NCS_CUDA
 
 template<>
 bool HHSimulator<ncs::sim::DeviceType::CPU>::
@@ -368,6 +369,7 @@ update(ncs::sim::NeuronUpdateParameters* parameters) {
   return true;
 }
 
+#ifdef NCS_CUDA
 template<>
 bool HHSimulator<ncs::sim::DeviceType::CUDA>::
 update(ncs::sim::NeuronUpdateParameters* parameters) {
@@ -415,6 +417,7 @@ update(ncs::sim::NeuronUpdateParameters* parameters) {
   }
   return true;
 }
+#endif // NCS_CUDA
 
 extern "C" {
 

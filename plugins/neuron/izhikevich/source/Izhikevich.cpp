@@ -67,6 +67,7 @@ update(ncs::sim::NeuronUpdateParameters* parameters) {
   return true;
 }
 
+#ifdef NCS_CUDA
 template<>
 bool IzhikevichSimulator<ncs::sim::DeviceType::CUDA>::
 update(ncs::sim::NeuronUpdateParameters* parameters) {
@@ -102,6 +103,7 @@ update(ncs::sim::NeuronUpdateParameters* parameters) {
   this->publish(new_state);
   return true;
 }
+#endif // NCS_CUDA
 
 bool set(ncs::spec::Generator*& target,
          const std::string& parameter,

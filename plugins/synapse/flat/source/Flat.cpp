@@ -4,7 +4,7 @@
 #include "Flat.h"
 #ifdef NCS_CUDA
 #include "Flat.cuh"
-#endif
+#endif // NCS_CUDA
 
 bool set(ncs::spec::Generator*& target,
          const std::string& parameter,
@@ -54,7 +54,7 @@ update(ncs::sim::SynapseUpdateParameters* parameters) {
   return true;
 }
 
-
+#ifdef NCS_CUDA
 template<>
 bool FlatSimulator<ncs::sim::DeviceType::CUDA>::
 update(ncs::sim::SynapseUpdateParameters* parameters) {
@@ -68,7 +68,7 @@ update(ncs::sim::SynapseUpdateParameters* parameters) {
                    num_synapses_);
   return true;
 }
-
+#endif // NCS_CUDA
 
 template<ncs::sim::DeviceType::Type MType>
 ncs::sim::SynapseSimulator<MType>* createSimulator() {

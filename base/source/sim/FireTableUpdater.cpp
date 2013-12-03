@@ -30,6 +30,7 @@ update_(GlobalNeuronStateBuffer<DeviceType::CPU>* neuron_state,
   return true;
 }
 
+#ifdef NCS_CUDA
 template<>
 bool FireTableUpdater<DeviceType::CUDA>::
 update_(GlobalNeuronStateBuffer<DeviceType::CUDA>* neuron_state,
@@ -44,7 +45,7 @@ update_(GlobalNeuronStateBuffer<DeviceType::CUDA>* neuron_state,
                         device_synaptic_vector_size_);
   return true;
 }
-
+#endif // NCS_CUDA
 
 } // namespace sim
 

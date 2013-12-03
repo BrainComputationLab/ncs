@@ -110,9 +110,11 @@ template<>
 bool VoltageGatedChannelSimulator<ncs::sim::DeviceType::CPU>::
 update(ChannelUpdateParameters* parameters);
 
+#ifdef NCS_CUDA
 template<>
 bool VoltageGatedChannelSimulator<ncs::sim::DeviceType::CUDA>::
 update(ChannelUpdateParameters* parameters);
+#endif // NCS_CUDA
 
 template<ncs::sim::DeviceType::Type MType>
 class HHSimulator 
@@ -143,8 +145,10 @@ template<>
 bool HHSimulator<ncs::sim::DeviceType::CPU>::
 update(ncs::sim::NeuronUpdateParameters* parameters);
 
+#ifdef NCS_CUDA
 template<>
 bool HHSimulator<ncs::sim::DeviceType::CUDA>::
 update(ncs::sim::NeuronUpdateParameters* parameters);
+#endif // NCS_CUDA
 
 #include "HH.hpp"

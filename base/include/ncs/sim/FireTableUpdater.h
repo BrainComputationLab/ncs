@@ -42,10 +42,12 @@ bool FireTableUpdater<DeviceType::CPU>::
 update_(GlobalNeuronStateBuffer<DeviceType::CPU>* neuron_state,
         unsigned int step);
 
+#ifdef NCS_CUDA
 template<>
 bool FireTableUpdater<DeviceType::CUDA>::
 update_(GlobalNeuronStateBuffer<DeviceType::CUDA>* neuron_state,
         unsigned int step);
+#endif // NCS_CUDA
 
 } // namespace sim
 
