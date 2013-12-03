@@ -162,6 +162,7 @@ update(ncs::sim::NeuronUpdateParameters* parameters) {
       voltage = spike_shape_[i][spike_shape_state];
       spike_shape_state--;
     }
+    calcium *= calcium_persistence_[i];
     new_voltage[i] = voltage;
     new_spike_shape_state[i] = spike_shape_state;
     new_calcium[i] = calcium;
@@ -220,6 +221,7 @@ update(ncs::sim::NeuronUpdateParameters* parameters) {
                       dt_over_capacitance_,
                       spike_shape_length_,
                       calcium_spike_increment_,
+                      calcium_persistence_,
                       spike_shape_,
                       threshold_,
                       neuron_fire_bits,

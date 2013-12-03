@@ -16,6 +16,7 @@ __global__ void updateNeuronsKernel(const int* old_spike_shape_state,
                                     const float* dt_over_capacitance,
                                     const unsigned int* spike_shape_length,
                                     const float* calcium_spike_increment,
+                                    const float* calcium_persistence,
                                     const float* const* spike_shape,
                                     const float* threshold,
                                     ncs::sim::Bit::Word* neuron_fire_bits,
@@ -54,6 +55,7 @@ __global__ void updateNeuronsKernel(const int* old_spike_shape_state,
         voltage = spike_shape[i][spike_shape_state];
         spike_shape_state--;
       }
+      calcium *= calcium_persistence[i];
       new_voltage[i] = voltage;
       new_spike_shape_state[i] = spike_shape_state;
       new_calcium[i] = calcium;
@@ -77,6 +79,7 @@ void updateNeurons(const int* old_spike_shape_state,
                    const float* dt_over_capacitance,
                    const unsigned int* spike_shape_length,
                    const float* calcium_spike_increment,
+                   const float* calcium_persistence,
                    const float* const* spike_shape,
                    const float* threshold,
                    ncs::sim::Bit::Word* neuron_fire_bits,
@@ -104,6 +107,7 @@ void updateNeurons(const int* old_spike_shape_state,
                                                        dt_over_capacitance,
                                                        spike_shape_length,
                                                        calcium_spike_increment,
+                                                       calcium_persistence,
                                                        spike_shape,
                                                        threshold,
                                                        neuron_fire_bits,
