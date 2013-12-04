@@ -119,7 +119,7 @@ class Simulation:
     alias = CellAlias(label, subgroups)
     self.cell_aliases[label] = alias
     return alias
-  
+
   def connect(self, label, presynaptic, postsynaptic, probability, parameters):
     if self.getConnection(label):
       print "Connection %s already exists." % label
@@ -140,12 +140,12 @@ class Simulation:
     self.connection_aliases[label] = alias
     return alias
 
-  def addInput(self, 
-               type_name, 
-               parameters, 
-               groups, 
-               probability, 
-               start_time, 
+  def addInput(self,
+               type_name,
+               parameters,
+               groups,
+               probability,
+               start_time,
                end_time):
     group_list = None
     if isinstance(groups, list):
@@ -209,11 +209,11 @@ class Simulation:
       alias = ConnectionAlias(None, targets)
       if not self.resolveConnectionAlias_(alias):
         print "A target was ill-defined."
-        return None 
+        return None
       target_names = [ x.name for x in alias.subgroups ]
     else:
       print "Invalid target specified."
-      return None 
+      return None
 
     report = pyncs.Report(pyncs.string_list(target_names),
                           target,
@@ -222,7 +222,7 @@ class Simulation:
     data_source = self.simulation.addReport(report)
     if not data_source:
       print "Failed to add report."
-      return None 
+      return None
     return Report(data_source)
 
   def init(self, argv):
@@ -254,7 +254,7 @@ class Simulation:
       neuron_groups = [x.neuron_group for x in alias.subgroups]
       neuron_group_list = pyncs.neuron_group_list(neuron_groups)
       alias.neuron_alias = pyncs.NeuronAlias(neuron_group_list)
-    neuron_alias_map = { n : a.neuron_alias 
+    neuron_alias_map = { n : a.neuron_alias
                          for n, a in self.cell_aliases.items() }
     self.model_specification.neuron_aliases = (
       pyncs.string_to_neuron_alias_map(neuron_alias_map)
@@ -276,9 +276,9 @@ class Simulation:
         return False
 
       group = pyncs.neuron_group_list
-      presynaptic_neuron_groups = [x.neuron_group 
+      presynaptic_neuron_groups = [x.neuron_group
                                    for x in connection.presynaptic.subgroups]
-      presynaptic = group([x.neuron_group 
+      presynaptic = group([x.neuron_group
                            for x in connection.presynaptic.subgroups])
       postsynaptic = group([x.neuron_group
                             for x in connection.postsynaptic.subgroups])
@@ -306,7 +306,7 @@ class Simulation:
     self.model_specification.synapse_aliases = (
       pyncs.string_to_synapse_alias_map(synapse_alias_map)
     )
-  
+
     self.simulation = pyncs.Simulation(self.model_specification,
                                        self.simulaton_parameters)
     return self.simulation.init(pyncs.string_list(argv))
@@ -315,6 +315,9 @@ class Simulation:
     if self.simulation.isMaster():
       for i in range(0, steps):
         self.simulation.step()
+
+  def shutdown(self):
+    return self.simulation.shutdown()
 
   def getModelParameters(self, parameters):
     if isinstance(parameters, pyncs.ModelParameters):
@@ -442,5 +445,5 @@ class Simulation:
         to_visit.append(alias_object)
     alias.resolving = False
     alias.resolved = True
-    alias.subgroups = connections 
+    alias.subgroups = connections
     return True
