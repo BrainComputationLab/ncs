@@ -44,4 +44,17 @@ void addOldFirings(const unsigned int* old_fire_indices,
                    float simulation_time,
                    unsigned int num_old_firings);
 
+void checkPostfire(const ncs::sim::Bit::Word* neuron_fire,
+                   const unsigned int* device_neuron_device_ids,
+                   const float* last_prefire_times,
+                   const float* tau_ltps,
+                   const float* tau_ltds,
+                   const float* A_ltps,
+                   const float* A_ltd_minimums,
+                   float* A_ltds,
+                   float* base_utilizations,
+                   float* last_postfire_times,
+                   float simulation_time,
+                   unsigned int num_synapses);
+
 } // namespace cuda

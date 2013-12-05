@@ -92,6 +92,7 @@ bool NCSSimulator<ncs::sim::DeviceType::CPU>::
 update(ncs::sim::SynapseUpdateParameters* parameters) {
   using ncs::sim::Bit;
   const Bit::Word* synaptic_fire = parameters->synaptic_fire;
+  const Bit::Word* neuron_fire = parameters->device_neuron_fire;
   const float* neuron_voltage = parameters->neuron_voltage;
   float* synaptic_current = parameters->synaptic_current;
   std::mutex* write_lock = parameters->write_lock;
@@ -160,6 +161,29 @@ update(ncs::sim::SynapseUpdateParameters* parameters) {
       if (tau_ltd != 0.0f) {
         float exponent = -post_dt / tau_ltd;
         base_utilization += A_ltd_[i] * exp(exponent);
+        base_utilization_[i] = base_utilization;
+      }
+    }
+  }
+
+  for (size_t i = 0; i < num_synapses_; ++i) {
+    unsigned int neuron_id = device_neuron_device_ids_[i];
+    unsigned int word_index = Bit::word(neuron_id);
+    Bit::Word mask = Bit::mask(neuron_id);
+    if (neuron_fire[word_index] & mask) {
+      float post_dt = simulation_time - last_postfire_time_[i];
+      last_postfire_time_[i] = simulation_time;
+      float pre_dt = simulation_time - last_prefire_time_[i];
+      float tau_ltd = tau_ltd_[i];
+      if (tau_ltd != 0.0f) {
+        float exponent = -post_dt / tau_ltd;
+        A_ltd_[i] = A_ltd_[i] * exp(exponent) + A_ltd_minimum_[i];
+      }
+      float tau_ltp = tau_ltp_[i];
+      if (tau_ltp != 0.0f) {
+        float exponent = -pre_dt / tau_ltp;
+        float base_utilization = base_utilization_[i];
+        base_utilization += A_ltp_[i] * exp(exponent);
         base_utilization_[i] = base_utilization;
       }
     }
@@ -236,6 +260,19 @@ update(ncs::sim::SynapseUpdateParameters* parameters) {
                      new_firings->psg_max,
                      new_firings->device_current_size,
                      num_synapses_);
+
+  cuda::checkPostfire(parameters->device_neuron_fire,
+                      device_neuron_device_ids_,
+                      last_prefire_time_,
+                      tau_ltp_,
+                      tau_ltd_,
+                      A_ltp_,
+                      A_ltd_minimum_,
+                      A_ltd_,
+                      base_utilization_,
+                      last_postfire_time_,
+                      simulation_time,
+                      num_synapses_);
   
   cuda::addOldFirings(old_firings->fire_index,
                       old_firings->fire_time,

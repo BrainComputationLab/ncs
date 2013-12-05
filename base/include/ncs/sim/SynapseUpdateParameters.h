@@ -10,6 +10,7 @@ namespace sim {
 
 struct SynapseUpdateParameters {
   const Bit::Word* synaptic_fire;
+  const Bit::Word* device_neuron_fire;
   const float* neuron_voltage;
   float* synaptic_current;
   std::mutex* write_lock;

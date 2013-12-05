@@ -151,6 +151,8 @@ start(std::function<bool()> thread_init,
           synchronizer->synaptic_fire->getFireBits() + word_offset;
         parameters.neuron_voltage =
           synchronizer->neuron_state->getVoltages();
+        parameters.device_neuron_fire =
+          synchronizer->neuron_state->getFireBits();
         parameters.synaptic_current =
           synchronizer->synaptic_current->getCurrents();
         parameters.write_lock =

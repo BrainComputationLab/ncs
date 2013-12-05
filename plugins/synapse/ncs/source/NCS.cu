@@ -234,6 +234,114 @@ __global__ void checkPrefireKernel(const ncs::sim::Bit::Word* synaptic_fire,
   }
 }
 
+__device__ void computePositiveLearning(const unsigned int* indices,
+                                        const float* last_prefire_times,
+                                        const float* tau_ltps,
+                                        const float* tau_ltds,
+                                        const float* A_ltps,
+                                        const float* A_ltd_minimums,
+                                        float* A_ltds,
+                                        float* base_utilizations,
+                                        float* last_postfire_times,
+                                        float simulation_time,
+                                        unsigned int num_indices) {
+  if (block::thread() >= num_indices) {
+    return;
+  }
+  unsigned int i = block::thread();
+  float post_dt = simulation_time - last_postfire_times[i];
+  last_postfire_times[i] = simulation_time;
+  float pre_dt = simulation_time - last_prefire_times[i];
+  float tau_ltd = tau_ltds[i];
+  if (tau_ltd != 0.0f) {
+    float exponent = -post_dt / tau_ltd;
+    A_ltds[i] = A_ltds[i] * exp(exponent) + A_ltd_minimums[i];
+  }
+  float tau_ltp = tau_ltps[i];
+  if (tau_ltp != 0.0f) {
+    float exponent = -pre_dt / tau_ltp;
+    float base_utilization = base_utilizations[i];
+    base_utilization += A_ltps[i] * exp(exponent);
+    base_utilizations[i] = base_utilization;
+  }
+}
+
+__global__
+void checkPostfireKernel(const ncs::sim::Bit::Word* neuron_fire,
+                         const unsigned int* device_neuron_device_ids,
+                         const float* last_prefire_times,
+                         const float* tau_ltps,
+                         const float* tau_ltds,
+                         const float* A_ltps,
+                         const float* A_ltd_minimums,
+                         float* A_ltds,
+                         float* base_utilizations,
+                         float* last_postfire_times,
+                         float simulation_time,
+                         unsigned int num_synapses) {
+  extern __shared__ unsigned int queued_indices[];
+  unsigned int* num_queued = (unsigned int*)(queued_indices + block::size());
+  if (block::leader()) {
+    *num_queued = 0;
+  }
+  __syncthreads();
+  unsigned int limit = math::ceiling(num_synapses, block::size());
+  for (size_t i = grid::thread(); i < limit; i += grid::stride()) {
+    bool fired = false;
+    unsigned int local_index = 0;
+    if (i < num_synapses) {
+      unsigned int neuron_id = device_neuron_device_ids[i];
+      unsigned int fire_word_index = bit::word(neuron_id);
+      unsigned int mask = bit::mask(neuron_id);
+      if (neuron_fire[fire_word_index] & mask) {
+        fired = true;
+        local_index = atomicAdd(num_queued, 1u);
+        if (local_index < block::size()) {
+          queued_indices[local_index] = i;
+          fired = false;
+        } else {
+          local_index -= block::size();
+        }
+      }
+    }
+    __syncthreads();
+    if (*num_queued >= block::size()) {
+      computePositiveLearning(queued_indices,
+                              last_prefire_times,
+                              tau_ltps,
+                              tau_ltds,
+                              A_ltps,
+                              A_ltd_minimums,
+                              A_ltds,
+                              base_utilizations,
+                              last_postfire_times,
+                              simulation_time,
+                              block::size());
+      if (block::leader()) {
+        *num_queued -= block::size();
+      }
+      __syncthreads();
+    }
+    if (fired) {
+      queued_indices[local_index] = i;
+    }
+  }
+  __syncthreads();
+  if (*num_queued > 0) {
+    computePositiveLearning(queued_indices,
+                            last_prefire_times,
+                            tau_ltps,
+                            tau_ltds,
+                            A_ltps,
+                            A_ltd_minimums,
+                            A_ltds,
+                            base_utilizations,
+                            last_postfire_times,
+                            simulation_time,
+                            *num_queued);
+  }
+}
+
 __device__ 
 void addOldFiringsToGlobal(const unsigned int* old_fire_indices,
                            const float* old_fire_times,
@@ -484,5 +592,40 @@ void addOldFirings(const unsigned int* old_fire_indices,
                                              neuron_voltage,
                                              simulation_time,
                                              num_old_firings);
+}
+
+void checkPostfire(const ncs::sim::Bit::Word* neuron_fire,
+                   const unsigned int* device_neuron_device_ids,
+                   const float* last_prefire_times,
+                   const float* tau_ltps,
+                   const float* tau_ltds,
+                   const float* A_ltps,
+                   const float* A_ltd_minimums,
+                   float* A_ltds,
+                   float* base_utilizations,
+                   float* last_postfire_times,
+                   float simulation_time,
+                   unsigned int num_synapses) {
+  using ncs::sim::CUDA;
+  unsigned int threads_per_block = CUDA::getThreadsPerBlock(num_synapses);
+  unsigned int num_blocks = CUDA::getNumberOfBlocks(num_synapses);
+  unsigned int shared_memory =
+    sizeof(unsigned int) * threads_per_block + // queued_indices
+    sizeof(unsigned int);// num_queued
+  checkPostfireKernel<<<num_blocks,
+                        threads_per_block,
+                        shared_memory,
+                        CUDA::getStream()>>>(neuron_fire,
+                                             device_neuron_device_ids,
+                                             last_prefire_times,
+                                             tau_ltps,
+                                             tau_ltds,
+                                             A_ltps,
+                                             A_ltd_minimums,
+                                             A_ltds,
+                                             base_utilizations,
+                                             last_postfire_times,
+                                             simulation_time,
+                                             num_synapses);
 }
 } // namespace cuda
