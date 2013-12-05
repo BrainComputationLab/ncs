@@ -28,16 +28,6 @@ bool CPUExtractor<Bit>::extract(const void* source, void* destination) {
   return true;
 }
 
-#ifdef NCS_CUDA
-
-template<>
-bool CUDAExtractor<Bit>::extract(const void* source, void* destination) {
-  std::cout << "STUB::CUDAExtractor<Bit>::extract" << std::endl;
-  return true;
-}
-
-#endif // NCS_CUDA
-
 } // namespace sim
 
 } // namespace ncs

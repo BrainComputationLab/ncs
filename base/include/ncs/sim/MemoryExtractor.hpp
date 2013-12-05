@@ -1,4 +1,5 @@
 #include <ncs/sim/Memory.h>
+#include <ncs/sim/Storage.h>
 
 #ifdef NCS_CUDA
 #include <ncs/cuda/MemoryExtractor.h>
@@ -40,13 +41,14 @@ CUDAExtractor<T>::CUDAExtractor(const std::vector<unsigned int>& indices) {
 
 template<typename T>
 bool CUDAExtractor<T>::extract(const void* source, void* destination) {
-  cuda::extract<T>(static_cast<const T*>(source),
+  cuda::extract<T>(static_cast<const typename Storage<T>::type*>(source),
                    device_buffer_,
                    indices_,
                    num_indices_);
-  mem::copy<DeviceType::CPU, DeviceType::CUDA>(static_cast<T*>(destination),
-                                               device_buffer_,
-                                               buffer_size_);
+  typename Storage<T>::type* dest =
+    static_cast<typename Storage<T>::type*>(destination);
+  mem::copy<DeviceType::CPU, 
+            DeviceType::CUDA>(dest, device_buffer_, buffer_size_);
   return true;
 }
 

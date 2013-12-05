@@ -44,9 +44,6 @@ private:
   size_t buffer_size_;
 };
 
-template<>
-bool CUDAExtractor<Bit>::extract(const void* source, void* destination);
-
 #endif // NCS_CUDA
 
 } // namespace sim
