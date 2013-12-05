@@ -91,3 +91,11 @@ inline __device__ unsigned int extract(const unsigned int* array,
 
 } // namespace bit
 
+namespace math {
+
+inline __device__ unsigned int ceiling(unsigned int v, unsigned int divisor) {
+  return (v + divisor - 1) / divisor * divisor;
+}
+
+} // namespace math
+

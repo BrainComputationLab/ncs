@@ -2,6 +2,9 @@
 #include <ncs/sim/FactoryMap.h>
 
 #include "NCS.h"
+#ifdef NCS_CUDA
+#include "NCS.cuh"
+#endif // NCS_CUDA
 
 NCSDataBuffer<ncs::sim::DeviceType::CPU>::NCSDataBuffer() {
 }
@@ -193,7 +196,71 @@ update(ncs::sim::SynapseUpdateParameters* parameters) {
 template<>
 bool NCSSimulator<ncs::sim::DeviceType::CUDA>::
 update(ncs::sim::SynapseUpdateParameters* parameters) {
-  std::cout << "STUB: NCSSimulator<CUDA>::update()" << std::endl;
+  using ncs::sim::Bit;
+  const Bit::Word* synaptic_fire = parameters->synaptic_fire;
+  const float* neuron_voltage = parameters->neuron_voltage;
+  float* synaptic_current = parameters->synaptic_current;
+  float simulation_time = parameters->simulation_time;
+  auto old_firings = self_subscription_->pull();
+  auto new_firings = this->getBlank();
+  unsigned int old_fire_size = old_firings->current_size;
+  unsigned int potential_size = old_fire_size + num_synapses_;
+  if (potential_size > new_firings->maximum_size) {
+    new_firings->expandAndClear(potential_size * 1.5);
+  } else {
+    new_firings->clear();
+  }
+
+  cuda::checkPrefire(synaptic_fire,
+                     tau_facilitation_,
+                     tau_depression_,
+                     max_conductance_,
+                     tau_ltp_,
+                     tau_ltd_,
+                     A_ltp_minimum_,
+                     last_postfire_time_,
+                     tau_postsynaptic_conductance_,
+                     reversal_potential_,
+                     device_neuron_device_ids_,
+                     neuron_voltage,
+                     utilization_,
+                     redistribution_,
+                     base_utilization_,
+                     last_prefire_time_,
+                     A_ltp_,
+                     A_ltd_,
+                     synaptic_current,
+                     simulation_time,
+                     new_firings->fire_index,
+                     new_firings->fire_time,
+                     new_firings->psg_max,
+                     new_firings->device_current_size,
+                     num_synapses_);
+  
+  cuda::addOldFirings(old_firings->fire_index,
+                      old_firings->fire_time,
+                      psg_waveform_duration_,
+                      old_firings->psg_max,
+                      tau_postsynaptic_conductance_,
+                      device_neuron_device_ids_,
+                      reversal_potential_,
+                      new_firings->fire_index,
+                      new_firings->fire_time,
+                      new_firings->psg_max,
+                      new_firings->device_current_size,
+                      synaptic_current,
+                      neuron_voltage,
+                      simulation_time,
+                      old_firings->current_size);
+  using ncs::sim::DeviceType;
+  ncs::sim::mem::copy<DeviceType::CPU,
+                      DeviceType::CUDA>(&(new_firings->current_size),
+                                        new_firings->device_current_size,
+                                        1);
+  // post fires
+
+  old_firings->release();
+  this->publish(new_firings);
   return true;
 }
 

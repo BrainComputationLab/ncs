@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 #include <ncs/cuda/CUDA.h>
 #include <ncs/cuda/FireTableUpdater.cuh>
 #include <ncs/sim/CUDA.h>
@@ -47,8 +49,8 @@ void updateFireTable( Bit::Word* neuron_fire_vector,
                      unsigned int* presynaptic_neuron_ids,
                      unsigned int* synaptic_delays,
                      unsigned int num_synapses) {
-	updateTableKernel<<<CUDA::getThreadsPerBlock(num_synapses), 
-	                    CUDA::getNumberOfBlocks(num_synapses),
+	updateTableKernel<<<CUDA::getNumberOfBlocks(num_synapses),
+                      CUDA::getThreadsPerBlock(num_synapses), 
                       0,
                       CUDA::getStream()>>>(neuron_fire_vector,
                                            synapse_fire_table,

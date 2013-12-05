@@ -25,6 +25,8 @@ class NCSDataBuffer : public ncs::sim::DataBuffer {
 public:
   NCSDataBuffer();
   bool init(size_t num_synapses);
+  bool clear();
+  bool expandAndClear(size_t new_size);
   unsigned int maximum_size;
   unsigned int current_size;
   unsigned int* device_current_size;

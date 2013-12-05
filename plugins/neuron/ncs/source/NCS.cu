@@ -29,7 +29,7 @@ __global__ void updateNeuronsKernel(const int* old_spike_shape_state,
 	unsigned int& warp_result = shared_fire_vector[threadIdx.x];
 	unsigned int* result_vector_base = shared_fire_vector + warp::index() * 32;
 	unsigned int warp_thread = warp::thread();
-	unsigned int limit = (num_neurons + 31) / 32;
+  unsigned int limit = math::ceiling(num_neurons, 32);
 	unsigned int mask = bit::mask(warp_thread);
   for (size_t i = grid::thread(); i < limit; i += grid::stride()) {
     warp_result = 0;
@@ -93,8 +93,8 @@ void updateNeurons(const int* old_spike_shape_state,
   unsigned int num_blocks = ncs::sim::CUDA::getNumberOfBlocks(num_neurons);
   unsigned int shared_memory_size = 
     sizeof(ncs::sim::Bit::Word) * threads_per_block;
-  updateNeuronsKernel<<<threads_per_block,
-                        num_blocks,
+  updateNeuronsKernel<<<num_blocks,
+                        threads_per_block,
                         shared_memory_size,
                         ncs::sim::CUDA::getStream()>>>(old_spike_shape_state,
                                                        old_voltage,

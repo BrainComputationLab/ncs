@@ -106,8 +106,8 @@ __global__ void addCurrentKernel(const unsigned int* neuron_plugin_ids,
 bool resetParticleProducts(float* particle_products,
                            unsigned int num_channels) {
   using ncs::sim::CUDA;
-  resetParticleProductsKernel<<<CUDA::getThreadsPerBlock(num_channels),
-                                CUDA::getNumberOfBlocks(num_channels),
+  resetParticleProductsKernel<<<CUDA::getNumberOfBlocks(num_channels),
+                                CUDA::getThreadsPerBlock(num_channels),
                                 0,
                                 CUDA::getStream()>>>(particle_products,
                                                      num_channels);
@@ -130,7 +130,7 @@ __global__ void updateHHKernel(const float* old_voltage,
 	unsigned int& warp_result = shared_fire_vector[threadIdx.x];
 	unsigned int* result_vector_base = shared_fire_vector + warp::index() * 32;
 	unsigned int warp_thread = warp::thread();
-	unsigned int limit = (num_neurons + 31) / 32;
+  unsigned int limit = math::ceiling(num_neurons, 32);
 	unsigned int mask = bit::mask(warp_thread);
   for (size_t i = grid::thread(); i < limit; i += grid::stride()) {
     warp_result = 0;
@@ -181,8 +181,8 @@ bool updateParticles(const float* alpha_a,
                      float dt,
                      unsigned int num_particles) {
   using ncs::sim::CUDA;
-  updateParticlesKernel<<<CUDA::getThreadsPerBlock(num_particles),
-                          CUDA::getNumberOfBlocks(num_particles),
+  updateParticlesKernel<<<CUDA::getNumberOfBlocks(num_particles),
+                          CUDA::getThreadsPerBlock(num_particles),
                           0,
                           CUDA::getStream()>>>(alpha_a,
                                                alpha_b,
@@ -216,8 +216,8 @@ bool addCurrent(const unsigned int* neuron_plugin_ids,
                 float* channel_reversal_current,
                 unsigned int num_channels) {
   using ncs::sim::CUDA;
-  addCurrentKernel<<<CUDA::getThreadsPerBlock(num_channels),
-                     CUDA::getNumberOfBlocks(num_channels),
+  addCurrentKernel<<<CUDA::getNumberOfBlocks(num_channels),
+                     CUDA::getThreadsPerBlock(num_channels),
                      0,
                      CUDA::getStream()>>>(neuron_plugin_ids,
                                           conductances,
@@ -245,21 +245,21 @@ bool updateHH(const float* old_voltage,
   unsigned int threads_per_block = CUDA::getThreadsPerBlock(num_neurons);
   unsigned int num_blocks = CUDA::getNumberOfBlocks(num_neurons);
   unsigned int shared_memory = threads_per_block * sizeof(ncs::sim::Bit::Word);
-  updateHHKernel<<<threads_per_block,
-                    num_blocks,
-                    shared_memory,
-                    CUDA::getStream()>>>(old_voltage,
-                                         input_current,
-                                         synaptic_current,
-                                         channel_reversal_current,
-                                         channel_current,
-                                         capacitances,
-                                         thresholds,
-                                         fire_vector,
-                                         new_voltage,
-                                         device_neuron_voltage,
-                                         dt,
-                                         num_neurons);
+  updateHHKernel<<<num_blocks,
+                   threads_per_block,
+                   shared_memory,
+                   CUDA::getStream()>>>(old_voltage,
+                                        input_current,
+                                        synaptic_current,
+                                        channel_reversal_current,
+                                        channel_current,
+                                        capacitances,
+                                        thresholds,
+                                        fire_vector,
+                                        new_voltage,
+                                        device_neuron_voltage,
+                                        dt,
+                                        num_neurons);
   return CUDA::synchronize();
 }
 

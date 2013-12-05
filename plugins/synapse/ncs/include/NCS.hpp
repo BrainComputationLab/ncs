@@ -14,13 +14,45 @@ NCSDataBuffer<MType>::NCSDataBuffer() {
 template<ncs::sim::DeviceType::Type MType>
 bool NCSDataBuffer<MType>::init(size_t num_synapses) {
   maximum_size = num_synapses;
+  current_size = 0;
   using ncs::sim::Memory;
   bool result = true;
-  result &= Memory<MType>::malloc(device_current_size, 1);
+  std::vector<unsigned int> s(1, 0);
+  result &= ncs::sim::mem::clone<MType>(device_current_size, s);
   result &= Memory<MType>::malloc(fire_time, maximum_size);
   result &= Memory<MType>::malloc(fire_index, maximum_size);
   result &= Memory<MType>::malloc(psg_max, maximum_size);
   return result;
+}
+
+template<ncs::sim::DeviceType::Type MType>
+bool NCSDataBuffer<MType>::clear() {
+  current_size = 0;
+  return ncs::sim::Memory<MType>::zero(device_current_size, 1);
+}
+
+template<ncs::sim::DeviceType::Type MType>
+bool NCSDataBuffer<MType>::expandAndClear(size_t new_size) {
+  if (new_size <= maximum_size) {
+    return true;
+  }
+  if (device_current_size) {
+    ncs::sim::Memory<MType>::free(device_current_size);
+  }
+  if (fire_time) {
+    ncs::sim::Memory<MType>::free(fire_time);
+  }
+  if (fire_index) {
+    ncs::sim::Memory<MType>::free(fire_index);
+  }
+  if (psg_max) {
+    ncs::sim::Memory<MType>::free(psg_max);
+  }
+  device_current_size = nullptr;
+  fire_time = nullptr;
+  fire_index = nullptr;
+  psg_max = nullptr;
+  return init(new_size);
 }
 
 template<ncs::sim::DeviceType::Type MType>

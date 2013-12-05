@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 #include <ncs/cuda/CUDA.h>
 #include <ncs/sim/CUDA.h>
 #include "Izhikevich.cuh"
@@ -30,7 +32,7 @@ __global__ void updateNeuronsKernel(const float* as,
 	unsigned int& warp_result = shared_fire_vector[threadIdx.x];
 	unsigned int* result_vector_base = shared_fire_vector + warp::index() * 32;
 	unsigned int warp_thread = warp::thread();
-	unsigned int limit = (num_neurons + 31) / 32;
+  unsigned int limit = math::ceiling(num_neurons, 32);
 	unsigned int mask = bit::mask(warp_thread);
   for (size_t i = grid::thread(); i < limit; i += grid::stride()) {
     warp_result = 0;
@@ -87,8 +89,8 @@ bool updateNeurons(const float* as,
   unsigned int threads_per_block = CUDA::getThreadsPerBlock(num_neurons);
   unsigned int num_blocks = CUDA::getNumberOfBlocks(num_neurons);
   unsigned int shared_memory = threads_per_block * sizeof(ncs::sim::Bit::Word);
-  updateNeuronsKernel<<<threads_per_block,
-                        num_blocks,
+  updateNeuronsKernel<<<num_blocks,
+                        threads_per_block,
                         shared_memory,
                         CUDA::getStream()>>>(as,
                                              bs,

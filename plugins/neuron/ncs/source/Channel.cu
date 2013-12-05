@@ -54,8 +54,8 @@ bool updateVoltageGatedIon(const unsigned int* neuron_plugin_ids,
                            float dt,
                            unsigned int num_channels) {
   using ncs::sim::CUDA;
-  updateVoltageGatedIonKernel<<<CUDA::getThreadsPerBlock(num_channels),
-                                CUDA::getNumberOfBlocks(num_channels),
+  updateVoltageGatedIonKernel<<<CUDA::getNumberOfBlocks(num_channels),
+                                CUDA::getThreadsPerBlock(num_channels),
                                 0,
                                 CUDA::getStream()>>>(neuron_plugin_ids,
                                                      neuron_voltages,
@@ -127,8 +127,8 @@ bool updateCalciumDependent(const unsigned int* neuron_plugin_ids,
                             float dt,
                             unsigned int num_channels) {
   using ncs::sim::CUDA;
-  updateCalciumDependentKernel<<<CUDA::getThreadsPerBlock(num_channels),
-                                 CUDA::getNumberOfBlocks(num_channels),
+  updateCalciumDependentKernel<<<CUDA::getNumberOfBlocks(num_channels),
+                                 CUDA::getThreadsPerBlock(num_channels),
                                  0,
                                  CUDA::getStream()>>>(neuron_plugin_ids,
                                                       neuron_voltages,

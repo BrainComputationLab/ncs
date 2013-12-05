@@ -5,6 +5,7 @@
 #include <map>
 #include <queue>
 #include <random>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -104,7 +105,24 @@ bool Simulator::initialize(int argc, char** argv) {
   }
 
   std::clog << "Gathering cluster data..." << std::endl;
-  if (!gatherClusterData_(DeviceType::CPU | DeviceType::CUDA)) {
+  std::set<std::string> arguments;
+  for (int i = 0; i < argc; ++i) {
+    arguments.insert(std::string(argv[i]));
+  }
+  unsigned int enabled_device_types = 0;
+  if (arguments.find("--cuda") != arguments.end()) {
+    enabled_device_types |= DeviceType::CUDA;
+  }
+  if (arguments.find("--cpu") != arguments.end()) {
+    enabled_device_types |= DeviceType::CPU;
+  }
+  if (arguments.find("--cl") != arguments.end()) {
+    enabled_device_types |= DeviceType::CL;
+  }
+  if (0 == enabled_device_types) {
+    enabled_device_types = DeviceType::CPU;
+  }
+  if (!gatherClusterData_(enabled_device_types)) {
     std::cerr << "Failed to gather cluster data." << std::endl;
     return false;
   }

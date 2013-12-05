@@ -27,8 +27,8 @@ bool updateFlat(const ncs::sim::Bit::Word* synaptic_fire,
                 float* synaptic_current,
                 unsigned int num_synapses) {
   using ncs::sim::CUDA;
-  updateFlatKernel<<<CUDA::getThreadsPerBlock(num_synapses),
-                     CUDA::getNumberOfBlocks(num_synapses),
+  updateFlatKernel<<<CUDA::getNumberOfBlocks(num_synapses),
+                     CUDA::getThreadsPerBlock(num_synapses),
                      0,
                      CUDA::getStream()>>>(synaptic_fire,
                                           device_neuron_device_ids,
