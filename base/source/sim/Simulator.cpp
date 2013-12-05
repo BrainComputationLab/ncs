@@ -291,7 +291,6 @@ bool Simulator::addInput(spec::InputGroup* input) {
     inputs_per_device[neuron->location.device].push_back(in);
   }
 
-  // TODO(rvhoang): thread this
   for (size_t i = 0; i < devices_.size(); ++i) {
     if (inputs_per_device[i].empty()) {
       continue;
@@ -772,9 +771,8 @@ void Simulator::workerFunction_() {
 }
 
 bool Simulator::initializeSeeds_() {
-  // TODO(rvhoang): get seeds from input
-  neuron_seed_ = 0;
-  synapse_seed_ = 0;
+  neuron_seed_ = simulation_parameters_->getNeuronSeed();
+  synapse_seed_ = simulation_parameters_->getSynapseSeed();
   return true;
 }
 
