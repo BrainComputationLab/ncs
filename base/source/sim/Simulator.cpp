@@ -1014,7 +1014,7 @@ bool Simulator::distributeSynapses_() {
   auto isOnThisMachine = [=](Neuron* neuron) {
     return neuron->location.machine == this_device_index;
   };
-  std::mt19937 generator(getSynapseSeed_());
+  std::ranlux48_base generator(getSynapseSeed_());
 
   std::map<std::string, std::vector<Synapse*>> this_machine_synapses_by_type;
   for (auto key_value : model_specification_->synapse_groups) {

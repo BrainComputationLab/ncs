@@ -12,7 +12,7 @@ namespace ncs {
 
 namespace spec {
 
-typedef std::mt19937 RNG;
+typedef std::ranlux48_base RNG;
 
 /**
   Abstract base class for a Generator that creates Geometry based on an RNG.

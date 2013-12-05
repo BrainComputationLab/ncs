@@ -40,7 +40,6 @@ def Run(argv):
     "spike_shape": [
       -38, 30, -43, -60, -60
     ],
-    "capacitance": 1.0,
     "channels": [
       voltage_channel,
       calcium_channel,
