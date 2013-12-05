@@ -9,6 +9,7 @@ __thread DeviceBase* DeviceBase::thread_device_ = nullptr;
 
 bool DeviceBase::setThreadDevice(DeviceBase* device) {
   thread_device_ = device;
+  return true;
 }
 
 DeviceBase* DeviceBase::getThreadDevice() {
