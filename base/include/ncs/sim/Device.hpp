@@ -139,6 +139,7 @@ bool Device<MType>::initializeReporters(int machine_location,
 
 template<DeviceType::Type MType>
 bool Device<MType>::threadInit() {
+  DeviceBase::setThreadDevice(this);
   return true;
 }
 

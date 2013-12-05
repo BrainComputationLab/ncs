@@ -146,7 +146,7 @@ start(std::function<bool()> thread_init,
         auto word_offset = Bit::num_words(unit_offset);
         if (nullptr == synchronizer) {
           delete subscription;
-          return;
+          break;
         }
         NeuronUpdateParameters parameters;
         parameters.input_current = 

@@ -50,7 +50,10 @@ public:
                         float end_time) = 0;
   virtual SpecificPublisher<Signal>* getVectorExtractor() = 0;
   virtual ~DeviceBase() = 0;
+  static bool setThreadDevice(DeviceBase* device);
+  static DeviceBase* getThreadDevice();
 private:
+  static __thread DeviceBase* thread_device_;
 };
 
 template<DeviceType::Type MType>

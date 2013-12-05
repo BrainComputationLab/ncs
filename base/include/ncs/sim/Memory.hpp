@@ -65,6 +65,9 @@ bool Memory<DeviceType::CUDA>::zero(T* addr, size_t count) {
   if (cudaSuccess != result) {
     std::cerr << "cudaMemsetAsync failed: " <<
       cudaGetErrorString(cudaGetLastError()) << std::endl;
+    std::cerr << "addr: " << addr << std::endl;
+    std::cerr << "count: " << count << std::endl;
+    std::cerr << "stream: " << CUDA::getStream() << std::endl;
     return false;
   }
   return true;

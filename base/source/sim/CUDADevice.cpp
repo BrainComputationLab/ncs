@@ -10,7 +10,9 @@ CUDADevice::CUDADevice(int device_number)
 }
 
 bool CUDADevice::threadInit() {
-  return CUDA::setDevice(device_number_) && CUDA::initStream();
+  return DeviceBase::setThreadDevice(this) &&
+    CUDA::setDevice(device_number_) && 
+    CUDA::initStream();
 }
 
 bool CUDADevice::threadDestroy() {
