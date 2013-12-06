@@ -22,8 +22,6 @@ def run(argv):
 		return
 
 	sim.addInput("rectangular_current",{"amplitude":0.5,"width": 1, "frequency": 1},group_1,1,0.01,1.0)
-	current_report=sim.addReport("group_1","neuron","synaptic_current",1.0)
-	current_report.toStdOut()
 	voltage_report=sim.addReport("group_1","neuron","neuron_voltage",1.0)
 	voltage_report.toAsciiFile("./phasic_spiking_izh.txt")	
 	sim.step(1000)

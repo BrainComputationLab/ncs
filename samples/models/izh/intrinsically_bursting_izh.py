@@ -23,8 +23,6 @@ def run(argv):
 
 	#sim.addInput("rectangular_current",{"amplitude": 10,"width": 1, "frequency": 1},group_1,1,0.01,1)
 	sim.addInput("rectangular_current",{"amplitude":10,"width": 1, "frequency": 1},group_1,1,0.01,1.0)
-	current_report=sim.addReport("group_1","neuron","synaptic_current",1.0)
-	current_report.toStdOut()
 	voltage_report=sim.addReport("group_1","neuron","neuron_voltage",1.0)
 	voltage_report.toAsciiFile("./intrinsically_bursting_izh.txt")	
 	sim.step(1000)

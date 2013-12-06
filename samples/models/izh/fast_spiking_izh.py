@@ -22,8 +22,6 @@ def run(argv):
 		return
 
 	sim.addInput("rectangular_current",{"amplitude":10,"width": 1, "frequency": 1},group_1,1,0.01,1.0)
-	current_report=sim.addReport("group_1","neuron","synaptic_current",1.0)
-	current_report.toStdOut()
 	voltage_report=sim.addReport("group_1","neuron","neuron_voltage",1.0)
 	#Place report file in current directory
 	voltage_report.toAsciiFile("./fast_spiking.txt")	
