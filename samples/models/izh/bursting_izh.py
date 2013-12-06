@@ -1,3 +1,5 @@
+# Model: Bursting Izh Cell
+# Created by: Devyani Tanna
 #!/usr/bin/python
 
 import sys
