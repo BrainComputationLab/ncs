@@ -123,4 +123,4 @@ def add(sim):
   sim.addCellGroup("CA_COLUMN:HP_probe:somaE", 100, "soma_probe_HP", None)
 
   # layer_SO
-#  sim.addCellGroup("CA_COLUMN:layer_SO:O_LM:somaI_OLM", "soma_inhib_OLM", None)
+  sim.addCellGroup("CA_COLUMN:layer_SO:O_LM:somaI_OLM", 300, "soma_inhib_OLM", None)

@@ -1,3 +1,5 @@
+#include <ncs/sim/Device.h>
+
 template<ncs::sim::DeviceType::Type MType>
 ChannelCurrentBuffer<MType>::ChannelCurrentBuffer() 
   : current_(nullptr),
@@ -136,6 +138,11 @@ init(std::vector<ChannelSimulator<MType>*> simulators,
 
 template<ncs::sim::DeviceType::Type MType>
 bool ChannelUpdater<MType>::start() {
+  ncs::sim::DeviceBase* device = ncs::sim::DeviceBase::getThreadDevice();
+  if (!device) {
+    std::cerr << "ChannelUpdater needs to know thread device." << std::endl;
+    return false;
+  }
   struct Synchronizer : public ncs::sim::DataBuffer {
     ChannelCurrentBuffer<MType>* channel_buffer;
     NeuronBuffer<MType>* neuron_buffer;
@@ -148,14 +155,15 @@ bool ChannelUpdater<MType>::start() {
     auto blank = new Synchronizer();
     synchronizer_publisher->addBlank(blank);
   }
-  auto master_function = [this, synchronizer_publisher]() {
+  auto master_function = [this, synchronizer_publisher, device]() {
+    device->threadInit();
     float simulation_time = 0.0f;
     float time_step = simulation_parameters_->getTimeStep();
     while(true) {
       NeuronBuffer<MType>* neuron_buffer = neuron_subscription_->pull();
       if (nullptr == neuron_buffer) {
         delete synchronizer_publisher;
-        return;
+        break;
       }
       auto channel_buffer = this->getBlank();
       channel_buffer->clear();
@@ -172,17 +180,19 @@ bool ChannelUpdater<MType>::start() {
       synchronizer_publisher->publish(synchronizer);
       simulation_time += time_step;
     }
+    device->threadDestroy();
   };
   master_thread_ = std::thread(master_function);
 
   for (auto simulator : simulators_) {
     auto subscription = synchronizer_publisher->subscribe();
-    auto worker_function = [subscription, simulator]() {
+    auto worker_function = [subscription, simulator, device]() {
+      device->threadInit();
       while(true) {
         auto synchronizer = subscription->pull();
         if (nullptr == synchronizer) {
           delete subscription;
-          return;
+          break;
         }
         ChannelUpdateParameters parameters;
         parameters.voltage = synchronizer->neuron_buffer->getVoltage();
@@ -197,6 +207,7 @@ bool ChannelUpdater<MType>::start() {
         }
         synchronizer->release();
       }
+      device->threadDestroy();
     };
     worker_threads_.push_back(std::thread(worker_function));
   }
