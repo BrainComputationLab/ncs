@@ -1,4 +1,4 @@
-#include <ncs/sim/Device.h>
+#include <ncs/sim/DeviceBase.h>
 
 template<ncs::sim::DeviceType::Type MType>
 ChannelCurrentBuffer<MType>::ChannelCurrentBuffer() 

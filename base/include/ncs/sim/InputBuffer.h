@@ -1,4 +1,6 @@
 #pragma once
+#include <ncs/sim/Bit.h>
+
 namespace ncs {
 
 namespace sim {

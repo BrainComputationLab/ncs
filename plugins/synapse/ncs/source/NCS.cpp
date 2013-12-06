@@ -216,7 +216,7 @@ update(ncs::sim::SynapseUpdateParameters* parameters) {
   return true;
 }
 
-
+#ifdef NCS_CUDA
 template<>
 bool NCSSimulator<ncs::sim::DeviceType::CUDA>::
 update(ncs::sim::SynapseUpdateParameters* parameters) {
@@ -300,6 +300,7 @@ update(ncs::sim::SynapseUpdateParameters* parameters) {
   this->publish(new_firings);
   return true;
 }
+#endif //NCS_CUDA 
 
 extern "C" {
 
