@@ -15,7 +15,8 @@ struct ModelSpecification {
   std::map<std::string, NeuronAlias*> neuron_aliases;
   std::map<std::string, SynapseGroup*> synapse_groups;
   std::map<std::string, SynapseAlias*> synapse_aliases;
-  std::map<std::string, ModelParameters*> model_parameters;
+  std::map<std::string, ModelParameters*> neuron_parameters;
+  std::map<std::string, ModelParameters*> synapse_parameters;
 };
 
 } // namespace spec

@@ -92,7 +92,8 @@ class EmptyReport:
 
 class Simulation:
   def __init__(self):
-    self.model_parameters = {}
+    self.neuron_parameters = {}
+    self.synapse_parameters = {}
     self.cell_groups = {}
     self.cell_aliases = {}
     self.connections = {}
@@ -100,35 +101,47 @@ class Simulation:
     self.simulaton_parameters = pyncs.SimulationParameters()
     self.simulaton_parameters.thisown = False
 
-  def addModelParameters(self, label, type_name, parameters):
-    if self.getModelParameters(label):
-      print "ModelParameters %s already exists." % label
+  def addNeuron(self, label, type_name, parameters):
+    if self.getNeuronParameters(label):
+      print "NeuronParameters %s already exists." % label
       return None
     model_parameters = self.buildModelParameters_(type_name, parameters)
     if not model_parameters:
-      print "Failed to build ModelParameters %s" % label
+      print "Failed to build NeuronParameters %s" % label
       return None
     model_parameters.thisown = False
-    self.model_parameters[label] = model_parameters
+    self.neuron_parameters[label] = model_parameters
     return model_parameters
 
-  def addCellGroup(self, label, count, parameters, geometry = None):
+  def addSynapse(self, label, type_name, parameters):
+    if self.getSynapseParameters(label):
+      print "SynapseParameters %s already exists." % label
+      return None
+    model_parameters = self.buildModelParameters_(type_name, parameters)
+    if not model_parameters:
+      print "Failed to build SynapseParameters %s" % label
+      return None
+    model_parameters.thisown = False
+    self.synapse_parameters[label] = model_parameters
+    return model_parameters
+
+  def addNeuronGroup(self, label, count, parameters, geometry = None):
     if self.getCellGroup(label):
-      print "CellGroup %s already exists." % label
+      print "NeuronGroup %s already exists." % label
       return None
     cell_group = CellGroup(label, count, parameters, geometry)
     self.cell_groups[label] = cell_group
-    return self.addCellAlias(label, cell_group)
+    return self.addNeuronAlias(label, cell_group)
 
-  def addCellAlias(self, label, subgroups):
+  def addNeuronAlias(self, label, subgroups):
     if label in self.cell_aliases:
-      print "Cell alias %s already exists" % label
+      print "Neuron alias %s already exists" % label
       return None
     alias = CellAlias(label, subgroups)
     self.cell_aliases[label] = alias
     return alias
   
-  def connect(self, label, presynaptic, postsynaptic, probability, parameters):
+  def addSynapseGroup(self, label, presynaptic, postsynaptic, probability, parameters):
     if self.getConnection(label):
       print "Connection %s already exists." % label
       return None
@@ -138,23 +151,23 @@ class Simulation:
                             probability,
                             parameters)
     self.connections[label] = connection
-    return self.addConnectionAlias(label, connection)
+    return self.addSynapseAlias(label, connection)
 
-  def addConnectionAlias(self, label, subgroups):
+  def addSynapseAlias(self, label, subgroups):
     if label in self.connection_aliases:
-      print "Connection alias %s already exists"% label
+      print "Synapse alias %s already exists"% label
       return None
     alias = ConnectionAlias(label, subgroups)
     self.connection_aliases[label] = alias
     return alias
 
-  def addInput(self, 
-               type_name, 
-               parameters, 
-               groups, 
-               probability, 
-               start_time, 
-               end_time):
+  def addStimulus(self, 
+                  type_name, 
+                  parameters, 
+                  groups, 
+                  probability, 
+                  start_time, 
+                  end_time):
     if not self.simulation.isMaster():
       return True
     group_list = None
@@ -240,12 +253,12 @@ class Simulation:
   def init(self, argv):
     self.model_specification = pyncs.ModelSpecification()
     self.model_specification.thisown = False
-    self.model_specification.model_parameters = (
-      pyncs.string_to_model_parameters_map(self.model_parameters)
-    )
+#self.model_specification.model_parameters = (
+#     pyncs.string_to_model_parameters_map(self.model_parameters)
+#   )
     neuron_group_map = {}
     for name, cell_group in self.cell_groups.items():
-      model_parameters = self.getModelParameters(cell_group.parameters)
+      model_parameters = self.getNeuronParameters(cell_group.parameters)
       if not model_parameters:
         print "ModelParameters %s not found" % cell_group.parameters
         return False
@@ -282,7 +295,7 @@ class Simulation:
         if not self.resolveCellAlias_(connection.postsynaptic):
           print "Invalid postsynaptic group in connection %s" % name
           return False
-      model_parameters = self.getModelParameters(connection.parameters)
+      model_parameters = self.getSynapseParameters(connection.parameters)
       if not model_parameters:
         print "ModelParameters %s not found" % connection.parameters
         return False
@@ -328,11 +341,18 @@ class Simulation:
       for i in range(0, steps):
         self.simulation.step()
 
-  def getModelParameters(self, parameters):
+  def getNeuronParameters(self, parameters):
     if isinstance(parameters, pyncs.ModelParameters):
       return parameters
-    if parameters in self.model_parameters:
-      return self.model_parameters[parameters]
+    if parameters in self.neuron_parameters:
+      return self.neuron_parameters[parameters]
+    return None
+
+  def getSynapseParameters(self, parameters):
+    if isinstance(parameters, pyncs.ModelParameters):
+      return parameters
+    if parameters in self.synapse_parameters:
+      return self.synapse_parameters[parameters]
     return None
 
   def getCellGroup(self, group):
