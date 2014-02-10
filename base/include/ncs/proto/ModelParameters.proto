@@ -62,4 +62,6 @@ message Report {
   required Target target = 2;
   required string report_name = 3;
   required float percentage = 4;
+  required float start_time = 5;
+  required float end_time = 6;
 }

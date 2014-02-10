@@ -21,11 +21,15 @@ init(size_t output_offset,
      const std::vector<unsigned int>& indices,
      const std::string pin_name,
      Publisher* source_publisher,
-     SpecificPublisher<ReportDataBuffer>* destination_publisher) {
+     SpecificPublisher<ReportDataBuffer>* destination_publisher,
+     unsigned int start_step,
+     unsigned int end_step) {
   output_offset_ = output_offset;
   datatype_ = datatype;
   indices_ = indices;
   pin_name_ = pin_name;
+  start_step_ = start_step;
+  end_step_ = end_step;
   source_publisher_ = source_publisher;
   source_subscription_ = source_publisher_->subscribe();
   destination_subscription_ = destination_publisher->subscribe();
@@ -65,6 +69,24 @@ bool PublisherExtractor::start() {
       device->threadInit();
     }
     while(true) {
+      DataBuffer* source_buffer = nullptr;
+      if (queued_buffer_) {
+        source_buffer = queued_buffer_;
+        queued_buffer_ = nullptr;
+      } else {
+        source_buffer = source_subscription_->pull();
+      }
+      if (nullptr == source_buffer) {
+        break;
+      }
+      if (source_buffer->simulation_step < start_step_) {
+        source_buffer->release();
+      } else {
+        queued_buffer_ = source_buffer;
+        break;
+      }
+    }
+    while(true) {
       Mailbox mailbox;
       DataBuffer* source_buffer = nullptr;
       if (queued_buffer_) {
@@ -88,6 +110,11 @@ bool PublisherExtractor::start() {
         source_subscription_ = nullptr;
         delete destination_subscription_;
         destination_subscription_ = nullptr;
+        break;
+      }
+      if (source_buffer->simulation_step > end_step_) {
+        source_buffer->release();
+        destination_buffer->release();
         break;
       }
       auto signal = this->getBlank();
@@ -144,6 +171,9 @@ bool PublisherExtractor::start() {
     delete destination_subscription_;
     destination_subscription_ = nullptr;
     this->clearSubscriptions();
+    if (extractor) {
+      delete extractor;
+    }
   };
   thread_ = std::thread(thread_function);
   return true;

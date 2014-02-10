@@ -33,6 +33,9 @@ AsciiStream<T>::AsciiStream(std::ostream& stream,
 
 template<typename T>
 AsciiStream<T>::~AsciiStream() {
+  if (data_source_) {
+    data_source_->unsubscribe();
+  }
   if (thread_.joinable()) {
     thread_.join();
   }

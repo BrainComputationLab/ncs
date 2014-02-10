@@ -23,6 +23,7 @@ public:
   sim::DataType::Type getDataType() const;
   const void* pull();
   void release();
+  void unsubscribe();
 #endif // SWIG
   ~DataSource();
 private:

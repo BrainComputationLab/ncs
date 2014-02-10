@@ -212,7 +212,7 @@ class Simulation:
                                    end_time)
     return self.simulation.addInput(input_group)
 
-  def addReport(self, targets, target_type, attribute, probability):
+  def addReport(self, targets, target_type, attribute, probability, start_time, end_time):
     if not self.simulation.isMaster():
       return EmptyReport() 
     target = pyncs.Report.Unknown
@@ -243,7 +243,9 @@ class Simulation:
     report = pyncs.Report(pyncs.string_list(target_names),
                           target,
                           attribute,
-                          probability)
+                          probability,
+                          start_time,
+                          end_time)
     data_source = self.simulation.addReport(report)
     if not data_source:
       print "Failed to add report."
@@ -340,6 +342,28 @@ class Simulation:
     if self.simulation.isMaster():
       for i in range(0, steps):
         self.simulation.step()
+
+  def wait(self):
+    self.simulation.wait()
+
+  def run(self, steps = -1, duration = -1):
+    if steps <= 0 and duration <= 0:
+      print "Either steps or duration must be greater than zero for run()."
+      return None
+    if steps > 0 and duration > 0:
+      print "Both steps and duration cannot be specified for run()."
+      return None
+    if steps > 0:
+      self.step(steps)
+    if duration > 0:
+      # This appears to fix rounding problems with smaller durations
+      milliseconds = duration * 1000
+      timestep_in_milliseconds = self.simulaton_parameters.getTimeStep() * 1000
+      num_steps = int(milliseconds) / int(timestep_in_milliseconds)
+      if num_steps <= 0:
+        print "Duration is too small to actually step the simulation in run()."
+        return None
+      self.step(num_steps)
 
   def getNeuronParameters(self, parameters):
     if isinstance(parameters, pyncs.ModelParameters):

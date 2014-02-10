@@ -124,6 +124,20 @@ void Subscription<PublicationType, PublisherType>::invalidate() {
 }
 
 template<class PublicationType, class PublisherType>
+void Subscription<PublicationType, PublisherType>::unsubscribe() {
+  std::unique_lock<std::mutex> lock(mutex_);
+  auto publisher = publisher_;
+  publisher_ = nullptr;
+  lock.unlock();
+  // If the publisher still exists
+  if (publisher) {
+    // Make sure we don't get any more publications to an unallocated sub
+    publisher->unsubscribe(this);
+  }
+  state_changed_.notify_all();
+}
+
+template<class PublicationType, class PublisherType>
 Subscription<PublicationType, PublisherType>::~Subscription() {
   // Make sure a publisher can't invalidate itself before we unsubscribe
   std::unique_lock<std::mutex> lock(mutex_);

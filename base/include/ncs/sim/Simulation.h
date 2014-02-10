@@ -15,6 +15,7 @@ public:
              spec::SimulationParameters* simulation_parameters);
   bool init(const std::vector<std::string>& args);
   bool step();
+  bool wait();
   bool addInput(spec::InputGroup* input);
   spec::DataSource* addReport(spec::Report* report);
   bool shutdown();

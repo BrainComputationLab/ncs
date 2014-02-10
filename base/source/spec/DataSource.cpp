@@ -63,6 +63,12 @@ void DataSource::release() {
   }
 }
 
+void DataSource::unsubscribe() {
+  if (subscription_) {
+    subscription_->unsubscribe();
+  }
+}
+
 DataSource::~DataSource() {
   if (pulled_buffer_) {
     pulled_buffer_->release();

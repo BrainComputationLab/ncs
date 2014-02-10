@@ -8,11 +8,15 @@ namespace spec {
 Report::Report(const std::vector<std::string>& aliases,
        Target target,
        const std::string& report_name,
-       float percentage)
+       float percentage,
+       double start_time,
+       double end_time)
   : aliases_(aliases),
     target_(target),
     report_name_(report_name),
-    percentage_(percentage) {
+    percentage_(percentage),
+    start_time_(start_time),
+    end_time_(end_time) {
 }
 
 const std::vector<std::string>& Report::getAliases() const {
@@ -29,6 +33,14 @@ const std::string& Report::getReportName() const {
 
 float Report::getPercentage() const {
   return percentage_;
+}
+
+float Report::getStartTime() const {
+  return start_time_;
+}
+
+float Report::getEndTime() const {
+  return end_time_;
 }
 
 Report::~Report() {
@@ -53,6 +65,8 @@ bool Report::toProtobuf(com::Report* report) const {
   }
   report->set_report_name(report_name_);
   report->set_percentage(percentage_);
+  report->set_start_time(start_time_);
+  report->set_end_time(end_time_);
   return true;
 }
 
@@ -79,7 +93,9 @@ Report* Report::fromProtobuf(com::Report* report) {
   return new Report(aliases,
                     target,
                     report->report_name(),
-                    report->percentage());
+                    report->percentage(),
+                    report->start_time(),
+                    report->end_time());
 }
 
 } // namespace spec

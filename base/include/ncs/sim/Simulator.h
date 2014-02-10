@@ -28,6 +28,7 @@ public:
             spec::SimulationParameters* simulation_parameters);
   bool initialize(int argc, char** argv);
   bool step();
+  bool wait();
   bool addInput(spec::InputGroup* input);
   bool isMaster() const;
   DataSink* addReport(spec::Report* report);
@@ -37,7 +38,8 @@ private:
     Shutdown = 0,
     Step = 1,
     AddInput = 2,
-    AddReport = 3
+    AddReport = 3,
+    Wait = 4
   };
   void workerFunction_();
   bool initializeSeeds_();

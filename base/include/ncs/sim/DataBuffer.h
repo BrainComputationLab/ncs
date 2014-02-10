@@ -72,10 +72,15 @@ public:
 	*/
 	void push(PublicationType* data);
 
-    /**
-        Notifies the subscription that the publisher no longer exists.
-    */
-    void invalidate();
+  /**
+    Notifies the subscription that the publisher no longer exists.
+   */
+  void invalidate();
+
+  /**
+    Informs the publisher to stop publishing to this subscriber.
+  */
+  void unsubscribe();
 
 	/**
 		Destructor: Unsubscribes from the source as well

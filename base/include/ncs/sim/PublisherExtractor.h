@@ -17,7 +17,9 @@ public:
             const std::vector<unsigned int>& indices,
             const std::string pin_name,
             Publisher* source_publisher,
-            SpecificPublisher<ReportDataBuffer>* destination_publisher);
+            SpecificPublisher<ReportDataBuffer>* destination_publisher,
+            unsigned int start_step,
+            unsigned int end_step);
   bool getStep(unsigned int& step);
   bool syncStep(unsigned int step);
   bool start();
@@ -33,6 +35,9 @@ private:
     destination_subscription_;
   std::string pin_name_;
   std::thread thread_;
+
+  unsigned int start_step_;
+  unsigned int end_step_;
 };
 
 } // namespace sim

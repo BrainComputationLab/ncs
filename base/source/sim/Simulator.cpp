@@ -218,6 +218,15 @@ bool Simulator::step() {
   return simulation_controller_->step();
 }
 
+bool Simulator::wait() {
+  if (isMaster()) {
+    int command = Wait;
+    communicator_->bcast(&command, 1, 0);
+  }
+  communicator_->syncState(true);
+  return simulation_controller_->idle();
+}
+
 bool Simulator::addInput(spec::InputGroup* input) {
   simulation_controller_->idle();
   if (isMaster()) {
@@ -545,6 +554,9 @@ DataSink* Simulator::addReport(spec::Report* report) {
     unsigned int machine_total_bytes = 0;
     unsigned int num_total_elements = 0;
     unsigned int num_real_elements = 0;
+    float timestep = simulation_parameters_->getTimeStep();
+    unsigned int start_step = report->getStartTime() / timestep; 
+    unsigned int end_step = report->getEndTime() / timestep;
     ReportController* report_controller = new ReportController();
     std::vector<PublisherExtractor*> publisher_extractors;
     for (size_t i = 0; i < locations.size(); ++i) {
@@ -578,7 +590,9 @@ DataSink* Simulator::addReport(spec::Report* report) {
                            indices,
                            report_name,
                            publisher,
-                           report_controller)) {
+                           report_controller,
+                           start_step,
+                           end_step)) {
         std::cerr << "Failed to initialize PublisherExtractor." << std::endl;
         status = false;
         continue;
