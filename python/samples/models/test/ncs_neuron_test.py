@@ -1,11 +1,13 @@
 #!/usr/bin/python
 
 import math
-import sys
+import os,sys
+ncs_lib_path = ('../../../../python/')
+sys.path.append(ncs_lib_path)
 
 import ncs
 
-def Run(argv):
+def run(argv):
   voltage_channel = {
     "type": "voltage_gated_ion",
     "m_initial": 0.0,
@@ -35,11 +37,13 @@ def Run(argv):
     "calcium_spike_increment": 100.0,
     "tau_calcium": 0.07,
     "leak_reversal_potential": 0.0,
+    "leak_conductance":0.0 ,
     "tau_membrane": 0.02,
     "r_membrane": 200.0,
     "spike_shape": [
       -38, 30, -43, -60, -60
     ],
+    "capacitance": 1.0,
     "channels": [
       voltage_channel,
       calcium_channel,
@@ -47,35 +51,33 @@ def Run(argv):
   }
 
   sim = ncs.Simulation()
-  neuron_parameters = sim.addModelParameters("ncs_neuron",
+  neuron_parameters = sim.addNeuron("ncs_neuron",
                                              "ncs",
                                              ncs_cell
                                             )
-  group_1 = sim.addCellGroup("group_1", 2, "ncs_neuron", None) # last param is geometry
+  group_1 = sim.addNeuronGroup("group_1", 100, "ncs_neuron", None) # last param is geometry
 
-  all_cells = sim.addCellAlias("all_cells", [group_1])
-  sim.addCellAlias("all", all_cells)
-  sim.addCellAlias("all_2", "all_cells")
+  all_cells = sim.addNeuronAlias("all_cells", [group_1])
+  sim.addNeuronAlias("all", all_cells)
+  sim.addNeuronAlias("all_2", "all_cells")
 
   if not sim.init(argv):
     print "Failed to initialize simulation."
     return
 
-  sim.addInput("rectangular_current", { "amplitude": 1.0 }, group_1, 1.0, 0.0, 1.0)
+  sim.addStimulus("rectangular_current", { "amplitude": 0.1 }, group_1, 1.0, 0.0, 1.0)
 
-  #voltage_report = sim.addReport("group_1", "neuron", "neuron_voltage", 1.0)
-  voltage_report = sim.addReport("group_1", "neuron", "neuron_voltage", 1.0).toStdOut()
-#  voltage_report = sim.addReport("group_1", "neuron", "neuron_voltage", 1.0).toAsciiFile("/tmp/voltages.txt")
-#voltage_report.toAsciiFile("/tmp/voltages.txt")
+  voltage_report = sim.addReport("group_1", "neuron", "neuron_voltage",1.0, 0.0,1.0).toStdOut()
+  #voltage_report.toAsciiFile("voltages.txt")
+  
 
-  print "Starting simulation"
-  sim.step(10)
-  print "Deleting simulation"
+  sim.run(duration=0.01)
   del sim
+  del voltage_report
   return
 
 if __name__ == "__main__":
-  Run(sys.argv)
+  run(sys.argv)
 
 
 

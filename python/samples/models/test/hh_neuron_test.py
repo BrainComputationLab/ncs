@@ -1,8 +1,9 @@
 #!/usr/bin/python
 
 import math
-import sys
-
+import os,sys
+ncs_lib_path = ('../../../../python/')
+sys.path.append(ncs_lib_path)
 import ncs
 
 def Run(argv):
@@ -133,27 +134,27 @@ def Run(argv):
   }
 
   sim = ncs.Simulation()
-  neuron_parameters = sim.addModelParameters("hh_neuron",
+  neuron_parameters = sim.addNeuron("hh_neuron",
                                              "hh",
                                              hh_cell
                                             )
-  group_1 = sim.addCellGroup("group_1", 2, "hh_neuron", None) # last param is geometry
+  group_1 = sim.addNeuronGroup("group_1", 1, "hh_neuron", None) # last param is geometry
 
-  all_cells = sim.addCellAlias("all_cells", [group_1])
-  sim.addCellAlias("all", all_cells)
-  sim.addCellAlias("all_2", "all_cells")
+  all_cells = sim.addNeuronAlias("all_cells", [group_1])
+  sim.addNeuronAlias("all", all_cells)
+  sim.addNeuronAlias("all_2", "all_cells")
 
   if not sim.init(argv):
     print "Failed to initialize simulation."
     return
 
-  sim.addInput("rectangular_current", { "amplitude": 10.0 }, group_1, 1.0, 0.0, 1.0)
+  sim.addStimulus("rectangular_current", { "amplitude": 10.0 }, group_1, 1.0, 0.0, 1.0)
 
-  voltage_report = sim.addReport("group_1", "neuron", "neuron_voltage", 1.0)
+  voltage_report = sim.addReport("group_1", "neuron", "neuron_voltage", 1.0,0.0,0.5)
 #voltage_report.toAsciiFile("/tmp/voltages.txt")
   voltage_report.toStdOut()
 
-  sim.step(500)
+  sim.run(duration=0.500)
   return
 
 if __name__ == "__main__":

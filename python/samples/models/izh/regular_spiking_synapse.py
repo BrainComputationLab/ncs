@@ -1,12 +1,13 @@
 #!/usr/bin/python
 
-import sys
-
+import os, sys
+ncs_lib_path = ('../../../')
+sys.path.append(ncs_lib_path)
 import ncs
 
 def run(argv):
 	sim = ncs.Simulation()
-	regular_spiking_parameters = sim.addModelParameters("regular_spiking","izhikevich",
+	regular_spiking_parameters = sim.addNeuron("regular_spiking","izhikevich",
 								{
 								 "a": 0.02,
 								 "b": 0.2,
@@ -17,7 +18,7 @@ def run(argv):
 								 "threshold": 30,
 								})
 	
-	flat_synapse_parameters = sim.addModelParameters("synapse","ncs",{
+	flat_synapse_parameters = sim.addSynapse("synapse","ncs",{
 										
 									"utilization": ncs.Normal(0.5,0.05),
 									"redistribution": 1.0,
@@ -36,22 +37,22 @@ def run(argv):
 									"delay": 1,
 								})	
 
-	group_1=sim.addCellGroup("group_1",1,regular_spiking_parameters,None)
-	group_2=sim.addCellGroup("group_2",1,regular_spiking_parameters,None)
+	group_1=sim.addNeuronGroup("group_1",1,regular_spiking_parameters,None)
+	group_2=sim.addNeuronGroup("group_2",1,regular_spiking_parameters,None)
 	
-	connection1=sim.connect("connection1","group_1","group_2",1,"synapse");
+	connection1=sim.addSynapseGroup("connection1","group_1","group_2",1,"synapse");
 
 	
 	if not sim.init(argv):
 		print "failed to initialize simulation."
 		return
 
-	sim.addInput("rectangular_current",{"amplitude":10,"width": 1, "frequency": 1},group_1,1,0.01,1.0)
-	voltage_report1=sim.addReport("group_1","neuron","neuron_voltage",1.0)
+	sim.addStimulus("rectangular_current",{"amplitude":10,"width": 1, "frequency": 1},group_1,1,0.01,1.0)
+	voltage_report1=sim.addReport("group_1","neuron","neuron_voltage",1.0,0.0,0.01)
 	voltage_report1.toAsciiFile("./group1_synapse_model.txt")	
-	voltage_report2=sim.addReport("group_2","neuron","neuron_voltage",1.0)
+	voltage_report2=sim.addReport("group_2","neuron","neuron_voltage",1.0,0.0,0.01)
 	voltage_report2.toAsciiFile("./group2_synapse_model.txt");	
-	sim.step(1000)
+	sim.run(duration=0.01)
 
 	return
 

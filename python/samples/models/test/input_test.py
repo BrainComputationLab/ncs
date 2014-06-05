@@ -1,13 +1,14 @@
 #!/usr/bin/python
 
 import math
-import sys
-
+import os,sys
+ncs_lib_path = ('../../../../python/')
+sys.path.append(ncs_lib_path)
 import ncs
 
 def run(argv):
 	sim = ncs.Simulation()
-	bursting_parameters = sim.addModelParameters("bursting","izhikevich",
+	bursting_parameters = sim.addNeuron("bursting","izhikevich",
 								{
 								 "a": 0.02,
 								 "b": 0.3,
@@ -17,12 +18,12 @@ def run(argv):
 								 "v": -65.0,
 								 "threshold": 30,
 								})
-	group_1=sim.addCellGroup("group_1",2,bursting_parameters,None)
+	group_1=sim.addNeuronGroup("group_1",2,bursting_parameters,None)
 	if not sim.init(argv):
 		print "failed to initialize simulation."
 		return
 
-	sim.addInput("sine_current",
+	sim.addStimulus("sine_current",
                {
                  "amplitude_scale":10,
                  "time_scale": 200.0 / math.pi,
@@ -35,9 +36,9 @@ def run(argv):
                1.0)
 #	current_report=sim.addReport("group_1","neuron","synaptic_current",1.0)
 #	current_report.toStdOut()
-	voltage_report=sim.addReport("group_1","neuron","input_current",1.0).toStdOut()
+	voltage_report=sim.addReport("group_1","neuron","input_current",1.0,0.0,1.0).toStdOut()
 #voltage_report.toAsciiFile("./bursting_izh.txt")
-	sim.step(1000)
+	sim.run(duration=1.0)
 
 	return
 

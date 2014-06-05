@@ -2,7 +2,9 @@
 
 
 #include this two statements at the top
-import sys
+import os, sys
+ncs_lib_path = ('../../../') #Path to ncs.py
+sys.path.append(ncs_lib_path)
 import ncs
 
 def run(argv):
@@ -23,7 +25,7 @@ def run(argv):
 	#		uniform example: "a": ncs.Uniform(min, max)
         #		normal example: "a": ncs.Normal(mean, standard deviation)
 	# Example of addModelParameters with regular_spiking izhikevich neuron 	
-	regular_spiking_parameters = sim.addModelParameters("regular_spiking","izhikevich",
+	regular_spiking_parameters = sim.addNeuron("regular_spiking","izhikevich",
 								{
 								 "a": 0.02,
 								 "b": 0.2,
@@ -40,7 +42,7 @@ def run(argv):
 	#	2. number of cells
 	#	3. model parameters
 	#	4. geometry generator (optional)
-	group_1=sim.addCellGroup("group_1",1,regular_spiking_parameters,None)
+	group_1=sim.addNeuronGroup("group_1",1,regular_spiking_parameters,None)
 
 	#after all the model information, initialize simulation
 	if not sim.init(argv):
@@ -65,7 +67,7 @@ def run(argv):
 	#	5. start time for stimulus (seconds)
 	#		For example, if you wanted to start stimulus at 1 ms, write 0.01
 	#	6. end time for stimulus (seconds)
-	sim.addInput("rectangular_current",{"amplitude":10,"width": 1, "frequency": 1},group_1,1,0.01,1.0)
+	sim.addStimulus("rectangular_current",{"amplitude":10,"width": 1, "frequency": 1},group_1,1,0.01,1.0)
 	
 	#Report can be added by add report function
 	#Parameters for addReport function:
@@ -78,16 +80,16 @@ def run(argv):
 
 	#example of a report to terminal
 	#this model doesn't have synapse information so 0s will be displayed on terminal
-	current_report=sim.addReport("group_1","neuron","synaptic_current",1.0)
+	current_report=sim.addReport("group_1","neuron","synaptic_current",1.0,0.0,0.01)
 	current_report.toStdOut()
 
 	#example of a report to file
-	voltage_report=sim.addReport("group_1","neuron","neuron_voltage",1.0)
+	voltage_report=sim.addReport("group_1","neuron","neuron_voltage",1.0,0.0,0.01)
 	# ./ places report in the same directory as the code file
 	voltage_report.toAsciiFile("./template_regular_spiking.txt")	
 
 	#number of time steps - each time step is 1 ms
-	sim.step(1000)
+	sim.run(duration=0.01)
 
 	#return statement
 	return
