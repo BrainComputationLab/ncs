@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import os, sys
+#specify the location of ncs.py in ncs_lib_path
 ncs_lib_path = ('../../../../')
 sys.path.append(ncs_lib_path)
 import ncs
