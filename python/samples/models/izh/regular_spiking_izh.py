@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import os, sys
-ncs_lib_path = ('../../../')
+ncs_lib_path = ('../../../../')
 sys.path.append(ncs_lib_path)
 import ncs
 
@@ -23,10 +23,10 @@ def run(argv):
 		return
 
 	sim.addStimulus("rectangular_current",{"amplitude":10,"width": 1, "frequency": 1},group_1,1,0.01,1.0)
-	voltage_report=sim.addReport("group_1","neuron","neuron_voltage",1.0,0.0,0.01)
+	voltage_report=sim.addReport("group_1","neuron","neuron_voltage",1.0,0.0,1.0)
 	voltage_report.toAsciiFile("./regular_spiking.txt")	
 	
-	sim.run(duration=0.01)
+	sim.run(duration=1.0)
 
 	return
 
