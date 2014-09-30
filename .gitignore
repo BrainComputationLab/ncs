@@ -2,4 +2,13 @@
 *.swp
 *.swo
 Vagrantfile
-build/
+build
+plugins
+CMakeCache.txt
+CMakeFiles
+Makefile
+base/CMakeFiles
+base/Makefile
+base/ModelParameters.pb.cc
+base/ModelParameters.pb.h
+*.cmake
