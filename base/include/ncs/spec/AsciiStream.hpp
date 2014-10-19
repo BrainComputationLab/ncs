@@ -10,6 +10,29 @@ AsciiStream<T>::AsciiStream(std::ostream& stream,
   if (nullptr == data_source_) {
     return;
   }
+
+
+  // Attempt to open a tcp socket. Once successful communication
+  // takes place, we can try sending over the report data
+  try {
+
+      // uses localhost address and some arbritrary free port
+      ncs::spec::ClientSocket client_socket ( "localhost", 30000 );
+      std::string reply;
+
+      try {
+        client_socket << "Test message";
+        client_socket >> reply;
+      }
+      catch ( ncs::spec::SocketException& ) {}
+
+      std::cout << "We received this response:\n\"" << reply << "\"\n";;
+      }
+  catch ( ncs::spec::SocketException& e ) {
+      std::cout << "Exception was caught:" << e.description() << "\n";
+      }
+
+
   auto thread_function = [this]() {
     size_t num_elements = data_source_->getTotalNumberOfElements();
     while(true) {
