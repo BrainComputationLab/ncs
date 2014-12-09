@@ -38,19 +38,16 @@ class Socket
 
   // Data Transimission
   bool send ( const std::string ) const;
+  bool send ( const void* ) const;
   int recv ( std::string& ) const;
 
-
+  bool close ();
   void set_non_blocking ( const bool );
-
   bool is_valid() const { return m_sock != -1; }
 
  private:
-
   int m_sock;
   sockaddr_in m_addr;
-
-
 };
 
 } // namespace spec
