@@ -77,12 +77,19 @@ class Report:
     self.sink = pyncs.AsciiFileSink(self.data_source, path)
     return self
 
+  #def toAsciiFile(self, path, report_name):
+  #  if self.sink:
+  #    print "Data source is already in use."
+  #    return self
+  #  self.sink = pyncs.AsciiFileSink(self.data_source, path, report_name)
+  #  return self
+
   def toStdOut(self):
     if self.sink:
       print "Data source is already in use."
       return self
     self.sink = pyncs.AsciiStreamSink(self.data_source)
-    return self
+    return self    
 
 class EmptyReport:
   def toAsciiFile(self, path):

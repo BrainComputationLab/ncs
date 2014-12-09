@@ -1,10 +1,9 @@
-// Definition of the ClientSocket class
-
 #ifndef ClientSocket_class
 #define ClientSocket_class
 
 #include <ncs/spec/Socket.h>
 #include <ncs/spec/SocketException.h>
+#include <iostream>
 
 namespace ncs {
 
@@ -13,13 +12,19 @@ namespace spec {
 class ClientSocket : private ncs::spec::Socket
 {
  public:
-
-  ClientSocket ( std::string host, int port );
+  ClientSocket ();
+  ClientSocket (std::string host, int port);
   virtual ~ClientSocket(){};
 
-  const ClientSocket& operator << ( const std::string& ) const;
-  const ClientSocket& operator >> ( std::string& ) const;
+  bool bindWithoutThrow ( std::string host, int port );
 
+  //template <typename T>
+  //const ClientSocket& operator << (const T&) const;
+  //const ClientSocket& operator << (const void*) const;
+  const ClientSocket& operator << (const std::string&) const;
+  const ClientSocket& operator >> (std::string&) const;
+
+  void close();
 };
 
 } // namespace spec

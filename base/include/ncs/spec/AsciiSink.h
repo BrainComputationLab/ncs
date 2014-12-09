@@ -12,15 +12,20 @@ class AsciiStreamSink {
 public:
   AsciiStreamSink(DataSource* data_source,
                   std::ostream& stream = std::cout);
+  AsciiStreamSink(DataSource* data_source, const std::string report_name,
+                  std::ostream& stream = std::cout);
   ~AsciiStreamSink();
 private:
   class AsciiStreamBase* stream_;
+  std::string report_name_;
 };
 
 class AsciiFileSink {
 public:
   AsciiFileSink(DataSource* data_source,
                 const std::string& path);
+  AsciiFileSink(DataSource* data_source,
+                const std::string& path, const std::string report_name);
   ~AsciiFileSink();
 private:
   AsciiStreamSink* stream_;

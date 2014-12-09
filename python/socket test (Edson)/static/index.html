@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+  <script src="assets/js/angular.js"></script>
+
+  <meta charset="UTF-8">
+  <title>Test</title>
+</head>
+
+<body ng-app="sampleApp" ng-controller="sampleController">
+  <button ng-click="start()">Start!</button>
+  <div printer>
+  </div>
+</body>
+
+</html>
+
+<script>
+
+var app = angular.module('sampleApp', []);
+
+  // main controller that listens to function calls in HTML
+  app.controller('sampleController', ['$scope', 'socketHandler',  function($scope, socketHandler){
+
+    $scope.start = function(){
+      socketHandler.connect();
+    }
+
+  }]);
+
+  // singleton that manages websockets
+  app.service('socketHandler', [ 'socket', function(socket){
+    var started = false;
+
+    this.connect = function(){
+      // make sure this doesn't happen twice
+      if(!started){
+
+        // instantiate socket object, then connect
+        var sampleSocket = new socket(0);
+        sampleSocket.connect();
+
+        started = true;
+      }
+    }
+
+
+  }]);
+
+  // "class" that is instanceable by socketHandler
+  app.factory('socket', ['$rootScope', function($rootScope){
+
+    function socket(id){
+      this.id = id;
+    }
+
+    socket.prototype = {
+      connect: function(){
+        var address = "ws://localhost:8000/report-" + this.id;
+
+        // WebSocket is created here. Its native in HTML5
+        var socket = new WebSocket(address);
+
+        socket.onopen = function(){
+          console.log("Success");
+
+          // The server is instructed to send data once it receives the go ahead
+          socket.send("test");
+        }
+
+        socket.onerror = function(){ console.log("Error"); }
+
+        socket.onclose = function(){ console.log("Closed"); }
+
+        // receive data in JSON formate
+        socket.onmessage = function(message){
+          var data = JSON.parse(message.data);
+          $rootScope.$broadcast('data', data);
+        }
+
+        this.socket = socket;
+      }
+    }
+
+    return (socket);
+
+  }]);
+
+  // directive that manipulates the HTML based on what happens in the Angular Javascript
+  app.directive('printer', ['$rootScope', function($rootScope){
+
+    return {
+      link: function(scope, element, attrs){
+        $rootScope.$on('data', function(data, message){
+          var newLine = '<p>' + message + '</p>'
+          angular.element(element).append(newLine);
+        })
+      }
+    }
+
+  }]);
+
+
+</script>

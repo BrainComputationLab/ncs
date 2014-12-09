@@ -1,0 +1,3 @@
+message SimData {
+  required float data = 1;
+}
