@@ -21,7 +21,7 @@ def Run(argv):
                                                 )
   group_1 = sim.addNeuronGroup("group_1", 1, "label_excitatory", None) # last param is geometry
   group_2 = sim.addNeuronGroup("group_2", 1, excitatory_parameters)
-  flat_parameters = sim.addNeuron("synapse", 
+  flat_parameters = sim.addSynapse("synapse", 
                                            "ncs", 
                                            { "utilization": ncs.Normal(0.5, 0.05),
                                              "redistribution": 1.0,

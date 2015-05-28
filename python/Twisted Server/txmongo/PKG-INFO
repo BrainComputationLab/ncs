@@ -1,0 +1,19 @@
+Metadata-Version: 1.1
+Name: txmongo
+Version: 15.0.0
+Summary: Asynchronous Python driver for MongoDB <http://www.mongodb.org>
+Home-page: https://github.com/twisted/txmongo
+Author: Alexandre Fiori, Bret Curtis
+Author-email: fiorix@gmail.com, psi29a@gmail.com
+License: Apache License, Version 2.0
+Description: UNKNOWN
+Keywords: mongo,mongodb,pymongo,gridfs,txmongo
+Platform: UNKNOWN
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Operating System :: MacOS :: MacOS X
+Classifier: Operating System :: Microsoft :: Windows
+Classifier: Operating System :: POSIX
+Classifier: Programming Language :: Python
+Classifier: Topic :: Database

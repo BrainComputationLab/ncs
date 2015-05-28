@@ -1,0 +1,1034 @@
+{
+  "model": {
+    "author": "", 
+    "cellAliases": [], 
+    "cellGroups": {
+      "cellGroups": [
+        {
+          "$$hashKey": "093", 
+          "classification": "cells", 
+          "description": "Description", 
+          "geometry": "Box", 
+          "name": "Cell 1", 
+          "num": 100, 
+          "parameters": {
+            "calcium": {
+              "maxValue": 0, 
+              "mean": 0, 
+              "minValue": 0, 
+              "stddev": 0, 
+              "type": "exact", 
+              "value": -65
+            }, 
+            "calciumSpikeIncrement": {
+              "maxValue": 0, 
+              "mean": 0, 
+              "minValue": 0, 
+              "stddev": 0, 
+              "type": "exact", 
+              "value": 8
+            }, 
+            "capacitance": {
+              "maxValue": 0, 
+              "mean": 0, 
+              "minValue": 0, 
+              "stddev": 0, 
+              "type": "exact", 
+              "value": 30
+            }, 
+            "channel": [
+              {
+                "activationSlope": {
+                  "maxValue": 0, 
+                  "mean": 0, 
+                  "minValue": 0, 
+                  "stddev": 0, 
+                  "type": "exact", 
+                  "value": 30
+                }, 
+                "className": "voltageGatedIonChannel", 
+                "conductance": {
+                  "maxValue": 0, 
+                  "mean": 0, 
+                  "minValue": 0, 
+                  "stddev": 0, 
+                  "type": "exact", 
+                  "value": 30
+                }, 
+                "deactivationSlope": {
+                  "maxValue": 0, 
+                  "mean": 0, 
+                  "minValue": 0, 
+                  "stddev": 0, 
+                  "type": "exact", 
+                  "value": 30
+                }, 
+                "description": "Description", 
+                "equilibriumSlope": {
+                  "maxValue": 0, 
+                  "mean": 0, 
+                  "minValue": 0, 
+                  "stddev": 0, 
+                  "type": "exact", 
+                  "value": 30
+                }, 
+                "mInitial": {
+                  "maxValue": 0, 
+                  "mean": 0, 
+                  "minValue": 0, 
+                  "stddev": 0, 
+                  "type": "exact", 
+                  "value": 30
+                }, 
+                "name": "Voltage Gated Ion Channel", 
+                "r": {
+                  "maxValue": 0, 
+                  "mean": 0, 
+                  "minValue": 0, 
+                  "stddev": 0, 
+                  "type": "exact", 
+                  "value": 30
+                }, 
+                "reversalPotential": {
+                  "maxValue": 0, 
+                  "mean": 0, 
+                  "minValue": 0, 
+                  "stddev": 0, 
+                  "type": "exact", 
+                  "value": 30
+                }, 
+                "vHalf": {
+                  "maxValue": 0, 
+                  "mean": 0, 
+                  "minValue": 0, 
+                  "stddev": 0, 
+                  "type": "exact", 
+                  "value": 30
+                }
+              }, 
+              {
+                "backwardsRate": {
+                  "maxValue": 0, 
+                  "mean": 0, 
+                  "minValue": 0, 
+                  "stddev": 0, 
+                  "type": "exact", 
+                  "value": 30
+                }, 
+                "className": "calciumDependantChannel", 
+                "conductance": {
+                  "maxValue": 0, 
+                  "mean": 0, 
+                  "minValue": 0, 
+                  "stddev": 0, 
+                  "type": "exact", 
+                  "value": 30
+                }, 
+                "description": "Description", 
+                "forwardExponent": {
+                  "maxValue": 0, 
+                  "mean": 0, 
+                  "minValue": 0, 
+                  "stddev": 0, 
+                  "type": "exact", 
+                  "value": 30
+                }, 
+                "forwardScale": {
+                  "maxValue": 0, 
+                  "mean": 0, 
+                  "minValue": 0, 
+                  "stddev": 0, 
+                  "type": "exact", 
+                  "value": 30
+                }, 
+                "mInitial": {
+                  "maxValue": 0, 
+                  "mean": 0, 
+                  "minValue": 0, 
+                  "stddev": 0, 
+                  "type": "exact", 
+                  "value": 30
+                }, 
+                "mPower": {
+                  "maxValue": 0, 
+                  "mean": 0, 
+                  "minValue": 0, 
+                  "stddev": 0, 
+                  "type": "exact", 
+                  "value": 30
+                }, 
+                "name": "Calcium Dependant Channel", 
+                "reversalPotential": {
+                  "maxValue": 0, 
+                  "mean": 0, 
+                  "minValue": 0, 
+                  "stddev": 0, 
+                  "type": "exact", 
+                  "value": 30
+                }, 
+                "tauScale": {
+                  "maxValue": 0, 
+                  "mean": 0, 
+                  "minValue": 0, 
+                  "stddev": 0, 
+                  "type": "exact", 
+                  "value": 30
+                }
+              }
+            ], 
+            "leakConductance": {
+              "maxValue": 0, 
+              "mean": 0, 
+              "minValue": 0, 
+              "stddev": 0, 
+              "type": "exact", 
+              "value": 30
+            }, 
+            "leakReversalPotential": {
+              "maxValue": -55, 
+              "mean": 0, 
+              "minValue": -75, 
+              "stddev": 0, 
+              "type": "uniform", 
+              "value": 0
+            }, 
+            "rMembrane": {
+              "maxValue": 0, 
+              "mean": 0, 
+              "minValue": 0, 
+              "stddev": 0, 
+              "type": "exact", 
+              "value": 30
+            }, 
+            "restingPotential": {
+              "maxValue": 0, 
+              "mean": 0, 
+              "minValue": 0, 
+              "stddev": 0, 
+              "type": "exact", 
+              "value": 0.2
+            }, 
+            "spikeShape": [
+              "41", 
+              "-35", 
+              "-18"
+            ], 
+            "tauCalcium": {
+              "maxValue": -11, 
+              "mean": 0, 
+              "minValue": -15, 
+              "stddev": 0, 
+              "type": "uniform", 
+              "value": 0
+            }, 
+            "tauMembrane": {
+              "maxValue": 0, 
+              "mean": 0, 
+              "minValue": 0, 
+              "stddev": 0, 
+              "type": "exact", 
+              "value": 30
+            }, 
+            "threshold": {
+              "maxValue": 0, 
+              "mean": 0, 
+              "minValue": 0, 
+              "stddev": 0, 
+              "type": "exact", 
+              "value": 0.2
+            }, 
+            "type": "NCS"
+          }
+        }, 
+        {
+          "$$hashKey": "094", 
+          "classification": "cells", 
+          "description": "Description", 
+          "geometry": "Box", 
+          "name": "Cell 2", 
+          "num": 50, 
+          "parameters": {
+            "capacitance": {
+              "maxValue": 0, 
+              "mean": 0, 
+              "minValue": 0, 
+              "stddev": 0, 
+              "type": "exact", 
+              "value": 30
+            }, 
+            "channel": [
+              {
+                "className": "voltageGatedChannel", 
+                "conductance": {
+                  "maxValue": 0, 
+                  "mean": 0, 
+                  "minValue": 0, 
+                  "stddev": 0, 
+                  "type": "exact", 
+                  "value": 30
+                }, 
+                "description": "Description", 
+                "name": "Voltage Gated Channel", 
+                "particles": {
+                  "alpha": {
+                    "a": {
+                      "maxValue": 0, 
+                      "mean": 0, 
+                      "minValue": 0, 
+                      "stddev": 0, 
+                      "type": "exact", 
+                      "value": 30
+                    }, 
+                    "b": {
+                      "maxValue": 0, 
+                      "mean": 0, 
+                      "minValue": 0, 
+                      "stddev": 0, 
+                      "type": "exact", 
+                      "value": 30
+                    }, 
+                    "c": {
+                      "maxValue": 0, 
+                      "mean": 0, 
+                      "minValue": 0, 
+                      "stddev": 0, 
+                      "type": "exact", 
+                      "value": 30
+                    }, 
+                    "d": {
+                      "maxValue": 0, 
+                      "mean": 0, 
+                      "minValue": 0, 
+                      "stddev": 0, 
+                      "type": "exact", 
+                      "value": 30
+                    }, 
+                    "f": {
+                      "maxValue": 0, 
+                      "mean": 0, 
+                      "minValue": 0, 
+                      "stddev": 0, 
+                      "type": "exact", 
+                      "value": 30
+                    }, 
+                    "h": {
+                      "maxValue": 0, 
+                      "mean": 0, 
+                      "minValue": 0, 
+                      "stddev": 0, 
+                      "type": "exact", 
+                      "value": 30
+                    }
+                  }, 
+                  "beta": {
+                    "a": {
+                      "maxValue": 0, 
+                      "mean": 0, 
+                      "minValue": 0, 
+                      "stddev": 0, 
+                      "type": "exact", 
+                      "value": 30
+                    }, 
+                    "b": {
+                      "maxValue": 0, 
+                      "mean": 0, 
+                      "minValue": 0, 
+                      "stddev": 0, 
+                      "type": "exact", 
+                      "value": 30
+                    }, 
+                    "c": {
+                      "maxValue": 0, 
+                      "mean": 0, 
+                      "minValue": 0, 
+                      "stddev": 0, 
+                      "type": "exact", 
+                      "value": 30
+                    }, 
+                    "d": {
+                      "maxValue": 0, 
+                      "mean": 0, 
+                      "minValue": 0, 
+                      "stddev": 0, 
+                      "type": "exact", 
+                      "value": 30
+                    }, 
+                    "f": {
+                      "maxValue": 0, 
+                      "mean": 0, 
+                      "minValue": 0, 
+                      "stddev": 0, 
+                      "type": "exact", 
+                      "value": 30
+                    }, 
+                    "h": {
+                      "maxValue": 0, 
+                      "mean": 0, 
+                      "minValue": 0, 
+                      "stddev": 0, 
+                      "type": "exact", 
+                      "value": 30
+                    }
+                  }, 
+                  "className": "voltageGatedParticle", 
+                  "mPower": {
+                    "maxValue": 0, 
+                    "mean": 0, 
+                    "minValue": 0, 
+                    "stddev": 0, 
+                    "type": "exact", 
+                    "value": 30
+                  }, 
+                  "power": {
+                    "maxValue": 0, 
+                    "mean": 0, 
+                    "minValue": 0, 
+                    "stddev": 0, 
+                    "type": "exact", 
+                    "value": 30
+                  }, 
+                  "xInitial": {
+                    "maxValue": 0, 
+                    "mean": 0, 
+                    "minValue": 0, 
+                    "stddev": 0, 
+                    "type": "exact", 
+                    "value": 30
+                  }
+                }, 
+                "reversalPotential": {
+                  "maxValue": 0, 
+                  "mean": 0, 
+                  "minValue": 0, 
+                  "stddev": 0, 
+                  "type": "exact", 
+                  "value": 30
+                }
+              }
+            ], 
+            "restingPotential": {
+              "maxValue": 0, 
+              "mean": 0, 
+              "minValue": 0, 
+              "stddev": 0, 
+              "type": "exact", 
+              "value": 30
+            }, 
+            "threshold": {
+              "maxValue": 0, 
+              "mean": 0, 
+              "minValue": 0, 
+              "stddev": 0, 
+              "type": "exact", 
+              "value": 30
+            }, 
+            "type": "HodgkinHuxley"
+          }
+        }, 
+        {
+          "$$hashKey": "09B", 
+          "classification": "cells", 
+          "description": "Description", 
+          "geometry": "Sphere", 
+          "name": "Cell 3", 
+          "num": 150, 
+          "parameters": {
+            "a": {
+              "maxValue": 0, 
+              "mean": 0, 
+              "minValue": 0, 
+              "stddev": 0, 
+              "type": "exact", 
+              "value": 0.2
+            }, 
+            "b": {
+              "maxValue": 0, 
+              "mean": 0, 
+              "minValue": 0, 
+              "stddev": 0, 
+              "type": "exact", 
+              "value": 0.2
+            }, 
+            "c": {
+              "maxValue": 0, 
+              "mean": 0, 
+              "minValue": 0, 
+              "stddev": 0, 
+              "type": "exact", 
+              "value": -65
+            }, 
+            "d": {
+              "maxValue": 0, 
+              "mean": 0, 
+              "minValue": 0, 
+              "stddev": 0, 
+              "type": "exact", 
+              "value": 8
+            }, 
+            "threshold": {
+              "maxValue": 0, 
+              "mean": 0, 
+              "minValue": 0, 
+              "stddev": 0, 
+              "type": "exact", 
+              "value": 30
+            }, 
+            "type": "Izhikevich", 
+            "u": {
+              "maxValue": -11, 
+              "mean": 0, 
+              "minValue": -15, 
+              "stddev": 0, 
+              "type": "uniform", 
+              "value": 0
+            }, 
+            "v": {
+              "maxValue": -55, 
+              "mean": 0, 
+              "minValue": -75, 
+              "stddev": 0, 
+              "type": "uniform", 
+              "value": 0
+            }
+          }
+        }
+      ], 
+      "classification": "cellGroup", 
+      "description": "Description", 
+      "name": "Home"
+    }, 
+    "classification": "model", 
+    "description": "Description", 
+    "name": "Current Model", 
+    "synapses": []
+  }, 
+  "simulation": {
+    "duration": null, 
+    "fsv": null, 
+    "includeDistance": "No", 
+    "inputs": [], 
+    "interactive": "No", 
+    "name": null, 
+    "outputs": [], 
+    "seed": null
+  }
+}
+
+
+MODEL:
+{
+  "author": "", 
+  "cellAliases": [], 
+  "cellGroups": {
+    "cellGroups": [
+      {
+        "$$hashKey": "093", 
+        "classification": "cells", 
+        "description": "Description", 
+        "geometry": "Box", 
+        "name": "Cell 1", 
+        "num": 100, 
+        "parameters": {
+          "calcium": {
+            "maxValue": 0, 
+            "mean": 0, 
+            "minValue": 0, 
+            "stddev": 0, 
+            "type": "exact", 
+            "value": -65
+          }, 
+          "calciumSpikeIncrement": {
+            "maxValue": 0, 
+            "mean": 0, 
+            "minValue": 0, 
+            "stddev": 0, 
+            "type": "exact", 
+            "value": 8
+          }, 
+          "capacitance": {
+            "maxValue": 0, 
+            "mean": 0, 
+            "minValue": 0, 
+            "stddev": 0, 
+            "type": "exact", 
+            "value": 30
+          }, 
+          "channel": [
+            {
+              "activationSlope": {
+                "maxValue": 0, 
+                "mean": 0, 
+                "minValue": 0, 
+                "stddev": 0, 
+                "type": "exact", 
+                "value": 30
+              }, 
+              "className": "voltageGatedIonChannel", 
+              "conductance": {
+                "maxValue": 0, 
+                "mean": 0, 
+                "minValue": 0, 
+                "stddev": 0, 
+                "type": "exact", 
+                "value": 30
+              }, 
+              "deactivationSlope": {
+                "maxValue": 0, 
+                "mean": 0, 
+                "minValue": 0, 
+                "stddev": 0, 
+                "type": "exact", 
+                "value": 30
+              }, 
+              "description": "Description", 
+              "equilibriumSlope": {
+                "maxValue": 0, 
+                "mean": 0, 
+                "minValue": 0, 
+                "stddev": 0, 
+                "type": "exact", 
+                "value": 30
+              }, 
+              "mInitial": {
+                "maxValue": 0, 
+                "mean": 0, 
+                "minValue": 0, 
+                "stddev": 0, 
+                "type": "exact", 
+                "value": 30
+              }, 
+              "name": "Voltage Gated Ion Channel", 
+              "r": {
+                "maxValue": 0, 
+                "mean": 0, 
+                "minValue": 0, 
+                "stddev": 0, 
+                "type": "exact", 
+                "value": 30
+              }, 
+              "reversalPotential": {
+                "maxValue": 0, 
+                "mean": 0, 
+                "minValue": 0, 
+                "stddev": 0, 
+                "type": "exact", 
+                "value": 30
+              }, 
+              "vHalf": {
+                "maxValue": 0, 
+                "mean": 0, 
+                "minValue": 0, 
+                "stddev": 0, 
+                "type": "exact", 
+                "value": 30
+              }
+            }, 
+            {
+              "backwardsRate": {
+                "maxValue": 0, 
+                "mean": 0, 
+                "minValue": 0, 
+                "stddev": 0, 
+                "type": "exact", 
+                "value": 30
+              }, 
+              "className": "calciumDependantChannel", 
+              "conductance": {
+                "maxValue": 0, 
+                "mean": 0, 
+                "minValue": 0, 
+                "stddev": 0, 
+                "type": "exact", 
+                "value": 30
+              }, 
+              "description": "Description", 
+              "forwardExponent": {
+                "maxValue": 0, 
+                "mean": 0, 
+                "minValue": 0, 
+                "stddev": 0, 
+                "type": "exact", 
+                "value": 30
+              }, 
+              "forwardScale": {
+                "maxValue": 0, 
+                "mean": 0, 
+                "minValue": 0, 
+                "stddev": 0, 
+                "type": "exact", 
+                "value": 30
+              }, 
+              "mInitial": {
+                "maxValue": 0, 
+                "mean": 0, 
+                "minValue": 0, 
+                "stddev": 0, 
+                "type": "exact", 
+                "value": 30
+              }, 
+              "mPower": {
+                "maxValue": 0, 
+                "mean": 0, 
+                "minValue": 0, 
+                "stddev": 0, 
+                "type": "exact", 
+                "value": 30
+              }, 
+              "name": "Calcium Dependant Channel", 
+              "reversalPotential": {
+                "maxValue": 0, 
+                "mean": 0, 
+                "minValue": 0, 
+                "stddev": 0, 
+                "type": "exact", 
+                "value": 30
+              }, 
+              "tauScale": {
+                "maxValue": 0, 
+                "mean": 0, 
+                "minValue": 0, 
+                "stddev": 0, 
+                "type": "exact", 
+                "value": 30
+              }
+            }
+          ], 
+          "leakConductance": {
+            "maxValue": 0, 
+            "mean": 0, 
+            "minValue": 0, 
+            "stddev": 0, 
+            "type": "exact", 
+            "value": 30
+          }, 
+          "leakReversalPotential": {
+            "maxValue": -55, 
+            "mean": 0, 
+            "minValue": -75, 
+            "stddev": 0, 
+            "type": "uniform", 
+            "value": 0
+          }, 
+          "rMembrane": {
+            "maxValue": 0, 
+            "mean": 0, 
+            "minValue": 0, 
+            "stddev": 0, 
+            "type": "exact", 
+            "value": 30
+          }, 
+          "restingPotential": {
+            "maxValue": 0, 
+            "mean": 0, 
+            "minValue": 0, 
+            "stddev": 0, 
+            "type": "exact", 
+            "value": 0.2
+          }, 
+          "spikeShape": [
+            "41", 
+            "-35", 
+            "-18"
+          ], 
+          "tauCalcium": {
+            "maxValue": -11, 
+            "mean": 0, 
+            "minValue": -15, 
+            "stddev": 0, 
+            "type": "uniform", 
+            "value": 0
+          }, 
+          "tauMembrane": {
+            "maxValue": 0, 
+            "mean": 0, 
+            "minValue": 0, 
+            "stddev": 0, 
+            "type": "exact", 
+            "value": 30
+          }, 
+          "threshold": {
+            "maxValue": 0, 
+            "mean": 0, 
+            "minValue": 0, 
+            "stddev": 0, 
+            "type": "exact", 
+            "value": 0.2
+          }, 
+          "type": "NCS"
+        }
+      }, 
+      {
+        "$$hashKey": "094", 
+        "classification": "cells", 
+        "description": "Description", 
+        "geometry": "Box", 
+        "name": "Cell 2", 
+        "num": 50, 
+        "parameters": {
+          "capacitance": {
+            "maxValue": 0, 
+            "mean": 0, 
+            "minValue": 0, 
+            "stddev": 0, 
+            "type": "exact", 
+            "value": 30
+          }, 
+          "channel": [
+            {
+              "className": "voltageGatedChannel", 
+              "conductance": {
+                "maxValue": 0, 
+                "mean": 0, 
+                "minValue": 0, 
+                "stddev": 0, 
+                "type": "exact", 
+                "value": 30
+              }, 
+              "description": "Description", 
+              "name": "Voltage Gated Channel", 
+              "particles": {
+                "alpha": {
+                  "a": {
+                    "maxValue": 0, 
+                    "mean": 0, 
+                    "minValue": 0, 
+                    "stddev": 0, 
+                    "type": "exact", 
+                    "value": 30
+                  }, 
+                  "b": {
+                    "maxValue": 0, 
+                    "mean": 0, 
+                    "minValue": 0, 
+                    "stddev": 0, 
+                    "type": "exact", 
+                    "value": 30
+                  }, 
+                  "c": {
+                    "maxValue": 0, 
+                    "mean": 0, 
+                    "minValue": 0, 
+                    "stddev": 0, 
+                    "type": "exact", 
+                    "value": 30
+                  }, 
+                  "d": {
+                    "maxValue": 0, 
+                    "mean": 0, 
+                    "minValue": 0, 
+                    "stddev": 0, 
+                    "type": "exact", 
+                    "value": 30
+                  }, 
+                  "f": {
+                    "maxValue": 0, 
+                    "mean": 0, 
+                    "minValue": 0, 
+                    "stddev": 0, 
+                    "type": "exact", 
+                    "value": 30
+                  }, 
+                  "h": {
+                    "maxValue": 0, 
+                    "mean": 0, 
+                    "minValue": 0, 
+                    "stddev": 0, 
+                    "type": "exact", 
+                    "value": 30
+                  }
+                }, 
+                "beta": {
+                  "a": {
+                    "maxValue": 0, 
+                    "mean": 0, 
+                    "minValue": 0, 
+                    "stddev": 0, 
+                    "type": "exact", 
+                    "value": 30
+                  }, 
+                  "b": {
+                    "maxValue": 0, 
+                    "mean": 0, 
+                    "minValue": 0, 
+                    "stddev": 0, 
+                    "type": "exact", 
+                    "value": 30
+                  }, 
+                  "c": {
+                    "maxValue": 0, 
+                    "mean": 0, 
+                    "minValue": 0, 
+                    "stddev": 0, 
+                    "type": "exact", 
+                    "value": 30
+                  }, 
+                  "d": {
+                    "maxValue": 0, 
+                    "mean": 0, 
+                    "minValue": 0, 
+                    "stddev": 0, 
+                    "type": "exact", 
+                    "value": 30
+                  }, 
+                  "f": {
+                    "maxValue": 0, 
+                    "mean": 0, 
+                    "minValue": 0, 
+                    "stddev": 0, 
+                    "type": "exact", 
+                    "value": 30
+                  }, 
+                  "h": {
+                    "maxValue": 0, 
+                    "mean": 0, 
+                    "minValue": 0, 
+                    "stddev": 0, 
+                    "type": "exact", 
+                    "value": 30
+                  }
+                }, 
+                "className": "voltageGatedParticle", 
+                "mPower": {
+                  "maxValue": 0, 
+                  "mean": 0, 
+                  "minValue": 0, 
+                  "stddev": 0, 
+                  "type": "exact", 
+                  "value": 30
+                }, 
+                "power": {
+                  "maxValue": 0, 
+                  "mean": 0, 
+                  "minValue": 0, 
+                  "stddev": 0, 
+                  "type": "exact", 
+                  "value": 30
+                }, 
+                "xInitial": {
+                  "maxValue": 0, 
+                  "mean": 0, 
+                  "minValue": 0, 
+                  "stddev": 0, 
+                  "type": "exact", 
+                  "value": 30
+                }
+              }, 
+              "reversalPotential": {
+                "maxValue": 0, 
+                "mean": 0, 
+                "minValue": 0, 
+                "stddev": 0, 
+                "type": "exact", 
+                "value": 30
+              }
+            }
+          ], 
+          "restingPotential": {
+            "maxValue": 0, 
+            "mean": 0, 
+            "minValue": 0, 
+            "stddev": 0, 
+            "type": "exact", 
+            "value": 30
+          }, 
+          "threshold": {
+            "maxValue": 0, 
+            "mean": 0, 
+            "minValue": 0, 
+            "stddev": 0, 
+            "type": "exact", 
+            "value": 30
+          }, 
+          "type": "HodgkinHuxley"
+        }
+      }, 
+      {
+        "$$hashKey": "09B", 
+        "classification": "cells", 
+        "description": "Description", 
+        "geometry": "Sphere", 
+        "name": "Cell 3", 
+        "num": 150, 
+        "parameters": {
+          "a": {
+            "maxValue": 0, 
+            "mean": 0, 
+            "minValue": 0, 
+            "stddev": 0, 
+            "type": "exact", 
+            "value": 0.2
+          }, 
+          "b": {
+            "maxValue": 0, 
+            "mean": 0, 
+            "minValue": 0, 
+            "stddev": 0, 
+            "type": "exact", 
+            "value": 0.2
+          }, 
+          "c": {
+            "maxValue": 0, 
+            "mean": 0, 
+            "minValue": 0, 
+            "stddev": 0, 
+            "type": "exact", 
+            "value": -65
+          }, 
+          "d": {
+            "maxValue": 0, 
+            "mean": 0, 
+            "minValue": 0, 
+            "stddev": 0, 
+            "type": "exact", 
+            "value": 8
+          }, 
+          "threshold": {
+            "maxValue": 0, 
+            "mean": 0, 
+            "minValue": 0, 
+            "stddev": 0, 
+            "type": "exact", 
+            "value": 30
+          }, 
+          "type": "Izhikevich", 
+          "u": {
+            "maxValue": -11, 
+            "mean": 0, 
+            "minValue": -15, 
+            "stddev": 0, 
+            "type": "uniform", 
+            "value": 0
+          }, 
+          "v": {
+            "maxValue": -55, 
+            "mean": 0, 
+            "minValue": -75, 
+            "stddev": 0, 
+            "type": "uniform", 
+            "value": 0
+          }
+        }
+      }
+    ], 
+    "classification": "cellGroup", 
+    "description": "Description", 
+    "name": "Home"
+  }, 
+  "classification": "model", 
+  "description": "Description", 
+  "name": "Current Model", 
+  "synapses": []
+}
+
+
+SIMULATION:
+{
+  "duration": null, 
+  "fsv": null, 
+  "includeDistance": "No", 
+  "inputs": [], 
+  "interactive": "No", 
+  "name": null, 
+  "outputs": [], 
+  "seed": null
+}

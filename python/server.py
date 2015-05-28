@@ -13,7 +13,6 @@ import subprocess
 import struct
 import ncs
 import array
-import json
 import yaml
 
 protobuf_path = ('../base/include/ncs/proto')
@@ -21,7 +20,8 @@ sys.path.append(protobuf_path)
 import SimData_pb2
 from model import ModelService
 
-port = 8003
+inputPort = 8001
+outputPort = 8003
 
 group_1 = None
 
@@ -40,9 +40,9 @@ class SimThread(Thread):
     	# run the script that was passed in
 		full_path = os.path.abspath(self.script)
 		os.system("chmod +x " + full_path)
-		subprocess.call(full_path, shell=True)
+		#subprocess.call(full_path, shell=True)
 
-		#sim.run(duration=1.0)    
+		sim.run(duration=1.0)    
 		print "Simulation Complete!"
 		del self.sim
 
@@ -140,7 +140,7 @@ def jsonTest(sim):
         			],
         			"method": {
            	 			"type": "file",
-            			"filename": "regular_spiking_izh_json.txt",
+            			"filename": "regular_spiking_izh_json_test.txt",
             			"number_format": "ascii"
        	 			},
         			"time_start": 0.0,
@@ -222,7 +222,8 @@ def jsonTest(sim):
 
 	# assigns sim params based on json properties
 	modelService = ModelService()
-
+	#sim = modelService.sim_test(sim);
+	#return sim
 	# this function takes dictionaries (converted json objects)
 	# handles assigning neurons, synapses, and groups
 	group_1 = modelService.process_model(sim, temp, temp2)	
@@ -233,8 +234,72 @@ def jsonTest(sim):
 
 	modelService.add_stims_and_reports(sim, temp, temp2, group_1)
 
-#function for handling sockets
-def handleSocket(clientSocket):
+'''def acceptClientsForInput(inputServerSocket):
+
+	# listen forever
+	while True:
+		# accept connections
+		inputAcceptedSocket, addr = inputServerSocket.accept()
+		thread.start_new_thread(handleInputSocket,(inputAcceptedSocket,))
+
+	# close the sockets
+	inputServerSocket.close()'''
+
+def acceptClientsForOutput(outputServerSocket):
+
+	# listen forever
+	while True:
+		# accept connections
+		outputAcceptedSocket, addr = outputServerSocket.accept()
+		thread.start_new_thread(handleOutputSocket,(outputAcceptedSocket,))
+
+	# close the sockets
+	outputServerSocket.close()	
+
+#function for handling simulation input parameters
+def handleInputSocket(clientSocket):
+	print 'Established connection with NCB'
+
+	# temporarily write the live data to a file for comparision
+	file = open("json.txt", "w")
+	
+	#receive the simulation parameters
+	input_data = clientSocket.recv(4096)
+	#file.write(input_data + '\n\n\n')
+
+	print 'loading JSON...'
+
+	json_obj = json.loads(input_data)
+	json_model = json_obj['model']
+	json_sim_input_and_output = json_obj['simulation']
+	#print json_obj
+
+	# dumps is to encoded
+	# loads is to decoded from JSON to python
+
+	file.write(json.dumps(json_obj, sort_keys=True, indent=2) + '\n\n\n')
+
+	file.write('MODEL:\n')
+	file.write(json.dumps(json_model, sort_keys=True, indent=2) + '\n\n\n')
+	file.write('SIMULATION:\n')
+	file.write(json.dumps(json_sim_input_and_output, sort_keys=True, indent=2) + '\n')
+
+	modelService = ModelService()
+	#sim = modelService.sim_test(sim);
+	#return sim
+	# this function takes dictionaries (converted json objects)
+	# handles assigning neurons, synapses, and groups
+	neuron_groups = []
+	synapse_groups = []
+	modelService.process_model(sim, json_model, neuron_groups, synapse_groups)
+	modelService.add_stims_and_reports(sim, json_sim_input_and_output, neuron_groups, synapse_groups)
+
+	# close sockets
+	file.close()
+	clientSocket.close()	
+
+#function for handling streaming simulation output
+def handleOutputSocket(clientSocket):
 	print 'Established connection with simulator'
 
 	# create socket to stream simulation data
@@ -257,7 +322,7 @@ def handleSocket(clientSocket):
 	while True:
 
 		# receive the message length
-		msg = (connectionSocket.recvfrom(1))[0]
+		msg = (clientSocket.recvfrom(1))[0]
 		if not msg:
 			break
 		msg_size = int(msg)	
@@ -270,7 +335,7 @@ def handleSocket(clientSocket):
 		# ensure we received the entire message before deserializing
 		buffer = ''
 		while len(buffer) < msg_size:
-			chunk = connectionSocket.recv(msg_size - len(buffer))
+			chunk = clientSocket.recv(msg_size - len(buffer))
 			if chunk == '':
 				break
 			buffer += chunk
@@ -307,7 +372,6 @@ def handleSocket(clientSocket):
 	file.close()
 	clientSocket.close()
 	outputSocket.close()
-	print 'Sockets Closed\n'
 
 # make sure run as main script
 if __name__ == '__main__':
@@ -322,28 +386,38 @@ if __name__ == '__main__':
 	# for now all socket communication will use the local host	
 	host = gethostbyname(gethostname())	
 
-	# create TCP socket to receive simulation data
-	serverSocket = socket(AF_INET, SOCK_STREAM)
-	serverSocket.bind((host,port))
+	# create TCP socket to receive simulation input parameters
+	inputSocket = socket(AF_INET, SOCK_STREAM)
+	inputSocket.bind((host,inputPort))
 	
 	# init queue to 5 sockets
-	serverSocket.listen(5)
-	print 'Ready at address:', serverSocket.getsockname()[0], 'on port:', port
+	inputSocket.listen(5)
+	print 'Ready for input at address:', inputSocket.getsockname()[0], 'on port:', inputPort
+
+	# create TCP socket to receive simulation output data
+	outputSocket = socket(AF_INET, SOCK_STREAM)
+	outputSocket.bind((host,outputPort))
+	
+	# init queue to 5 sockets
+	outputSocket.listen(5)
+	print 'Ready for output at address:', outputSocket.getsockname()[0], 'on port:', outputPort
+
+	# wait for streaming data on a separate thread
+	#thread.start_new_thread(acceptClientsForInput,(inputSocket,))
+	thread.start_new_thread(acceptClientsForOutput,(outputSocket,))
 
 	# start running the simulation
 	sim = ncs.Simulation()
 	#jsonTest(sim)
-	sim_thread = SimThread(sim, 5, sim_script)
-	sim_thread.start()
+	#sim_thread = SimThread(sim, 5, sim_script)
+	#sim_thread.start()
 
 	# listen forever
 	while True:
-		# Establish the connection
-		connectionSocket, addr = serverSocket.accept()
-
-		# handle the socket on a new thread
-		thread.start_new_thread(handleSocket,(connectionSocket,))
+		# accept connections
+		inputAcceptedSocket, addr = inputSocket.accept()
+		thread.start_new_thread(handleInputSocket,(inputAcceptedSocket,))
 
 	# close the sockets
-	serverSocket.close()
+	inputSocket.close()
 
