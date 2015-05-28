@@ -1,0 +1,92 @@
+{
+ "model": 
+	{
+	 "name": "Current Model", 
+	 "classification": "model", 
+	 "author": "", 
+	 "cellAliases": [], 
+	 "synapses": [], 
+	 "cellGroups": 
+	 {
+	  "cellGroups": [
+	   {
+	    "classification": "cells", 
+	    "$$hashKey": "object:190", 
+	    "name": "Cell 3", 
+	    "parameters": 
+	    {
+	     "a": 
+	     {
+	      "type": "exact", 
+	      "maxValue": 0, 
+	      "value": 0.2, 
+	      "minValue": 0
+	      }, 
+	      "c": 
+	      {
+	       "type": "exact", 
+	       "maxValue": 0, 
+	       "value": -65, 
+	       "minValue": 0
+	      }, 
+	      "b": 
+	      {
+	       "type": "exact", 
+	       "maxValue": 0, 
+	       "value": 0.2, 
+	       "minValue": 0
+	      }, 
+	      "d": 
+	      {
+	       "type": "exact", 
+	       "maxValue": 0, 
+	       "value": 8, 
+	       "minValue": 0
+	      }, 
+	      "u": 
+	      {
+	       "type": "uniform",  
+	       "maxValue": -11, 
+	       "value": 0, 
+	       "minValue": -15
+	      }, 
+	      "v": 
+	      {
+	       "type": "uniform", 
+	       "maxValue": -55, 
+	       "value": 0, 
+	       "minValue": -75
+	      }, 
+	      "threshold": 
+	      {
+	       "type": "exact", 
+	       "maxValue": 0, 
+	       "value": 30, 
+	       "minValue": 0
+	      }, 
+	       "type": "Izhikevich"
+	     }, 
+	     "geometry": "Sphere",
+	     "num": 150, 
+	     "description": "Description"
+	    }],
+	    "name": "Home", 
+	    "classification": "cellGroup", 
+	    "description": "Description"
+	   }, 
+	   "description": "Description"
+	  }, 
+	  "simulation": 
+	  {
+	   "inputs": [], 
+	   "name": "sim1", 
+	   "outputs": [], 
+	   "seed": null, 
+	   "fsv": null, 
+	   "duration": 3, 
+	   "includeDistance": "No", 
+	   "interactive": "No"
+	  }
+}
+
+

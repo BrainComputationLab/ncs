@@ -22,10 +22,11 @@ AsciiStream<T>::AsciiStream(std::ostream& stream,
 
     // Attempt to open socket to stream data
     ncs::spec::ClientSocket client_socket;
-    bool connected = client_socket.bindWithoutThrow( "127.0.1.1", 8003 );
+    bool connected = client_socket.bindWithoutThrow( "127.0.1.1", 8005 ); // THIS IS THE PORT THE DAEMON IS LISTENING ON
     std::cout << "Connection status: " << connected << std::endl;
 
     size_t num_elements = data_source_->getTotalNumberOfElements();
+
     while(true) {
       const void* data = data_source_->pull();
       if (nullptr == data) {
@@ -47,8 +48,9 @@ AsciiStream<T>::AsciiStream(std::ostream& stream,
         buffer = std::to_string(buffer.length()) + buffer;
 
         // send the message
-        if (connected)
+        if (connected) {
           client_socket << buffer;
+        }
       }
 
       stream_ << d[0];

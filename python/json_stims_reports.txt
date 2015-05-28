@@ -1,0 +1,57 @@
+MODEL:
+{
+  "author": "", 
+  "cellAliases": [], 
+  "cellGroups": {
+    "cellGroups": [], 
+    "classification": "cellGroup", 
+    "description": "Description", 
+    "name": "Home"
+  }, 
+  "classification": "model", 
+  "description": "Description", 
+  "name": "Current Model", 
+  "synapses": []
+}
+
+
+SIMULATION:
+{
+  "duration": 1, 
+  "fsv": null, 
+  "includeDistance": "No", 
+  "inputs": [
+    {
+      "$$hashKey": "05L", 
+      "amplitude": 2, 
+      "className": "simulationInput", 
+      "endTime": 1000000, 
+      "frequency": 10, 
+      "inputTarget": "No Cell Groups Available", 
+      "name": "Input1", 
+      "probability": 0.5, 
+      "startTime": 500000, 
+      "stimulusType": "Rectangular Current", 
+      "width": 3
+    }
+  ], 
+  "interactive": "No", 
+  "name": "s", 
+  "outputs": [
+    {
+      "$$hashKey": "05O", 
+      "className": "simulationOutput", 
+      "endTime": "1", 
+      "fileName": "s", 
+      "frequency": 10, 
+      "name": "Output1", 
+      "numberFormat": "ascii", 
+      "outputType": "Save As File", 
+      "probability": 0.5, 
+      "reportTarget": "No Cell Groups Available", 
+      "reportType": "Channel Conductance", 
+      "startTime": 0
+    }
+  ], 
+  "seed": null
+}

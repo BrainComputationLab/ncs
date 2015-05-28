@@ -1,0 +1,167 @@
+{"model": {"name": "Current Model", "classification": "model", "author": "", "cellAliases": [], "synapses": [], "cellGroups": {"cellGroups": [{"classification": "cells", "$$hashKey": "05A", "name": "Cell 3", "parameters": {"a": {"type": "exact", "maxValue": 0, "value": 0.2, "minValue": 0}, "c": {"type": "exact", "maxValue": 0, "value": -65, "minValue": 0}, "b": {"type": "exact", "maxValue": 0, "value": 0.2, "minValue": 0}, "d": {"type": "exact", "maxValue": 0, "value": 8, "minValue": 0}, "u": {"type": "uniform", "maxValue": -11, "value": 0, "minValue": -15}, "v": {"type": "uniform", "maxValue": -55, "value": 0, "minValue": -75}, "threshold": {"type": "exact", "maxValue": 0, "value": 30, "minValue": 0}, "type": "Izhikevich"}, "geometry": "Sphere", "num": 150, "description": "Description"}], "name": "Home", "classification": "cellGroup", "description": "Description"}, "description": "Description"}, "simulation": {"inputs": [], "name": null, "outputs": [], "seed": null, "fsv": null, "duration": null, "includeDistance": "No", "interactive": "No"}}
+
+
+{
+  "model": {
+    "author": "", 
+    "cellAliases": [], 
+    "cellGroups": {
+      "cellGroups": [
+        {
+          "$$hashKey": "05A", 
+          "classification": "cells", 
+          "description": "Description", 
+          "geometry": "Sphere", 
+          "name": "Cell 3", 
+          "num": 150, 
+          "parameters": {
+            "a": {
+              "maxValue": 0, 
+              "minValue": 0, 
+              "type": "exact", 
+              "value": 0.2
+            }, 
+            "b": {
+              "maxValue": 0, 
+              "minValue": 0, 
+              "type": "exact", 
+              "value": 0.2
+            }, 
+            "c": {
+              "maxValue": 0, 
+              "minValue": 0, 
+              "type": "exact", 
+              "value": -65
+            }, 
+            "d": {
+              "maxValue": 0, 
+              "minValue": 0, 
+              "type": "exact", 
+              "value": 8
+            }, 
+            "threshold": {
+              "maxValue": 0, 
+              "minValue": 0, 
+              "type": "exact", 
+              "value": 30
+            }, 
+            "type": "Izhikevich", 
+            "u": {
+              "maxValue": -11, 
+              "minValue": -15, 
+              "type": "uniform", 
+              "value": 0
+            }, 
+            "v": {
+              "maxValue": -55, 
+              "minValue": -75, 
+              "type": "uniform", 
+              "value": 0
+            }
+          }
+        }
+      ], 
+      "classification": "cellGroup", 
+      "description": "Description", 
+      "name": "Home"
+    }, 
+    "classification": "model", 
+    "description": "Description", 
+    "name": "Current Model", 
+    "synapses": []
+  }, 
+  "simulation": {
+    "duration": null, 
+    "fsv": null, 
+    "includeDistance": "No", 
+    "inputs": [], 
+    "interactive": "No", 
+    "name": null, 
+    "outputs": [], 
+    "seed": null
+  }
+}
+
+
+MODEL:
+{
+  "author": "", 
+  "cellAliases": [], 
+  "cellGroups": {
+    "cellGroups": [
+      {
+        "$$hashKey": "05A", 
+        "classification": "cells", 
+        "description": "Description", 
+        "geometry": "Sphere", 
+        "name": "Cell 3", 
+        "num": 150, 
+        "parameters": {
+          "a": {
+            "maxValue": 0, 
+            "minValue": 0, 
+            "type": "exact", 
+            "value": 0.2
+          }, 
+          "b": {
+            "maxValue": 0, 
+            "minValue": 0, 
+            "type": "exact", 
+            "value": 0.2
+          }, 
+          "c": {
+            "maxValue": 0, 
+            "minValue": 0, 
+            "type": "exact", 
+            "value": -65
+          }, 
+          "d": {
+            "maxValue": 0, 
+            "minValue": 0, 
+            "type": "exact", 
+            "value": 8
+          }, 
+          "threshold": {
+            "maxValue": 0, 
+            "minValue": 0, 
+            "type": "exact", 
+            "value": 30
+          }, 
+          "type": "Izhikevich", 
+          "u": {
+            "maxValue": -11, 
+            "minValue": -15, 
+            "type": "uniform", 
+            "value": 0
+          }, 
+          "v": {
+            "maxValue": -55, 
+            "minValue": -75, 
+            "type": "uniform", 
+            "value": 0
+          }
+        }
+      }
+    ], 
+    "classification": "cellGroup", 
+    "description": "Description", 
+    "name": "Home"
+  }, 
+  "classification": "model", 
+  "description": "Description", 
+  "name": "Current Model", 
+  "synapses": []
+}
+
+
+SIMULATION:
+{
+  "duration": null, 
+  "fsv": null, 
+  "includeDistance": "No", 
+  "inputs": [], 
+  "interactive": "No", 
+  "name": null, 
+  "outputs": [], 
+  "seed": null
+}
