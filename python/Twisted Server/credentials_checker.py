@@ -55,8 +55,9 @@ class DBCredentialsChecker(object):
 				if DEBUG:
 					print 'Valid credentials'
 
-				# this passes back the username as the avatar ID
-				deferred.callback(credentials.username) 
+				# this passes back <username>:<lab id> as the avatar ID
+				deferred.callback(credentials.username + ':' + str(result[0].get('lab_id'))) 
+				#deferred.callback(credentials.username)
 			else:
 				if DEBUG:
 					print 'Incorrect password'

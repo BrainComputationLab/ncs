@@ -5,10 +5,10 @@
     "cellGroups": {
       "cellGroups": [
         {
-          "$$hashKey": "09B", 
           "classification": "cells", 
           "description": "Description", 
           "geometry": "Sphere", 
+          "hashKey": "09B", 
           "name": "Cell 3", 
           "num": 150, 
           "parameters": {
@@ -102,10 +102,10 @@ MODEL:
   "cellGroups": {
     "cellGroups": [
       {
-        "$$hashKey": "09B", 
         "classification": "cells", 
         "description": "Description", 
         "geometry": "Sphere", 
+        "hashKey": "09B", 
         "name": "Cell 3", 
         "num": 150, 
         "parameters": {
