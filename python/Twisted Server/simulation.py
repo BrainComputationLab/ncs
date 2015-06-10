@@ -47,6 +47,6 @@ class Simulation:
 
 		self.modelService.add_stims_and_reports(self.sim, json_sim_input_and_output, json_model, neuron_groups, synapse_groups)
 
-	def run_sim(self, params):
+	def run_sim(self, params, ign):
 		#self.sim.run(duration=1.0)
 		pass

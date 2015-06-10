@@ -87,7 +87,7 @@ class ProxyService(service.Service):
 
     def startService(self):
         service.Service.startService(self)
-        log.msg('Service for receiving sim data is running')
+        log.msg('Service for receiving simulation data has been started')
 
     def recv_data(self):
         clientFactory = SendSimDataToClientProtocolFactory()
