@@ -20,23 +20,23 @@ from twisted.application import internet, service
 from twisted.internet.protocol import ServerFactory, Protocol
 from twisted.python import log
 
-from stream_data_proxy import ProxyService, RecvSimDataProxyProtocolFactory
+from data_receiver import RecvDataService, RecvDataProtocolFactory
 from add_user import AddUserService, AddUserProtocolFactory
 from authenticator import AuthenticationService, AuthenticationServiceFactory
 
 # configuration parameters
-sim_port = 10000
+sim_port = 8005
 add_user_port = 8009
-ncb_port = 8005
+ncb_port = 8004
 iface = '127.0.1.1'
 
 # this will hold the services that combine to form the server
 top_service = service.MultiService()
 
 # service for receiving sim output and relaying it to clients
-proxy_service = ProxyService()
-proxy_service.setServiceParent(top_service)
-factory = RecvSimDataProxyProtocolFactory(proxy_service)
+data_service = RecvDataService()
+data_service.setServiceParent(top_service)
+factory = RecvDataProtocolFactory(data_service)
 tcp_service = internet.TCPServer(sim_port, factory, interface=iface)
 tcp_service.setServiceParent(top_service)
 

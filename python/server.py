@@ -20,8 +20,8 @@ sys.path.append(protobuf_path)
 import SimData_pb2
 from model import ModelService
 
-inputPort = 8001
-outputPort = 8003
+inputPort = 8004
+outputPort = 8005
 
 group_1 = None
 
@@ -291,9 +291,11 @@ def handleInputSocket(clientSocket):
 	# handles assigning neurons, synapses, and groups
 	neuron_groups = []
 	synapse_groups = []
+	sim = ncs.Simulation()
 	modelService.process_model(sim, json_model, neuron_groups, synapse_groups)
-	modelService.add_stims_and_reports(sim, json_sim_input_and_output, neuron_groups, synapse_groups)
-
+	sim.init(sys.argv)
+	#modelService.add_stims_and_reports(sim, json_sim_input_and_output, json_model, neuron_groups, synapse_groups)
+	sim.run(duration=1.0)
 	# close sockets
 	file.close()
 	clientSocket.close()	
@@ -305,7 +307,7 @@ def handleOutputSocket(clientSocket):
 	# create socket to stream simulation data
 	outputSocket = socket(AF_INET, SOCK_STREAM)
 	try:
-		outputSocket.connect((host,8005))
+		outputSocket.connect((host,8004))
 		print 'Established connection with web server'
 	except Exception, e:
 		print >>sys.stderr, "Error with output socket. Exception type is " + str(e)
@@ -407,7 +409,7 @@ if __name__ == '__main__':
 	thread.start_new_thread(acceptClientsForOutput,(outputSocket,))
 
 	# start running the simulation
-	sim = ncs.Simulation()
+	
 	#jsonTest(sim)
 	#sim_thread = SimThread(sim, 5, sim_script)
 	#sim_thread.start()

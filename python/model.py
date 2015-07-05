@@ -1956,7 +1956,8 @@ class ModelService(object):
         # fsv, includeDistance, interactive, and seed are not used...  
         print "ATTEMPTING TO RUN"
         # duration (in seconds) - each time step is 1 ms         
-        sim.run(duration=float(entity_dicts['duration']))          
+        sim.run(duration=float(entity_dicts['duration'])) 
+        #sim.run(duration=1.0)         
 
         return errors
 
