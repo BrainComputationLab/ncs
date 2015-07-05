@@ -25,6 +25,11 @@ AsciiStream<T>::AsciiStream(std::ostream& stream,
     bool connected = client_socket.bindWithoutThrow( "127.0.1.1", 8005 ); // THIS IS THE PORT THE DAEMON IS LISTENING ON
     std::cout << "Connection status: " << connected << std::endl;
 
+    // testing username send
+    if (connected) {
+      client_socket << "username.reportname";
+    }
+
     size_t num_elements = data_source_->getTotalNumberOfElements();
 
     while(true) {
@@ -45,7 +50,7 @@ AsciiStream<T>::AsciiStream(std::ostream& stream,
       else {
 
         // append the size of the message to the message
-        buffer = std::to_string(buffer.length()) + buffer;
+        //buffer = std::to_string(buffer.length()) + buffer;
 
         // send the message
         if (connected) {
@@ -65,7 +70,7 @@ AsciiStream<T>::AsciiStream(std::ostream& stream,
         else {
 
         // append the size of the message to the message
-          buffer = std::to_string(buffer.length()) + buffer;
+          //buffer = std::to_string(buffer.length()) + buffer;
 
         // send the message
           if (connected)
