@@ -41,7 +41,10 @@ tests/test_dbref.py
 tests/test_filters.py
 tests/test_find_and_modify.py
 tests/test_objects.py
+tests/test_protocol.py
 tests/test_queries.py
+tests/test_replicaset.py
+tests/test_write_concern.py
 txmongo/__init__.py
 txmongo/collection.py
 txmongo/connection.py

@@ -15,6 +15,7 @@ decoding as well as Exception types, when applicable.
 
 from collections import namedtuple
 import struct
+import __builtin__
 
 import base64
 import hmac
@@ -67,13 +68,15 @@ REPLY_AWAIT_CAPABLE = 1 << 3
 UPDATE_UPSERT = 1 << 0
 UPDATE_MULTI = 1 << 1
 
+INSERT_CONTINUE_ON_ERROR = 1 << 0
+
 Msg = namedtuple("Msg", ["len", "request_id", "response_to", "opcode", "message"])
 
 class KillCursors(namedtuple("KillCursors", ["len", "request_id", "response_to", "opcode",
                                              "zero", "n_cursors", "cursors"])):
     def __new__(cls, len=0, request_id=0, response_to=0, opcode=OP_KILL_CURSORS,
                 zero=0, n_cursors=0, cursors=None):
-        n_cursors = __builtins__["len"](cursors)
+        n_cursors = __builtin__.len(cursors)
         return super(KillCursors, cls).__new__(cls, len, request_id, response_to,
                                                opcode, zero, n_cursors, cursors)
 
@@ -308,14 +311,24 @@ class MongoProtocol(MongoServerProtocol, MongoClientProtocol):
                 df.callback(self)
 
     def connectionLost(self, reason=connectionDone):
+        # We need to clear factory.instance before failing deferreds
+        # because client code might immediately re-issue query when
+        # it catches AutoReconnect, so we must invalidate current
+        # connection before. Factory.clientConnectionFailed() is called
+        # too late.
+        self.factory.setInstance(None, reason)
+
+        autoreconnect = AutoReconnect()
+
         if self.__deferreds:
             deferreds, self.__deferreds = self.__deferreds, {}
             for df in deferreds.itervalues():
-                df.errback(reason)
+                df.errback(autoreconnect)
         deferreds, self.__connection_ready = self.__connection_ready, []
         if deferreds:
             for df in deferreds:
-                df.errback(reason)
+                df.errback(autoreconnect)
+
         protocol.Protocol.connectionLost(self, reason)
 
     def connectionReady(self):
@@ -365,18 +378,10 @@ class MongoProtocol(MongoServerProtocol, MongoClientProtocol):
         self.transport.loseConnection()
 
     @defer.inlineCallbacks
-    def get_last_error(self, db):
-        command = {"getlasterror": 1}
+    def get_last_error(self, db, **options):
+        command = SON([("getlasterror", 1)])
         db = "%s.$cmd" % db.split('.', 1)[0]
-        uri = self.factory.uri
-        if 'w' in uri["options"]:
-            command['w'] = int(uri["options"]['w'])
-        if "wtimeoutms" in uri["options"]:
-            command["wtimeout"] = int(uri["options"]["wtimeoutms"])
-        if "fsync" in uri["options"]:
-            command["fsync"] = bool(uri["options"]["fsync"])
-        if "journal" in uri["options"]:
-            command["journal"] = bool(uri["options"]["journal"])
+        command.update(options)
 
         query = Query(collection=db, query=command)
         reply = yield self.send_QUERY(query)

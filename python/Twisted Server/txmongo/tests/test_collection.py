@@ -65,7 +65,7 @@ class TestIndexInfo(unittest.TestCase):
         self.assertRaises(errors.InvalidName, make_col, self.db.test, "tes..t")
         self.assertRaises(errors.InvalidName, make_col, self.db.test, "tes\x00t")
         self.assertRaises(TypeError, self.coll.save, "test")
-        self.assertRaises(ValueError, self.coll.filemd5, "test")
+        self.assertFailure(self.coll.filemd5("test"), ValueError)
         self.assertFailure(self.db.test.find(spec="test"), TypeError)
         self.assertFailure(self.db.test.find(fields="test"), TypeError)
         self.assertFailure(self.db.test.find(skip="test"), TypeError)
@@ -86,7 +86,7 @@ class TestIndexInfo(unittest.TestCase):
         self.assertEqual(self.db.test.test, self.db.test("test"))
 
         options = yield self.db.test.options()
-        self.assertIsInstance(options, dict)
+        self.assertTrue(isinstance(options, dict))
 
         yield self.db.drop_collection("test")
         collection_names = yield self.db.collection_names()
@@ -97,8 +97,8 @@ class TestIndexInfo(unittest.TestCase):
         db = self.db
         coll = self.coll
 
-        self.assertRaises(TypeError, coll.create_index, 5)
-        self.assertRaises(TypeError, coll.create_index, {"hello": 1})
+        self.assertFailure(coll.create_index(5), TypeError)
+        self.assertFailure(coll.create_index({"hello": 1}), TypeError)
 
         yield coll.insert({'c': 1})  # make sure collection exists.
 
@@ -144,6 +144,21 @@ class TestIndexInfo(unittest.TestCase):
 
         ix = coll.create_index(filter.sort(filter.ASCENDING("b")), unique=True)
         yield self.assertFailure(ix, errors.DuplicateKeyError)
+
+    @defer.inlineCallbacks
+    def test_create_index_dropdups(self):
+        # dropDups was removed from MongoDB v3.0
+        ismaster = yield self.db.command("ismaster")
+        if ismaster["maxWireVersion"] >= 3:
+            raise unittest.SkipTest("dropDups was removed from MongoDB 3")
+
+        yield self.coll.drop()
+        yield self.coll.insert([{'b': 1}, {'b': 1}])
+
+        ix = yield self.coll.create_index(filter.sort(filter.ASCENDING('b')),
+                                          unique=True, drop_dups=True)
+        docs = yield self.coll.find(fields={"_id": 0})
+        self.assertEqual(docs, [{'b': 1}])
 
     @defer.inlineCallbacks
     def test_ensure_index(self):
@@ -228,20 +243,114 @@ class TestIndexInfo(unittest.TestCase):
         yield coll.create_index(filter.sort(filter.GEOHAYSTACK("pos") +
                                             filter.ASCENDING("type")), **{"bucket_size": 1})
 
-        # TODO: A db.command method has not been implemented yet.
-        # Sending command directly
-        command = SON([
-            ("geoSearch", "mycol"),
-            ("near", [33, 33]),
-            ("maxDistance", 6),
-            ("search", {"type": "restaurant"}),
-            ("limit", 30),
-        ])
-           
-        results = yield db["$cmd"].find_one(command)
+        results = yield db.command("geoSearch", "mycol",
+                                   near=[33, 33],
+                                   maxDistance=6,
+                                   search={"type": "restaurant"},
+                                   limit=30)
         self.assertEqual(2, len(results["results"]))
         self.assertEqual({
             "_id": _id,
             "pos": {"long": 34.2, "lat": 33.3},
             "type": "restaurant"
         }, results["results"][0])
+
+
+    @defer.inlineCallbacks
+    def test_drop_index(self):
+        yield self.coll.drop_indexes()
+
+        index = filter.sort(filter.ASCENDING("hello") + filter.DESCENDING("world"))
+
+        yield self.coll.create_index(index, name="myindex")
+        res = yield self.coll.drop_index("myindex")
+        self.assertEqual(res["ok"], 1)
+
+        yield self.coll.create_index(index)
+        res = yield self.coll.drop_index(index)
+        self.assertEqual(res["ok"], 1)
+
+        self.assertRaises(TypeError, self.coll.drop_index, 123)
+
+
+class TestRename(unittest.TestCase):
+
+    def setUp(self):
+        self.conn = txmongo.MongoConnection(mongo_host, mongo_port)
+        self.db = self.conn.mydb
+
+    @defer.inlineCallbacks
+    def tearDown(self):
+        yield self.conn.disconnect()
+
+    @defer.inlineCallbacks
+    def test_Rename(self):
+        coll = yield self.db.create_collection("coll1")
+        yield coll.insert({'x': 42}, safe=True)
+
+        yield coll.rename("coll2")
+
+        doc = yield self.db.coll2.find_one(fields={"_id": 0})
+        self.assertEqual(doc, {'x': 42})
+
+        yield self.db.coll2.drop()
+
+
+class TestOptions(unittest.TestCase):
+
+    def setUp(self):
+        self.conn = txmongo.MongoConnection(mongo_host, mongo_port)
+        self.db = self.conn.mydb
+
+    @defer.inlineCallbacks
+    def tearDown(self):
+        yield self.conn.disconnect()
+
+    @defer.inlineCallbacks
+    def test_Options(self):
+        coll = yield self.db.create_collection("opttest", {"capped": True, "size": 4096})
+        self.assertTrue(isinstance(coll, Collection))
+
+        opts = yield coll.options()
+        self.assertEqual(opts["capped"], True)
+        self.assertEqual(opts["size"], 4096)
+
+        yield coll.drop()
+
+    @defer.inlineCallbacks
+    def test_NonExistingCollection(self):
+        opts = yield self.db.nonexisting.options()
+        self.assertEqual(opts, {})
+
+    @defer.inlineCallbacks
+    def test_WithoutOptions(self):
+        coll = yield self.db.create_collection("opttest")
+        opts = yield coll.options()
+        self.assertEqual(opts, {})
+
+        yield coll.drop()
+
+
+class TestCreateCollection(unittest.TestCase):
+
+    def setUp(self):
+        self.conn = txmongo.MongoConnection(mongo_host, mongo_port)
+        self.db = self.conn.mydb
+
+    @defer.inlineCallbacks
+    def tearDown(self):
+        yield self.conn.disconnect()
+
+    @defer.inlineCallbacks
+    def test_Fail(self):
+        # Not using assertFailure() here because it doesn't wait until deferred is
+        # resolved or failed but there was a bug that made deferred hang forever
+        # in case if create_collection failed
+        try:
+            # Negative size
+            yield self.db.create_collection("opttest", {"size": -100})
+        except errors.OperationFailure as e:
+            pass
+        else:
+            self.fail()
+    test_Fail.timeout = 10

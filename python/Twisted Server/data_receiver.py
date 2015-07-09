@@ -1,11 +1,16 @@
 # -*- coding: utf-8 -*-
 
-import optparse, os
+import optparse, os, sys, ncs, struct
 from twisted.internet.defer import Deferred, succeed
-from twisted.internet.protocol import ClientFactory, ServerFactory, Protocol
+from twisted.internet.protocol import ClientFactory, ServerFactory, Protocol, ClientCreator
+from twisted.internet.defer import inlineCallbacks, returnValue
+from twisted.internet import reactor, task
 from twisted.application import internet, service
 from twisted.python import log
-import sys, ncs, struct
+from txamqp.protocol import AMQClient
+from txamqp.client import TwistedDelegate
+from txamqp.content import Content
+import txamqp.spec
 
 protobuf_path = ('../../base/include/ncs/proto')
 sys.path.append(protobuf_path)
@@ -19,36 +24,72 @@ simOutputRecvPort = 8005
 class RecvDataProtocol(Protocol):
 
     def __init__(self):
-        self.fifo = None
-        self.testfile = open("testfile", "w")
+        self.deferred = None
+        self.testfile = None
+        self.routing_key = None
+        self.first_message = True
+
+    @inlineCallbacks
+    def gotConnection(self, connection, username, password):
+        yield connection.authenticate(username, password)
+        if DEBUG:
+            print "Authenticated. Ready to send messages"
+
+        channel = yield connection.channel(1)
+        yield channel.channel_open()
+        returnValue((connection, channel))
+
+    @inlineCallbacks
+    def send_message(self, result, message):
+        connection, channel = result
+        msg = Content(message)
+        msg["delivery mode"] = 2
+
+        # TODO: replace the routing key with the username and sim name retrieved with the data
+        yield channel.basic_publish(exchange='chatservice', routing_key="txamqp_chatroom", content=msg)
+        if DEBUG:
+            print "Sending message: %s" % message
+        returnValue(result)
+
+    @inlineCallbacks
+    def cleanup(self, result):
+        connection, channel = result
+        stopToken = "STOP"
+        msg = Content(stopToken)
+        msg["delivery mode"] = 2
+        channel.basic_publish(exchange="chatservice", content=msg, routing_key="txamqp_chatroom")
+        yield channel.channel_close()
+        chan0 = yield connection.channel(0)
+        yield chan0.connection_close()
+
+    def connectionMade(self):
+
+        # Hey man, it's just temporary
+        self.testfile = open("testing-1-2-3.txt", "w")
+
+        host = "localhost"
+        port = 5672
+        vhost = '/'
+        username = "guest"
+        password = "guest"
+        spec = txamqp.spec.load("txamqp/amqp0-8.stripped.rabbitmq.xml")
+
+        delegate = TwistedDelegate()
+
+        self.deferred = ClientCreator(reactor, AMQClient, delegate=delegate, vhost=vhost, spec=spec).connectTCP(host, port)
+        self.deferred.addCallback(self.gotConnection, username, password)
 
     def dataReceived(self, data):
+        if self.first_message:
+            self.first_message = False
 
-        print 'IN DATA RECV'
+            #TODO: this is the username.reportname. Do something with it.
+            self.routing_key = data
 
-        if self.fifo:
-
-            # protobuf message instance
-            sim_data = SimData_pb2.SimData();
-
-            # receive the message length
-            #msg = (clientSocket.recvfrom(1))[0]
-            #msg_size = int(msg) 
-
-            # receive the report name
-            #report_name_size = int((connectionSocket.recvfrom(2))[0])
-            #report_name = (connectionSocket.recvfrom(report_name_size))[0]
-            #msg_size -= (report_name_size + 2)
-
-            # ensure we received the entire message before deserializing
-            '''buffer = ''
-            while len(buffer) < msg_size:
-                chunk = clientSocket.recv(msg_size - len(buffer))
-                if chunk == '':
-                    break
-                buffer += chunk'''
+        else:
 
             # deserialize the protocol buffer
+            sim_data = SimData_pb2.SimData();
             sim_data.ParseFromString(data)
 
             # unpack the bytes into floats
@@ -56,28 +97,15 @@ class RecvDataProtocol(Protocol):
             bytes = temp[len(temp) - 1] 
             if len(bytes) < 4:
                 bytes = bytes.zfill(4)
+
             value = struct.unpack('f', bytes)[0]
+
             self.testfile.write(str(value)+'\n')
-            self.fifo.write(str(value)+'\n')
-
-        else:
-            # invalid first message (does not contain username and report name)
-            if '.' not in data: # IS THIS HOW WE PLAN TO SEND IT?
-                self.transport.loseConnection()
-            else:
-                #path = os.path.join()
-                path = 'data/' + data.split('.')[0] + data.split('.')[1]
-
-                if DEBUG:
-                    print 'Fifo path: ' + path
-
-                os.mkfifo(path)
-                self.fifo = open(path, 'w')
+            self.deferred.addCallback(self.send_message, str(value))
 
     def connectionLost(self, reason):
-        if self.fifo is not None:
-            self.fifo.close()
         self.testfile.close()
+        self.deferred.addCallback(self.cleanup)
 
 class RecvDataProtocolFactory(ServerFactory):
 
@@ -88,12 +116,16 @@ class RecvDataProtocolFactory(ServerFactory):
 
 class RecvDataService(service.Service):
 
-    data = None
-
-    def __init__(self):
-        # set recv factory instance?
-        pass
-
     def startService(self):
         service.Service.startService(self)
         log.msg('Service for receiving simulation data has been started')
+
+# TODO: connect this as a service to the daemon
+if __name__ == "__main__":
+
+    # listen for connections for receiving data from the simulator
+    service = RecvDataService()
+    recvFactory = RecvDataProtocolFactory(service)
+    port = reactor.listenTCP(simOutputRecvPort, recvFactory)
+
+    reactor.run()

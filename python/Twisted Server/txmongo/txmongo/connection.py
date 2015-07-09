@@ -4,6 +4,8 @@
 
 from pymongo.errors import AutoReconnect, ConfigurationError, OperationFailure
 from pymongo.uri_parser import parse_uri
+from pymongo.read_preferences import ReadPreference
+from pymongo.write_concern import WriteConcern
 
 from twisted.internet import defer, reactor, task
 from twisted.internet.protocol import ReconnectingClientFactory
@@ -13,9 +15,13 @@ from txmongo.database import Database
 from txmongo.protocol import MongoProtocol, Query
 
 
+_PRIMARY_READ_PREFERENCES = set([ReadPreference.PRIMARY.mode,
+                                 ReadPreference.PRIMARY_PREFERRED.mode])
+
+
 class _Connection(ReconnectingClientFactory):
     __notify_ready = None
-    __discovered = None
+    __allnodes = None
     __index = -1
     __uri = None
     __conf_loop = None
@@ -26,7 +32,7 @@ class _Connection(ReconnectingClientFactory):
     maxDelay = 60
 
     def __init__(self, pool, uri, id):
-        self.__discovered = []
+        self.__allnodes = list(uri["nodelist"])
         self.__notify_ready = []
         self.__pool = pool
         self.__uri = uri
@@ -39,19 +45,31 @@ class _Connection(ReconnectingClientFactory):
     def buildProtocol(self, addr):
         # Build the protocol.
         p = ReconnectingClientFactory.buildProtocol(self, addr)
-
-        ready_deferred = p.connectionReady()
-
-        if not self.uri['options'].get('slaveok', False):
-            # Update our server configuration. This may disconnect if the node
-            # is not a master.
-            ready_deferred.addCallback(lambda _: self.configure(p))
-
-        ready_deferred\
-            .addCallback(lambda _: self._auth_proto(p))\
-            .addBoth(lambda _: self.setInstance(instance=p))
+        self._initializeProto(p)
         return p
 
+    @defer.inlineCallbacks
+    def _initializeProto(self, proto):
+        yield proto.connectionReady()
+        self.resetDelay()
+
+        uri_options = self.uri['options']
+        slaveok = uri_options.get('slaveok', False)
+        if 'readpreference' in uri_options:
+            slaveok = uri_options['readpreference'] not in _PRIMARY_READ_PREFERENCES
+
+        try:
+            if not slaveok:
+                # Update our server configuration. This may disconnect if the node
+                # is not a master.
+                yield self.configure(proto)
+
+            yield self._auth_proto(proto)
+            self.setInstance(instance=proto)
+        except Exception as e:
+            proto.fail(e)
+
+    @defer.inlineCallbacks
     def configure(self, proto):
         """
             Configures the protocol using the information gathered from the
@@ -59,22 +77,19 @@ class _Connection(ReconnectingClientFactory):
             BSON document size, replica set configuration, and the master
             status of the instance.
             """
-        if proto:
-            query = Query(collection="admin.$cmd", query={"ismaster": 1})
-            df = proto.send_QUERY(query)
-            df.addCallback(self._configureCallback, proto)
-            return df
-        return defer.succeed(None)
 
-    def _configureCallback(self, reply, proto):
-        """
-            Handle the reply from the "ismaster" query. The reply contains
-            configuration information about the peer.
-            """
+        if not proto:
+            defer.returnValue(None)
+
+        query = Query(collection="admin.$cmd", query={"ismaster": 1})
+        reply = yield proto.send_QUERY(query)
+
+        # Handle the reply from the "ismaster" query. The reply contains
+        # configuration information about the peer.
+
         # Make sure we got a result document.
         if len(reply.documents) != 1:
-            proto.fail(OperationFailure("Invalid document length."))
-            return
+            raise OperationFailure("Invalid document length.")
 
         # Get the configuration document from the reply.
         config = reply.documents[0].decode()
@@ -83,18 +98,15 @@ class _Connection(ReconnectingClientFactory):
         if not config.get("ok"):
             code = config.get("code")
             msg = config.get("err", "Unknown error")
-            proto.fail(OperationFailure(msg, code))
-            return
+            raise OperationFailure(msg, code)
 
         # Check that the replicaSet matches.
         set_name = config.get("setName")
-        expected_set_name = self.uri["options"].get("setname")
+        expected_set_name = self.uri["options"].get("replicaset")
         if expected_set_name and (expected_set_name != set_name):
             # Log the invalid replica set failure.
             msg = "Mongo instance does not match requested replicaSet."
-            reason = ConfigurationError(msg)
-            proto.fail(reason)
-            return
+            raise ConfigurationError(msg)
 
         # Track max bson object size limit.
         max_bson_size = config.get("maxBsonObjectSize")
@@ -107,22 +119,20 @@ class _Connection(ReconnectingClientFactory):
         # Track the other hosts in the replica set.
         hosts = config.get("hosts")
         if isinstance(hosts, list) and hosts:
-            hostaddrs = []
             for host in hosts:
                 if ':' not in host:
                     host = (host, 27017)
                 else:
                     host = host.split(':', 1)
                     host[1] = int(host[1])
-                hostaddrs.append(host)
-            self.__discovered = hostaddrs
+                    host = tuple(host)
+                if host not in self.__allnodes:
+                    self.__allnodes.append(host)
 
         # Check if this node is the master.
         ismaster = config.get("ismaster")
         if not ismaster:
-            reason = AutoReconnect("not master")
-            proto.fail(reason)
-            return
+            raise AutoReconnect("not master")
 
     def clientConnectionFailed(self, connector, reason):
         self.instance = None
@@ -147,8 +157,6 @@ class _Connection(ReconnectingClientFactory):
             """
         if self.instance:
             return defer.succeed(self.instance)
-        if self.__notify_ready is None:
-            self.__notify_ready = []
         df = defer.Deferred()
         self.__notify_ready.append(df)
         return df
@@ -171,12 +179,11 @@ class _Connection(ReconnectingClientFactory):
         delay = False
         self.__index += 1
 
-        all_nodes = list(self.uri["nodelist"]) + list(self.__discovered)
-        if self.__index >= len(all_nodes):
+        if self.__index >= len(self.__allnodes):
             self.__index = 0
             delay = True
 
-        connector.host, connector.port = all_nodes[self.__index]
+        connector.host, connector.port = self.__allnodes[self.__index]
 
         if delay:
             self.retry(connector)
@@ -184,6 +191,10 @@ class _Connection(ReconnectingClientFactory):
             connector.connect()
 
     def setInstance(self, instance=None, reason=None):
+        if instance == self.instance:
+            # Should not fail deferreds from __notify_ready if setInstance(None)
+            # called when instance is already None
+            return
         self.instance = instance
         deferreds, self.__notify_ready = self.__notify_ready, []
         if deferreds:
@@ -224,21 +235,30 @@ class ConnectionPool(object):
     __pool_size = None
     __uri = None
 
-    def __init__(self, uri="mongodb://127.0.0.1:27017", pool_size=1, ssl_context_factory=None):
+    __wc_possible_options = set(['w', "wtimeout", 'j', "fsync"])
+
+    def __init__(self, uri="mongodb://127.0.0.1:27017", pool_size=1, ssl_context_factory=None, **kwargs):
         assert isinstance(uri, basestring)
         assert isinstance(pool_size, int)
         assert pool_size >= 1
 
         if not uri.startswith("mongodb://"):
-            uri = "mongodb://".join(uri)
+            uri = "mongodb://" + uri
 
         self.__uri = parse_uri(uri)
+
+        wc_options = self.__uri['options'].copy()
+        wc_options.update(kwargs)
+        wc_options = dict((k, v) for k, v in wc_options.items() if k in self.__wc_possible_options)
+        self.__write_concern = WriteConcern(**wc_options)
+
         self.__pool_size = pool_size
         self.__pool = [_Connection(self, self.__uri, i) for i in range(pool_size)]
 
         if self.__uri['database'] and self.__uri['username'] and self.__uri['password']:
             self.authenticate(self.__uri['database'], self.__uri['username'],
-                              self.__uri['password'])
+                              self.__uri['password'],
+                              self.__uri['options'].get('authmechanism', 'DEFAULT'))
 
         host, port = self.__uri['nodelist'][0]
 
@@ -247,6 +267,10 @@ class ConnectionPool(object):
                 factory.connector = reactor.connectSSL(host, port, factory, ssl_context_factory)
             else:
                 factory.connector = reactor.connectTCP(host, port, factory)
+
+    @property
+    def write_concern(self):
+        return self.__write_concern
 
     def getprotocols(self):
         return self.__pool
@@ -294,6 +318,7 @@ class ConnectionPool(object):
             raise e.subFailure
 
 
+    @defer.inlineCallbacks
     def getprotocol(self):
         # Get the next protocol available for communication in the pool.
         connection = self.__pool[self.__index]
@@ -301,10 +326,11 @@ class ConnectionPool(object):
 
         # If the connection is already connected, just return it.
         if connection.instance:
-            return defer.succeed(connection.instance)
+            defer.returnValue(connection.instance)
 
         # Wait for the connection to connection.
-        return connection.notifyReady().addCallback(lambda c: c.instance)
+        yield connection.notifyReady()
+        defer.returnValue(connection.instance)
 
     @property
     def uri(self):
@@ -316,9 +342,9 @@ class ConnectionPool(object):
 ###
 
 class MongoConnection(ConnectionPool):
-    def __init__(self, host="127.0.0.1", port=27017, pool_size=1):
+    def __init__(self, host="127.0.0.1", port=27017, pool_size=1, **kwargs):
         uri = "mongodb://%s:%d/" % (host, port)
-        ConnectionPool.__init__(self, uri, pool_size=pool_size)
+        ConnectionPool.__init__(self, uri, pool_size=pool_size, **kwargs)
 
 
 lazyMongoConnectionPool = MongoConnection

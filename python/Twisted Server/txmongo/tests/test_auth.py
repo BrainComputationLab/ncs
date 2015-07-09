@@ -1,5 +1,5 @@
 # coding: utf-8
-# Copyright 2015 Ilya Skriblovsky
+# Copyright 2015 Ilya Skriblovsky <ilyaskriblovsky@gmail.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
+import tempfile
 import shutil
 import txmongo
 from bson.son import SON
@@ -62,17 +62,19 @@ class TestMongoAuth(unittest.TestCase):
         conn = self.__get_connection()
 
         try:
-            create_user = SON({"createUser": self.ua_login})
-            create_user.update({"pwd": self.ua_password, "roles": [{"role": "userAdminAnyDatabase",
-                                                                    "db": "admin"}]})
-            r = yield conn["admin"]["$cmd"].find_one(create_user)
+            self.ismaster = yield conn.admin.command("ismaster")
+
+            r = yield conn.admin.command("createUser", self.ua_login,
+                                         pwd=self.ua_password,
+                                         roles=[{"role": "userAdminAnyDatabase",
+                                                 "db": "admin"}])
 
             try:
                 # This should fail if authentication enabled in MongoDB since
                 # we've created user but didn't authenticated
                 yield conn[self.db1][self.coll].find_one()
 
-                yield conn["admin"]["$cmd"].find_one({"dropUser": self.ua_login})
+                yield conn.admin.command("dropUser", self.ua_login)
                 raise unittest.SkipTest("Authentication tests require authorization enabled "
                                         "in MongoDB configuration file")
             except OperationFailure:
@@ -85,24 +87,21 @@ class TestMongoAuth(unittest.TestCase):
         conn = self.__get_connection()
         yield conn["admin"].authenticate(self.ua_login, self.ua_password)
 
-        create_user = SON({"createUser": self.login1})
-        create_user.update({"pwd": self.password1, "roles": [{"role": "readWrite",
-                                                              "db": self.db1}]})
-        yield conn[self.db1]["$cmd"].find_one(create_user)
+        yield conn[self.db1].command("createUser", self.login1,
+                                     pwd=self.password1,
+                                     roles=[{"role": "readWrite",
+                                             "db": self.db1}])
 
-        create_user = SON({"createUser": self.login2})
-        create_user.update({"pwd": self.password2, "roles": [{"role": "readWrite",
-                                                              "db": self.db2}]})
-        yield conn[self.db2]["$cmd"].find_one(create_user)
+        yield conn[self.db2].command("createUser", self.login2,
+                                    pwd=self.password2,
+                                    roles=[{"role": "readWrite",
+                                            "db": self.db2}])
 
         yield conn.disconnect()
 
     @defer.inlineCallbacks
     def setUp(self):
-        self.__datadir = self.mktemp()
-        os.makedirs(self.__datadir)
-
-        self.__mongod = Mongod(self.__datadir, port=mongo_port, auth=True)
+        self.__mongod = Mongod(port=mongo_port, auth=True)
         yield self.__mongod.start()
 
         yield self.createUserAdmin()
@@ -118,13 +117,12 @@ class TestMongoAuth(unittest.TestCase):
 
             yield conn[self.db1][self.coll].drop()
             yield conn[self.db2][self.coll].drop()
-            yield conn[self.db1]["$cmd"].find_one({"dropUser": self.login1})
-            yield conn[self.db2]["$cmd"].find_one({"dropUser": self.login2})
-            yield conn["admin"]["$cmd"].find_one({"dropUser": self.ua_login})
+            yield conn[self.db1].command("dropUser", self.login1)
+            yield conn[self.db2].command("dropUser", self.login2)
+            yield conn["admin"].command("dropUser", self.ua_login)
             yield conn.disconnect()
         finally:
             yield self.__mongod.stop()
-            shutil.rmtree(self.__datadir)
 
     @defer.inlineCallbacks
     def test_AuthConnectionPool(self):
@@ -222,5 +220,134 @@ class TestMongoAuth(unittest.TestCase):
 
             yield conn[self.db2].authenticate(self.login2, self.password2)
             yield conn[self.db2][self.coll].find_one()
+        finally:
+            yield conn.disconnect()
+
+    @defer.inlineCallbacks
+    def test_MechanismArg(self):
+        conn = self.__get_connection()
+        try:
+            # Force connect
+            yield self.assertFailure(conn[self.db1][self.coll].find_one(), OperationFailure)
+
+            auth = conn[self.db1].authenticate(self.login1, self.password1, mechanism="XXX")
+            yield self.assertFailure(auth, MongoAuthenticationError)
+        finally:
+            yield conn.disconnect()
+
+    @defer.inlineCallbacks
+    def test_Explicit_SCRAM_SHA_1(self):
+        if self.ismaster["maxWireVersion"] < 3:
+            raise unittest.SkipTest("This test is only applicable to MongoDB >= 3")
+
+        conn = self.__get_connection()
+        try:
+            yield conn[self.db1].authenticate(self.login1, self.password1, mechanism="SCRAM-SHA-1")
+            yield conn[self.db1][self.coll].find_one()
+        finally:
+            yield conn.disconnect()
+
+    @defer.inlineCallbacks
+    def test_InvalidArgs(self):
+        conn = self.__get_connection()
+        try:
+            yield self.assertFailure(conn[self.db1].authenticate(self.login1, 123), TypeError)
+            yield self.assertFailure(conn[self.db1].authenticate(123, self.password1), TypeError)
+        finally:
+            yield conn.disconnect()
+
+
+
+class TestMongoDBCR(unittest.TestCase):
+
+    ua_login = "useradmin"
+    ua_password = "useradminpwd"
+
+    db1 = "db1"
+    coll = "coll"
+    login1 = "user1"
+    password1 = "pwd1"
+
+    @defer.inlineCallbacks
+    def setUp(self):
+        self.dbpath = tempfile.mkdtemp()
+
+        mongod_noauth = Mongod(port=mongo_port, auth=False, dbpath=self.dbpath)
+        yield mongod_noauth.start()
+
+        try:
+            conn = txmongo.connection.MongoConnection(mongo_host, mongo_port)
+
+            try:
+                ismaster = yield conn.admin.command("ismaster")
+                if ismaster["maxWireVersion"] < 3:
+                    raise unittest.SkipTest("This test is only for MongoDB 3.0")
+
+                # Force MongoDB 3.x to use MONGODB-CR auth schema
+                yield conn.admin.system.version.update_one({"_id": "authSchema"},
+                                                           {"$set": {"currentVersion": 3}},
+                                                           upsert=True)
+            finally:
+                yield conn.disconnect()
+        finally:
+            yield mongod_noauth.stop()
+
+
+        self.mongod = Mongod(port=mongo_port, auth=True, dbpath=self.dbpath)
+        yield self.mongod.start()
+
+        try:
+            conn = txmongo.connection.MongoConnection(mongo_host, mongo_port)
+            try:
+                yield conn.admin.command("createUser", self.ua_login, pwd=self.ua_password,
+                                         roles=[{"role": "userAdminAnyDatabase", "db": "admin"}])
+                yield conn.admin.authenticate(self.ua_login, self.ua_password)
+
+                yield conn[self.db1].command("createUser", self.login1, pwd=self.password1,
+                                             roles=[{"role": "readWrite", "db": self.db1}])
+            finally:
+                yield conn.disconnect()
+        except:
+            yield self.mongod.stop()
+            raise
+
+
+    @defer.inlineCallbacks
+    def tearDown(self):
+        yield self.mongod.stop()
+        shutil.rmtree(self.dbpath)
+
+
+    @defer.inlineCallbacks
+    def test_ConnectionPool(self):
+        conn = txmongo.connection.ConnectionPool(mongo_uri)
+
+        try:
+            yield conn[self.db1].authenticate(self.login1, self.password1,
+                                              mechanism="MONGODB-CR")
+            yield conn[self.db1][self.coll].insert_one({'x': 42})
+        finally:
+            yield conn.disconnect()
+
+    @defer.inlineCallbacks
+    def test_ByURI(self):
+        uri = "mongodb://{0}:{1}@{2}:{3}/{4}?authMechanism=MONGODB-CR".format(
+            self.login1, self.password1, mongo_host, mongo_port, self.db1
+        )
+        conn = txmongo.connection.ConnectionPool(uri)
+        try:
+            yield conn[self.db1][self.coll].insert_one({'x': 42})
+        finally:
+            yield conn.disconnect()
+
+    @defer.inlineCallbacks
+    def test_Fail(self):
+        conn = txmongo.connection.ConnectionPool(mongo_uri)
+
+        try:
+            yield conn[self.db1].authenticate(self.login1, self.password1+'x',
+                                              mechanism="MONGODB-CR")
+            query = conn[self.db1][self.coll].insert_one({'x': 42})
+            yield self.assertFailure(query, OperationFailure)
         finally:
             yield conn.disconnect()

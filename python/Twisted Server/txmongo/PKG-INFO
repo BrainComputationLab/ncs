@@ -1,6 +1,6 @@
 Metadata-Version: 1.1
 Name: txmongo
-Version: 15.0.0
+Version: 15.1.0
 Summary: Asynchronous Python driver for MongoDB <http://www.mongodb.org>
 Home-page: https://github.com/twisted/txmongo
 Author: Alexandre Fiori, Bret Curtis

@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 from bson.son import SON
+from pymongo.helpers import _check_command_response
 from twisted.internet import defer
 from txmongo.collection import Collection
 
@@ -10,8 +11,9 @@ from txmongo.collection import Collection
 class Database(object):
     __factory = None
 
-    def __init__(self, factory, database_name):
+    def __init__(self, factory, database_name, write_concern=None):
         self.__factory = factory
+        self.__write_concern = write_concern
         self._database_name = unicode(database_name)
 
     def __str__(self):
@@ -21,7 +23,7 @@ class Database(object):
         return "Database(%r, %r)" % (self.__factory, self._database_name,)
 
     def __call__(self, database_name):
-        return Database(self._factory, database_name)
+        return Database(self.__factory, database_name, self.__write_concern)
 
     def __getitem__(self, collection_name):
         return Collection(self, collection_name)
@@ -37,28 +39,35 @@ class Database(object):
     def connection(self):
         return self.__factory
 
-    def create_collection(self, name, options=None):
-        def wrapper(result, deferred, collection):
-            if result.get("ok", 0.0):
-                deferred.callback(collection)
-            else:
-                deferred.errback(RuntimeError(result.get("errmsg", "unknown error")))
+    @property
+    def write_concern(self):
+        return self.__write_concern or self.__factory.write_concern
 
-        deferred = defer.Deferred()
+    @defer.inlineCallbacks
+    def command(self, command, value=1, check=True, allowable_errors=None, **kwargs):
+        if isinstance(command, basestring):
+            command = SON([(command, value)])
+        command.update(kwargs)
+
+        ns = self["$cmd"]
+        response = yield ns.find_one(command)
+
+        if check:
+            msg = "command {0} on namespace {1} failed: %s".format(repr(command), ns)
+            _check_command_response(response, msg, allowable_errors)
+
+        defer.returnValue(response)
+
+    @defer.inlineCallbacks
+    def create_collection(self, name, options=None):
         collection = Collection(self, name)
 
         if options:
             if "size" in options:
                 options["size"] = float(options["size"])
+            yield self.command("create", name, **options)
 
-            command = SON({"create": name})
-            command.update(options)
-            d = self["$cmd"].find_one(command)
-            d.addCallback(wrapper, deferred, collection)
-        else:
-            deferred.callback(collection)
-
-        return deferred
+        defer.returnValue(collection)
 
     def drop_collection(self, name_or_collection):
         if isinstance(name_or_collection, Collection):
@@ -68,22 +77,21 @@ class Database(object):
         else:
             raise TypeError("name must be an instance of basestring or txmongo.Collection")
 
-        return self["$cmd"].find_one({"drop": unicode(name)})
-
-    def collection_names(self):
-        def wrapper(results):
-            names = [r["name"] for r in results]
-            names = [n[len(str(self)) + 1:] for n in names
-                     if n.startswith(str(self) + ".")]
-            names = [n for n in names if "$" not in n]
-            return names
-
-        d = self["system.namespaces"].find()
-        d.addCallback(wrapper)
-        return d
+        return self.command("drop", unicode(name), allowable_errors=["ns not found"])
 
     @defer.inlineCallbacks
-    def authenticate(self, name, password):
+    def collection_names(self):
+        results = yield self["system.namespaces"].find()
+
+        names = [r["name"] for r in results]
+        names = [n[len(str(self)) + 1:] for n in names
+                 if n.startswith(str(self) + ".")]
+        names = [n for n in names if "$" not in n]
+        defer.returnValue(names)
+
+
+    @defer.inlineCallbacks
+    def authenticate(self, name, password, mechanism="DEFAULT"):
         """
         Send an authentication command for this database.
         mostly stolen from pymongo
@@ -96,4 +104,4 @@ class Database(object):
         """
         Authenticating
         """
-        yield self.connection.authenticate(self, name, password)
+        yield self.connection.authenticate(self, name, password, mechanism)

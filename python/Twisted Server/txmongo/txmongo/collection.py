@@ -9,14 +9,21 @@ from bson import BSON, ObjectId
 from bson.code import Code
 from bson.son import SON
 from pymongo.errors import InvalidName
+from pymongo.helpers import _check_write_command_response
+from pymongo.results import InsertOneResult, InsertManyResult, UpdateResult, \
+    DeleteResult
+from pymongo.common import validate_ok_for_update, validate_ok_for_replace, \
+    validate_is_mapping, validate_boolean
+from pymongo.collection import ReturnDocument
+from pymongo.write_concern import WriteConcern
 from txmongo import filter as qf
 from txmongo.protocol import DELETE_SINGLE_REMOVE, UPDATE_UPSERT, UPDATE_MULTI, \
-    Query, Getmore, Insert, Update, Delete, KillCursors
+    Query, Getmore, Insert, Update, Delete, KillCursors, INSERT_CONTINUE_ON_ERROR
 from twisted.internet import defer
 
 
 class Collection(object):
-    def __init__(self, database, name):
+    def __init__(self, database, name, write_concern=None):
         if not isinstance(name, basestring):
             raise TypeError("name must be an instance of basestring")
 
@@ -32,6 +39,7 @@ class Collection(object):
 
         self._database = database
         self._collection_name = unicode(name)
+        self.__write_concern = write_concern
 
     def __str__(self):
         return "%s.%s" % (str(self._database), self._collection_name)
@@ -55,34 +63,57 @@ class Collection(object):
     def __call__(self, collection_name):
         return self[collection_name]
 
+    @property
+    def write_concern(self):
+        return self.__write_concern or self._database.write_concern
+
+    def with_options(self, **kwargs):
+        """Get a clone of collection changing the specified settings."""
+        # PyMongo's method gets several positional arguments. We support
+        # only write_concern for now which is the 3rd positional argument.
+        # So we are using **kwargs here to force user's code to specify
+        # write_concern as named argument, so adding other args in future
+        # won't break compatibility
+        write_concern = kwargs.get("write_concern") or self.__write_concern
+
+        return Collection(self._database, self._collection_name,
+                          write_concern=write_concern)
+
     @staticmethod
-    def _fields_list_to_dict(fields):
+    def _normalize_fields_projection(fields):
         """
         transform a list of fields from ["a", "b"] to {"a":1, "b":1}
         """
+        if fields is None:
+            return None
+
+        if isinstance(fields, dict):
+            return fields
+
+        # Consider fields as iterable
         as_dict = {}
         for field in fields:
             if not isinstance(field, types.StringTypes):
                 raise TypeError("fields must be a list of key names")
             as_dict[field] = 1
+        if not as_dict:
+            # Empty list should be treated as "_id only"
+            as_dict = {"_id": 1}
         return as_dict
 
     @staticmethod
     def _gen_index_name(keys):
         return u'_'.join([u"%s_%s" % item for item in keys])
 
+    @defer.inlineCallbacks
     def options(self):
-        def wrapper(result):
-            if result:
-                options = result.get("options", {})
-                if "create" in options:
-                    del options["create"]
-                return options
-            return {}
-
-        deferred_find_one = self._database.system.namespaces.find_one({"name": str(self)})
-        deferred_find_one.addCallback(wrapper)
-        return deferred_find_one
+        result = yield self._database.system.namespaces.find_one({"name": str(self)})
+        if not result:
+            result = {}
+        options = result.get("options", {})
+        if "create" in options:
+            del options["create"]
+        defer.returnValue(options)
 
 
     @defer.inlineCallbacks
@@ -134,11 +165,7 @@ class Collection(object):
         if not isinstance(limit, types.IntType):
             raise TypeError("limit must be an instance of int")
 
-        if fields is not None:
-            if not isinstance(fields, types.DictType):
-                if not fields:
-                    fields = ["_id"]
-                fields = self._fields_list_to_dict(fields)
+        fields = self._normalize_fields_projection(fields)
 
         spec = self.__apply_find_filter(spec, filter)
 
@@ -162,14 +189,8 @@ class Collection(object):
                 docs_count = min(docs_count, limit - fetched)
             fetched += docs_count
 
-            try:
-                # as_class is removed from PyMongo >= 3.0
-                # trying to use CodecOptions instead
-                options = bson.codec_options.CodecOptions(document_class=as_class)
-                out = [document.decode(codec_options=options) for document in documents[:docs_count]]
-            except AttributeError:
-                # Falling back to as_class for PyMongo < 3.0
-                out = [document.decode(as_class=as_class) for document in documents[:docs_count]]
+            options = bson.codec_options.CodecOptions(document_class=as_class)
+            out = [document.decode(codec_options=options) for document in documents[:docs_count]]
 
             if reply.cursor_id:
                 if limit == 0:
@@ -200,28 +221,22 @@ class Collection(object):
         deferred_protocol.addCallback(after_connection)
         return deferred_protocol
 
+    @defer.inlineCallbacks
     def find_one(self, spec=None, fields=None, **kwargs):
         if isinstance(spec, ObjectId):
             spec = {"_id": spec}
-        deferred_find = self.find(spec=spec, limit=1, fields=fields, **kwargs)
-        deferred_find.addCallback(lambda r: r[0] if r else {})
-        return deferred_find
+        result = yield self.find(spec=spec, limit=1, fields=fields, **kwargs)
+        defer.returnValue(result[0] if result else None)
 
+
+    @defer.inlineCallbacks
     def count(self, spec=None, fields=None):
-        def wrapper(result):
-            return result["n"]
+        fields = self._normalize_fields_projection(fields)
 
-        if fields is not None:
-            if not fields:
-                fields = ["_id"]
-            fields = self._fields_list_to_dict(fields)
-
-        spec = SON([("count", self._collection_name),
-                    ("query", spec or SON()),
-                    ("fields", fields)])
-        deferred_find_one = self._database["$cmd"].find_one(spec)
-        deferred_find_one.addCallback(wrapper)
-        return deferred_find_one
+        result = yield self._database.command("count", self._collection_name,
+                                              query=spec or SON(),
+                                              fields=fields)
+        defer.returnValue(result["n"])
 
     def group(self, keys, initial, reduce, condition=None, finalize=None):
         body = {
@@ -233,32 +248,46 @@ class Collection(object):
         if isinstance(keys, basestring):
             body["$keyf"] = Code(keys)
         else:
-            body["key"] = self._fields_list_to_dict(keys)
+            body["key"] = self._normalize_fields_projection(keys)
 
         if condition:
             body["cond"] = condition
         if finalize:
             body["finalize"] = Code(finalize)
 
-        return self._database["$cmd"].find_one({"group": body})
+        return self._database.command("group", body)
 
+    @defer.inlineCallbacks
     def filemd5(self, spec):
-        def wrapper(result):
-            return result.get("md5")
-
         if not isinstance(spec, ObjectId):
             raise ValueError("filemd5 expected an objectid for its "
                              "non-keyword argument")
 
-        spec = SON([("filemd5", spec),
-                    ("root", self._collection_name)])
+        result = yield self._database.command("filemd5", spec, root=self._collection_name)
+        defer.returnValue(result.get("md5"))
 
-        deferred_fine_one = self._database["$cmd"].find_one(spec)
-        deferred_fine_one.addCallback(wrapper)
-        return deferred_fine_one
+
+    def _get_write_concern(self, safe=None, **wc_options):
+        from_opts = WriteConcern(**wc_options)
+        if from_opts.document:
+            return from_opts
+
+        if safe == True:
+            if self.write_concern.acknowledged:
+                return self.write_concern
+            else:
+                # Edge case: MongoConnection(w=0).db.coll.insert(..., safe=True)
+                # In this case safe=True must issue getLastError without args
+                # even if connection-level write concern was unacknowledged
+                return WriteConcern()
+        elif safe == False:
+            return WriteConcern(w=0)
+
+        return self.write_concern
+
 
     @defer.inlineCallbacks
-    def insert(self, docs, safe=True, **kwargs):
+    def insert(self, docs, safe=None, flags=0, **kwargs):
         if isinstance(docs, types.DictType):
             ids = docs.get("_id", ObjectId())
             docs["_id"] = ids
@@ -276,28 +305,59 @@ class Collection(object):
             raise TypeError("insert takes a document or a list of documents")
 
         docs = [BSON.encode(d) for d in docs]
-        flags = kwargs.get("flags", 0)
         insert = Insert(flags=flags, collection=str(self), documents=docs)
 
         proto = yield self._database.connection.getprotocol()
 
         proto.send_INSERT(insert)
 
-        if safe:
-            yield proto.get_last_error(str(self._database))
+        write_concern = self._get_write_concern(safe, **kwargs)
+        if write_concern.acknowledged:
+            yield proto.get_last_error(str(self._database), **write_concern.document)
 
         defer.returnValue(ids)
 
     @defer.inlineCallbacks
-    def update(self, spec, document, upsert=False, multi=False, safe=True, **kwargs):
+    def _insert_one_or_many(self, documents, ordered=True):
+        if self.write_concern.acknowledged:
+            inserted_ids = []
+            for doc in documents:
+                if "_id" not in doc:
+                    doc["_id"] = ObjectId()
+                inserted_ids.append(doc["_id"])
+
+            command = SON([("insert", self._collection_name),
+                           ("documents", documents),
+                           ("ordered", ordered),
+                           ("writeConcern", self.write_concern.document)])
+            response = yield self._database.command(command)
+            _check_write_command_response([[0, response]])
+        else:
+            # falling back to OP_INSERT in case of unacknowledged op
+            flags = INSERT_CONTINUE_ON_ERROR if not ordered else 0
+            inserted_ids = yield self.insert(documents, flags=flags)
+
+        defer.returnValue(inserted_ids)
+
+    @defer.inlineCallbacks
+    def insert_one(self, document):
+        inserted_ids = yield self._insert_one_or_many([document])
+        defer.returnValue(InsertOneResult(inserted_ids[0], self.write_concern.acknowledged))
+
+    @defer.inlineCallbacks
+    def insert_many(self, documents, ordered=True):
+        inserted_ids = yield self._insert_one_or_many(documents, ordered)
+        defer.returnValue(InsertManyResult(inserted_ids, self.write_concern.acknowledged))
+
+
+    @defer.inlineCallbacks
+    def update(self, spec, document, upsert=False, multi=False, safe=None, flags=0, **kwargs):
         if not isinstance(spec, types.DictType):
             raise TypeError("spec must be an instance of dict")
         if not isinstance(document, types.DictType):
             raise TypeError("document must be an instance of dict")
         if not isinstance(upsert, types.BooleanType):
             raise TypeError("upsert must be an instance of bool")
-
-        flags = kwargs.get("flags", 0)
 
         if multi:
             flags |= UPDATE_MULTI
@@ -312,11 +372,60 @@ class Collection(object):
 
         proto.send_UPDATE(update)
 
-        if safe:
-            ret = yield proto.get_last_error(str(self._database))
+        write_concern = self._get_write_concern(safe, **kwargs)
+        if write_concern.acknowledged:
+            ret = yield proto.get_last_error(str(self._database), **write_concern.document)
             defer.returnValue(ret)
 
-    def save(self, doc, safe=True, **kwargs):
+
+    @defer.inlineCallbacks
+    def _update(self, filter, update, upsert, multi):
+        validate_is_mapping("filter", filter)
+        validate_boolean("upsert", upsert)
+
+        if self.write_concern.acknowledged:
+            updates = [SON([('q', filter), ('u', update),
+                            ("upsert", upsert), ("multi", multi)])]
+
+            command = SON([("update", self._collection_name),
+                           ("updates", updates),
+                           ("writeConcern", self.write_concern.document)])
+            raw_response = yield self._database.command(command)
+            _check_write_command_response([[0, raw_response]])
+
+            # Extract upserted_id from returned array
+            if raw_response.get("upserted"):
+                raw_response["upserted"] = raw_response["upserted"][0]["_id"]
+
+        else:
+            yield self.update(filter, update, upsert=upsert, multi=multi)
+            raw_response = None
+
+        defer.returnValue(raw_response)
+
+
+    @defer.inlineCallbacks
+    def update_one(self, filter, update, upsert=False):
+        validate_ok_for_update(update)
+
+        raw_response = yield self._update(filter, update, upsert, multi=False)
+        defer.returnValue(UpdateResult(raw_response, self.write_concern.acknowledged))
+
+    @defer.inlineCallbacks
+    def update_many(self, filter, update, upsert=False):
+        validate_ok_for_update(update)
+
+        raw_response = yield self._update(filter, update, upsert, multi=True)
+        defer.returnValue(UpdateResult(raw_response, self.write_concern.acknowledged))
+
+    @defer.inlineCallbacks
+    def replace_one(self, filter, replacement, upsert=False):
+        validate_ok_for_replace(replacement)
+
+        raw_response = yield self._update(filter, replacement, upsert, multi=False)
+        defer.returnValue(UpdateResult(raw_response, self.write_concern.acknowledged))
+
+    def save(self, doc, safe=None, **kwargs):
         if not isinstance(doc, types.DictType):
             raise TypeError("cannot save objects of type %s" % type(doc))
 
@@ -327,13 +436,12 @@ class Collection(object):
             return self.insert(doc, safe=safe, **kwargs)
 
     @defer.inlineCallbacks
-    def remove(self, spec, safe=True, single=False, **kwargs):
+    def remove(self, spec, safe=None, single=False, flags=0, **kwargs):
         if isinstance(spec, ObjectId):
             spec = SON(dict(_id=spec))
         if not isinstance(spec, types.DictType):
             raise TypeError("spec must be an instance of dict, not %s" % type(spec))
 
-        flags = kwargs.get("flags", 0)
         if single:
             flags |= DELETE_SINGLE_REMOVE
 
@@ -343,17 +451,46 @@ class Collection(object):
 
         proto.send_DELETE(delete)
 
-        if safe:
-            ret = yield proto.get_last_error(str(self._database))
+        write_concern = self._get_write_concern(safe, **kwargs)
+        if write_concern.acknowledged:
+            ret = yield proto.get_last_error(str(self._database), **write_concern.document)
             defer.returnValue(ret)
+
+    @defer.inlineCallbacks
+    def _delete(self, filter, multi):
+        validate_is_mapping("filter", filter)
+
+        if self.write_concern.acknowledged:
+            deletes = [SON([('q', filter), ("limit", 0 if multi else 1)])]
+            command = SON([("delete", self._collection_name),
+                           ("deletes", deletes),
+                           ("writeConcern", self.write_concern.document)])
+
+            raw_response = yield self._database.command(command)
+            _check_write_command_response([[0, raw_response]])
+
+        else:
+            yield self.remove(filter, single=not multi)
+            raw_response = None
+
+        defer.returnValue(raw_response)
+
+    @defer.inlineCallbacks
+    def delete_one(self, filter):
+        raw_response = yield self._delete(filter, multi=False)
+        defer.returnValue(DeleteResult(raw_response, self.write_concern.acknowledged))
+
+    @defer.inlineCallbacks
+    def delete_many(self, filter):
+        raw_response = yield self._delete(filter, multi=True)
+        defer.returnValue(DeleteResult(raw_response, self.write_concern.acknowledged))
+
 
     def drop(self, **kwargs):
         return self._database.drop_collection(self._collection_name)
 
+    @defer.inlineCallbacks
     def create_index(self, sort_fields, **kwargs):
-        def wrapper(result, name):
-            return name
-
         if not isinstance(sort_fields, qf.sort):
             raise TypeError("sort_fields must be an instance of filter.sort")
 
@@ -379,9 +516,8 @@ class Collection(object):
             kwargs["bucketSize"] = kwargs.pop("bucket_size")
 
         index.update(kwargs)
-        deferred_insert = self._database.system.indexes.insert(index, safe=True)
-        deferred_insert.addCallback(wrapper, name)
-        return deferred_insert
+        yield self._database.system.indexes.insert(index, safe=True)
+        defer.returnValue(name)
 
     def ensure_index(self, sort_fields, **kwargs):
         # ensure_index is an alias of create_index since we are not
@@ -396,77 +532,53 @@ class Collection(object):
         else:
             raise TypeError("index_identifier must be a name or instance of filter.sort")
 
-        cmd = SON([("deleteIndexes", self._collection_name), ("index", name)])
-        return self._database["$cmd"].find_one(cmd)
+        return self._database.command("deleteIndexes", self._collection_name,
+                                      index=name,
+                                      allowable_errors=["ns not found"])
 
     def drop_indexes(self):
         return self.drop_index("*")
 
+    @defer.inlineCallbacks
     def index_information(self):
-        def wrapper(raw):
-            info = {}
-            for idx in raw:
-                info[idx["name"]] = idx
-            return info
-
-        deferred_find = self._database.system.indexes.find({"ns": str(self)})
-        deferred_find.addCallback(wrapper)
-        return deferred_find
+        raw = yield self._database.system.indexes.find({"ns": str(self)})
+        info = {}
+        for idx in raw:
+            info[idx["name"]] = idx
+        defer.returnValue(info)
 
     def rename(self, new_name):
-        cmd = SON([("renameCollection", str(self)),
-                   ("to", "%s.%s" % (str(self._database), new_name))])
-        return self._database("admin")["$cmd"].find_one(cmd)
+        to = "%s.%s" % (str(self._database), new_name)
+        return self._database("admin").command("renameCollection", str(self), to=to)
 
+    @defer.inlineCallbacks
     def distinct(self, key, spec=None):
-        def wrapper(result):
-            if result:
-                return result.get("values")
-            return {}
-
-        cmd = SON([("distinct", self._collection_name), ("key", key)])
+        params = {"key": key}
         if spec:
-            cmd["query"] = spec
+            params["query"] = spec
 
-        d = self._database["$cmd"].find_one(cmd)
-        d.addCallback(wrapper)
-        return d
+        result = yield self._database.command("distinct", self._collection_name, **params)
+        defer.returnValue(result.get("values"))
 
+    @defer.inlineCallbacks
     def aggregate(self, pipeline, full_response=False):
-        def wrapper(result, full_response):
-            if full_response:
-                return result
-            return result.get("result")
+        raw = yield self._database.command("aggregate", self._collection_name, pipeline=pipeline)
+        if full_response:
+            defer.returnValue(raw)
+        defer.returnValue(raw.get("result"))
 
-        cmd = SON([("aggregate", self._collection_name),
-                   ("pipeline", pipeline)])
-
-        d = self._database["$cmd"].find_one(cmd)
-        d.addCallback(wrapper, full_response)
-        return d
-
+    @defer.inlineCallbacks
     def map_reduce(self, map, reduce, full_response=False, **kwargs):
-        def wrapper(result, full_response):
-            if full_response:
-                return result
-            return result.get("result")
+        params = {"map": map, "reduce": reduce}
+        params.update(**kwargs)
+        raw = yield self._database.command("mapreduce", self._collection_name, **params)
+        if full_response:
+            defer.returnValue(raw)
+        defer.returnValue(raw.get("results"))
 
-        cmd = SON([("mapreduce", self._collection_name),
-                   ("map", map), ("reduce", reduce)])
-        cmd.update(**kwargs)
-        deferred_find_one = self._database["$cmd"].find_one(cmd)
-        deferred_find_one.addCallback(wrapper, full_response)
-        return deferred_find_one
-
+    @defer.inlineCallbacks
     def find_and_modify(self, query=None, update=None, upsert=False, **kwargs):
-        def wrapper(result):
-            no_obj_error = "No matching object found"
-            if not result["ok"]:
-                if result["errmsg"] == no_obj_error:
-                    return None
-                else:
-                    raise ValueError("Unexpected Error: %s" % (result,))
-            return result.get("value")
+        no_obj_error = "No matching object found"
 
         if not update and not kwargs.get("remove", None):
             raise ValueError("Must either update or remove")
@@ -474,16 +586,69 @@ class Collection(object):
         if update and kwargs.get("remove", None):
             raise ValueError("Can't do both update and remove")
 
-        cmd = SON([("findAndModify", self._collection_name)])
-        cmd.update(kwargs)
+        params = kwargs
         # No need to include empty args
         if query:
-            cmd["query"] = query
+            params["query"] = query
         if update:
-            cmd["update"] = update
+            params["update"] = update
         if upsert:
+            params["upsert"] = upsert
+
+        result = yield self._database.command("findAndModify", self._collection_name,
+                                              allowable_errors=[no_obj_error],
+                                              **params)
+        if not result["ok"]:
+            if result["errmsg"] == no_obj_error:
+                defer.returnValue(None)
+            else:
+                # Should never get here because of allowable_errors
+                raise ValueError("Unexpected Error: %s" % (result,))
+        defer.returnValue(result.get("value"))
+
+
+    # Distinct findAndModify utility method is needed because traditional
+    # find_and_modify() accepts `sort` kwarg as dict and passes it to
+    # MongoDB command without conversion. But in find_one_and_*
+    # methods we want to take `filter.sort` instances
+    @defer.inlineCallbacks
+    def _new_find_and_modify(self, filter, projection, sort, upsert=None,
+                             return_document=ReturnDocument.BEFORE, **kwargs):
+        validate_is_mapping("filter", filter)
+        if not isinstance(return_document, bool):
+            raise ValueError("return_document must be ReturnDocument.BEFORE "
+                             "or ReturnDocument.AFTER")
+
+        cmd = SON([("findAndModify", self._collection_name),
+                   ("query", filter),
+                   ("new", return_document)])
+        cmd.update(kwargs)
+
+        if projection is not None:
+            cmd["fields"] = self._normalize_fields_projection(projection)
+
+        if sort is not None:
+            cmd["sort"] = dict(sort["orderby"])
+        if upsert is not None:
+            validate_boolean("upsert", upsert)
             cmd["upsert"] = upsert
 
-        deferred_find_one = self._database["$cmd"].find_one(cmd)
-        deferred_find_one.addCallback(wrapper)
-        return deferred_find_one
+        no_obj_error = "No matching object found"
+
+        result = yield self._database.command(cmd, allowable_errors=[no_obj_error])
+        defer.returnValue(result.get("value"))
+
+    def find_one_and_delete(self, filter, projection=None, sort=None, **kwargs):
+        return self._new_find_and_modify(filter, projection, sort, remove=True, **kwargs)
+
+    def find_one_and_replace(self, filter, replacement, projection=None, sort=None,
+                             upsert=False, return_document=ReturnDocument.BEFORE, **kwargs):
+        validate_ok_for_replace(replacement)
+        return self._new_find_and_modify(filter, projection, sort, upsert, return_document,
+                                         update=replacement, **kwargs)
+
+    def find_one_and_update(self, filter, update, projection=None, sort=None,
+                            upsert=False, return_document=ReturnDocument.BEFORE, **kwargs):
+        validate_ok_for_update(update)
+        return self._new_find_and_modify(filter, projection, sort, upsert, return_document,
+                                         update=update, **kwargs)
