@@ -166,7 +166,7 @@ class AuthenticationService(service.Service):
 
 	def launch_sim(self, params):
 		sim = Simulation()
-		deferred = maybeDeferred(sim.build_sim, params)
+		deferred = maybeDeferred(sim.build_sim, params, self.username)
 		deferred.addCallback(sim.run_sim, params)
 
 		# TEMPORARY..

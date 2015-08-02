@@ -17,12 +17,12 @@ def gotConnection(conn, username, password):
     chan = yield conn.channel(1)
     yield chan.channel_open()
 
-    yield chan.queue_declare(queue="chatrooms", durable=True, exclusive=False, auto_delete=False)
-    yield chan.exchange_declare(exchange="chatservice", type="direct", durable=True, auto_delete=False)
+    yield chan.queue_declare(queue="data", durable=True, exclusive=False, auto_delete=False)
+    yield chan.exchange_declare(exchange="datastream", type="direct", durable=True, auto_delete=False)
 
-    yield chan.queue_bind(queue="chatrooms", exchange="chatservice", routing_key="txamqp_chatroom")
+    yield chan.queue_bind(queue="data", exchange="datastream", routing_key="testuser@gmail.com..regular_spiking_izh")
 
-    yield chan.basic_consume(queue='chatrooms', no_ack=True, consumer_tag="testtag")
+    yield chan.basic_consume(queue='data', no_ack=True, consumer_tag="testtag")
 
     queue = yield conn.queue("testtag")
 
@@ -44,32 +44,19 @@ def gotConnection(conn, username, password):
 
 
 if __name__ == "__main__":
-    import sys
-    if len(sys.argv) < 7:
-        print "%s host port vhost username password path_to_spec" % sys.argv[0]
-        print "e.g. %s localhost 5672 / guest guest ../../specs/standard/amqp0-8.stripped.xml" % sys.argv[0]
-        sys.exit(1)
 
-    host = sys.argv[1]
-    port = int(sys.argv[2])
-    vhost = sys.argv[3]
-    username = sys.argv[4]
-    password = sys.argv[5]
-
-    spec = txamqp.spec.load(sys.argv[6])
-
+    spec = txamqp.spec.load("../amqp0-8.stripped.rabbitmq.xml")
     delegate = TwistedDelegate()
 
-    d = ClientCreator(reactor, AMQClient, delegate=delegate, vhost=vhost,
-        spec=spec).connectTCP(host, port)
+    d = ClientCreator(reactor, AMQClient, delegate=delegate, vhost='/', spec=spec).connectTCP("localhost", 5672)
 
-    d.addCallback(gotConnection, username, password)
+    d.addCallback(gotConnection, "guest", "guest")
 
-    def whoops(err):
+    def errorback(err):
         if reactor.running:
             log.err(err)
             reactor.stop()
 
-    d.addErrback(whoops)
+    d.addErrback(errorback)
 
     reactor.run()

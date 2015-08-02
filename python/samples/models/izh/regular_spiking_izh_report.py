@@ -30,7 +30,7 @@ def run(argv):
 
 	sim.addStimulus("rectangular_current", input_parameters, group_1, 1, 0.01, 1.0)
 	voltage_report=sim.addReport("group_1", "neuron", "neuron_voltage", 1, 0.0, 1.0)
-	voltage_report.toAsciiFile("./regular_spiking_izh.txt", "regular_spiking_izh")	
+	voltage_report.toAsciiFile("./regular_spiking_izh.txt", "testuser@gmail.com..regular_spiking_izh")	
 	
 	sim.run(duration=1.0)
 

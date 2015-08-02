@@ -1864,7 +1864,7 @@ class ModelService(object):
 
     # This function takes in the neuron and synapse groups created in the process_model function
     @classmethod
-    def add_stims_and_reports(cls, sim, entity_dicts, model_entity_dicts, neuron_groups, synapse_groups):
+    def add_stims_and_reports(cls, sim, entity_dicts, model_entity_dicts, neuron_groups, synapse_groups, username):
         errors = []
         neurons = model_entity_dicts['cellGroups']['cellGroups']
         synapses = model_entity_dicts['synapses']
@@ -1949,8 +1949,9 @@ class ModelService(object):
             rpt = sim.addReport(report_target, target_type, report_type, probability, time_start, time_end)
             print 'ADDING OUTPUT FILE...'
             # TODO: determine if other formats other than ASCII are available
+            sim_identifier = username + '..' + report['name']
             if report['saveAsFile'] == True:
-                rpt.toAsciiFile("./" + report['fileName'].encode('ascii', 'ignore'))
+                rpt.toAsciiFile("./" + report['fileName'].encode('ascii', 'ignore'), sim_identifier)
 
         # For running the simulation
         # fsv, includeDistance, interactive, and seed are not used...  
