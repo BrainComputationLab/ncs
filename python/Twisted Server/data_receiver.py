@@ -45,8 +45,8 @@ class RecvDataProtocol(Protocol):
         msg = Content(message)
         msg["delivery mode"] = 2
 
-        # TODO: replace the routing key with the username and sim name retrieved with the data
-        yield channel.basic_publish(exchange='chatservice', routing_key="txamqp_chatroom", content=msg)
+        yield channel.basic_publish(exchange='datastream', routing_key=self.routing_key, content=msg)
+
         if DEBUG:
             print "Sending message: %s" % message
         returnValue(result)
@@ -57,35 +57,33 @@ class RecvDataProtocol(Protocol):
         stopToken = "STOP"
         msg = Content(stopToken)
         msg["delivery mode"] = 2
-        channel.basic_publish(exchange="chatservice", content=msg, routing_key="txamqp_chatroom")
+        channel.basic_publish(exchange='datastream', content=msg, routing_key=self.routing_key)
         yield channel.channel_close()
         chan0 = yield connection.channel(0)
         yield chan0.connection_close()
 
     def connectionMade(self):
 
-        # Hey man, it's just temporary
-        self.testfile = open("testing-1-2-3.txt", "w")
+        if DEBUG:
+            self.testfile = open("testing-1-2-3.txt", "w")
 
-        host = "localhost"
-        port = 5672
-        vhost = '/'
-        username = "guest"
-        password = "guest"
         spec = txamqp.spec.load("txamqp/amqp0-8.stripped.rabbitmq.xml")
-
         delegate = TwistedDelegate()
 
-        self.deferred = ClientCreator(reactor, AMQClient, delegate=delegate, vhost=vhost, spec=spec).connectTCP(host, port)
-        self.deferred.addCallback(self.gotConnection, username, password)
+        self.deferred = ClientCreator(reactor, AMQClient, delegate=delegate, vhost='/', spec=spec).connectTCP("localhost", 5672)
+        self.deferred.addCallback(self.gotConnection, "guest", "guest")
 
     def dataReceived(self, data):
+
         if self.first_message:
+
+            # receive routing key
             self.first_message = False
+            key_size = int(data[0:3]) + 3
+            self.routing_key = data[3:key_size]
 
-            #TODO: this is the username.reportname. Do something with it.
-            self.routing_key = data
-
+            if DEBUG:
+                print "ROUTING KEY: " + self.routing_key
         else:
 
             # deserialize the protocol buffer
@@ -100,11 +98,13 @@ class RecvDataProtocol(Protocol):
 
             value = struct.unpack('f', bytes)[0]
 
-            self.testfile.write(str(value)+'\n')
+            if DEBUG:
+                self.testfile.write(str(value)+'\n')
             self.deferred.addCallback(self.send_message, str(value))
 
     def connectionLost(self, reason):
-        self.testfile.close()
+        if DEBUG:
+            self.testfile.close()
         self.deferred.addCallback(self.cleanup)
 
 class RecvDataProtocolFactory(ServerFactory):
@@ -120,7 +120,7 @@ class RecvDataService(service.Service):
         service.Service.startService(self)
         log.msg('Service for receiving simulation data has been started')
 
-# TODO: connect this as a service to the daemon
+# Not executed when ran as a service in the daemon
 if __name__ == "__main__":
 
     # listen for connections for receiving data from the simulator

@@ -14,7 +14,7 @@ class Simulation:
 	sim = ncs.Simulation()
 	modelService = ModelService()
 
-	def build_sim(self, params):
+	def build_sim(self, params, username):
 
 		json_model = params['model']
 		json_sim_input_and_output = params['simulation']
@@ -45,7 +45,7 @@ class Simulation:
 		if DEBUG: 
 			print "ATTEMPTING TO ADD STIMS AND REPORTS"
 
-		self.modelService.add_stims_and_reports(self.sim, json_sim_input_and_output, json_model, neuron_groups, synapse_groups)
+		self.modelService.add_stims_and_reports(self.sim, json_sim_input_and_output, json_model, neuron_groups, synapse_groups, username)
 
 	def run_sim(self, params, ign):
 		#self.sim.run(duration=1.0)
