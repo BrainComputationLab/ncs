@@ -1,8 +1,11 @@
+# -*- coding: utf-8 -*-
+
 from twisted.cred import error
 from twisted.cred.checkers import ICredentialsChecker
 from twisted.cred.credentials import IUsernameHashedPassword 
 from twisted.internet.defer import Deferred
 from zope.interface import implements
+import bcrypt
 
 DEBUG = True
 
@@ -47,17 +50,19 @@ class DBCredentialsChecker(object):
 				print 'Invalid username'
 			deferred.errback(error.UnauthorizedLogin('Invalid username')) 
 		else:
-			password = result[0].get('password')
+			hashed_password = bcrypt.hashpw(str(credentials.hashed), str(result[0].get('salt')))
+			credentials.hashed = unicode(hashed_password, "utf-8")
+
 			if DEBUG:
-				print 'Correct password: ' + password
+				print 'Correct password: ' + result[0].get('password')
 				print 'Entered password: ' + credentials.hashed
-			if credentials.checkPassword(password):
+
+			if credentials.checkPassword(result[0].get('password')):
 				if DEBUG:
 					print 'Valid credentials'
 
 				# this passes back <username>:<lab id> as the avatar ID
 				deferred.callback(credentials.username + ':' + str(result[0].get('lab_id'))) 
-				#deferred.callback(credentials.username)
 			else:
 				if DEBUG:
 					print 'Incorrect password'

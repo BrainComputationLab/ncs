@@ -14,7 +14,6 @@ import sys
 sys.path.append('txmongo/ncs_db')
 from database import TxMongoDatabase
 
-
 DEBUG = True
 
 # avatars are the objects (with associated functions) available for a particular user
