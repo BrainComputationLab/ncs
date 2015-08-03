@@ -508,7 +508,7 @@ if __name__ == '__main__':
 	# ADD PROMPT FOR USERNAME/PASSWORD
 
 	# send [serialized] credentials
-	credentials = json.dumps({"request": "login", "username": "testuser@gmail.com", "password": "supersecretpassword"})
+	credentials = json.dumps({"request": "login", "username": "testuser2@gmail.com", "password": "password2"})
 	clientSocket.send(credentials)
 	data = clientSocket.recv(512)
 	print data	 

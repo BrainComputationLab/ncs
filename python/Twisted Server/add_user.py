@@ -7,6 +7,7 @@ from twisted.internet.protocol import ServerFactory, Protocol
 from twisted.application import internet, service
 from twisted.python import log
 import json
+import bcrypt
 
 import sys
 sys.path.append('txmongo/ncs_db')
@@ -88,9 +89,18 @@ class AddUserService(service.Service):
 
         else:
 
-            # insert user into database
+            # encrypt password
+            print user_params['password']
+            salt = bcrypt.gensalt()
+            user_params['password'] = bcrypt.hashpw(str(user_params['password']), salt)
+            user_params['salt'] = salt
+
             if DEBUG:
                 print 'Valid username. Inserting new user.'
+                print 'Encrypted password: ' + str(user_params['password'])
+                print 'SALT: ' + str(user_params['salt'])
+
+            # insert user into database
             self.db.insert("users", user_params)
 
             # notify client of successful new user
