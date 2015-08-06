@@ -108,10 +108,11 @@ def launch_sim(socket):
 
 def save_model(socket, location):
 
+	# Yes, this is gross, but it shows the supported locations
 	if location == 'personal':
 		params = {
 			"request": "saveModel",
-		    "location": "blah",
+		    "location": "personal",
 		  	"model": 
             {
             "author": "Hersheys Bar", 
@@ -488,7 +489,6 @@ def get_models(socket):
 	data = socket.recv(4096)
 	print data
 
-# make sure run as main script
 if __name__ == '__main__':
 
 	#check for correct input
@@ -504,8 +504,6 @@ if __name__ == '__main__':
 	#create socket
 	clientSocket = socket(AF_INET, SOCK_STREAM)
 	clientSocket.connect((host,port))
-
-	# ADD PROMPT FOR USERNAME/PASSWORD
 
 	# send [serialized] credentials
 	credentials = json.dumps({"request": "login", "username": "testuser2@gmail.com", "password": "password2"})
