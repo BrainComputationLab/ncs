@@ -16,11 +16,8 @@ class ClientSocket : private ncs::spec::Socket
   ClientSocket (std::string host, int port);
   virtual ~ClientSocket(){};
 
-  bool bindWithoutThrow ( std::string host, int port );
+  bool bindWithoutThrow (std::string host, int port);
 
-  //template <typename T>
-  //const ClientSocket& operator << (const T&) const;
-  //const ClientSocket& operator << (const void*) const;
   const ClientSocket& operator << (const std::string&) const;
   const ClientSocket& operator >> (std::string&) const;
 
