@@ -81,9 +81,9 @@
     "name": "Current Model", 
     "synapses": []
   }, 
-  "request": "launchSim", 
+  "request": "exportScript", 
   "simulation": {
-    "duration": 0, 
+    "duration": 1, 
     "fsv": null, 
     "includeDistance": "No", 
     "inputs": [], 
@@ -182,7 +182,7 @@ MODEL:
 
 SIMULATION:
 {
-  "duration": 0, 
+  "duration": 1, 
   "fsv": null, 
   "includeDistance": "No", 
   "inputs": [], 

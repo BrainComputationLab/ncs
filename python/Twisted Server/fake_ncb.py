@@ -89,7 +89,7 @@ def launch_sim(socket):
 	    "synapses": []
 	  }, 
 	  "simulation": {
-	    "duration": 0, 
+	    "duration": 1, 
 	    "fsv": None, 
 	    "includeDistance": "No", 
 	    "inputs": [], 
@@ -489,6 +489,130 @@ def get_models(socket):
 	data = socket.recv(4096)
 	print data
 
+def export_to_script(socket):
+	params = {
+		"request": "exportScript",
+	  	"model": 
+	  	{
+	    "author": "", 
+	    "cellAliases": [], 
+	    "cellGroups": {
+	      "cellGroups": [
+	        {
+	          "hashKey": "09B", 
+	          "classification": "cells", 
+	          "description": "Description", 
+	          "geometry": "Sphere", 
+	          "name": "Cell 3", 
+	          "num": 150, 
+	          "parameters": {
+	            "a": {
+	              "maxValue": 0, 
+	              "mean": 0, 
+	              "minValue": 0, 
+	              "stddev": 0, 
+	              "type": "exact", 
+	              "value": 0.2
+	            }, 
+	            "b": {
+	              "maxValue": 0, 
+	              "mean": 0, 
+	              "minValue": 0, 
+	              "stddev": 0, 
+	              "type": "exact", 
+	              "value": 0.2
+	            }, 
+	            "c": {
+	              "maxValue": 0, 
+	              "mean": 0, 
+	              "minValue": 0, 
+	              "stddev": 0, 
+	              "type": "exact", 
+	              "value": -65
+	            }, 
+	            "d": {
+	              "maxValue": 0, 
+	              "mean": 0, 
+	              "minValue": 0, 
+	              "stddev": 0, 
+	              "type": "exact", 
+	              "value": 8
+	            }, 
+	            "threshold": {
+	              "maxValue": 0, 
+	              "mean": 0, 
+	              "minValue": 0, 
+	              "stddev": 0, 
+	              "type": "exact", 
+	              "value": 30
+	            }, 
+	            "type": "Izhikevich", 
+	            "u": {
+	              "maxValue": -11, 
+	              "mean": 0, 
+	              "minValue": -15, 
+	              "stddev": 0, 
+	              "type": "uniform", 
+	              "value": 0
+	            }, 
+	            "v": {
+	              "maxValue": -55, 
+	              "mean": 0, 
+	              "minValue": -75, 
+	              "stddev": 0, 
+	              "type": "uniform", 
+	              "value": 0
+	            }
+	          }
+	        }
+	      ], 
+	      "classification": "cellGroup", 
+	      "description": "Description", 
+	      "name": "Home"
+	    }, 
+	    "classification": "model", 
+	    "description": "Description", 
+	    "name": "Current Model", 
+	    "synapses": []
+	  }, 
+	  "simulation": {
+	    "duration": 1, 
+	    "fsv": None, 
+	    "includeDistance": "No", 
+	    "inputs": [], 
+	    "interactive": "No", 
+	    "name": None, 
+	    "outputs": [], 
+	    "seed": None
+	  }
+	}
+
+	message = json.dumps(params)
+	socket.send(message)
+	data = socket.recv(4096)
+	print data
+
+def script_to_json(socket):
+	params = {
+		"request": "scriptToJSON"
+	}
+
+	message = json.dumps(params)
+	socket.send(message)
+	data = socket.recv(4096)
+
+	print data
+
+def logout(socket):
+	params = {
+		"request": "logout"
+	}
+
+	message = json.dumps(params)
+	socket.send(message)
+	data = socket.recv(4096)
+	print data
+
 if __name__ == '__main__':
 
 	#check for correct input
@@ -510,6 +634,9 @@ if __name__ == '__main__':
 	clientSocket.send(credentials)
 	data = clientSocket.recv(512)
 	print data	 
+	data = json.loads(data)
+	if data['response'] == 'failure':
+		sys.exit(1)
 
 	# menu for testing all possible commands
 	ans = True
@@ -519,10 +646,13 @@ if __name__ == '__main__':
 		2.Save a model
 		3.Undo model change
 		4.Get current models
-		5.Quit
+		5.Export to Python script
+		6.Convert Python script to JSON 
+		7.Logout 
+		8.Quit
 		""")
 
-		ans=raw_input("What would you like to do? ")
+		ans=raw_input("Request: ")
 		if ans=="1":
 			launch_sim(clientSocket)  
 		elif ans=="2":
@@ -532,9 +662,15 @@ if __name__ == '__main__':
 		elif ans=="4":
 			get_models(clientSocket)
 		elif ans=="5":
+			export_to_script(clientSocket)
+		elif ans=="6":
+			script_to_json(clientSocket)
+		elif ans=="7":
+			logout(clientSocket)
+		elif ans=="8":
 			ans = None
 		else:
-			print("\n Not Valid Choice. Try again")
+			print("\n Invalid Choice.")
 
 	# close socket
 	clientSocket.close()

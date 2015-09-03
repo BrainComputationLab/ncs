@@ -94,14 +94,16 @@ class AuthenicationServiceProtocol(Protocol):
  					deferred.addCallbacks(self.request_done, self.request_done)
 
 			else:
-				self.transport.write('Invalid request. Goodbye.')
+				response = {"response": "failure", "reason": "Invalid request."}
+				response["request"] = message.get("request")
+				self.transport.write(json.dumps(response))
 				self.transport.loseConnection()
 		else:
-			self.transport.write('Invalid request format. Goodbye.')
+			self.transport.write(json.dumps({"request": "", "response": "failure", "reason": "Invalid request format."}))
 			self.transport.loseConnection()
 
 	def request_done(self, ign):
-		self.transport.write(self.service.response)
+		self.transport.write(json.dumps(self.service.response))
 
 	def tryLogin(self, username, password): 
 		if DEBUG:
@@ -116,17 +118,24 @@ class AuthenicationServiceProtocol(Protocol):
 		self.avatar = avatar
 		self.logout = logout
 
-		self.transport.write("Login successful, please proceed.")
+		self.transport.write(json.dumps({"request": "login", "response": "success"}))
 		if DEBUG:
-			print "Login successful, please proceed."
-
-		# SEND MODELS AND ANY SIM OUTPUT DATA
+			print "Login successful"
 
 	def _ebLogin(self, failure): 
 		if DEBUG:
-			print 'In login errorback'
-			print 'Login denied, goodbye.'
+			print 'Login denied.'
+		
+		response = {"request": "login", "response": "failure"}
 
+		if 'Invalid username' in str(failure):
+			response["reason"] = 'Invalid username.'
+		elif 'Incorrect password' in str(failure):
+			response["reason"] = 'Incorrect password.'
+		else:
+			response["reason"] = str(failure)
+
+		self.transport.write(json.dumps(response))
 		self.transport.loseConnection()
 
 class AuthenticationServiceFactory(ServerFactory):
@@ -156,6 +165,8 @@ class AuthenticationService(service.Service):
 				"saveModel" : self.save_model,
 				"getModels": self.get_models,
 				"undoModelChange": self.undo_model_change,
+				"exportScript": self.export_script,
+				"scriptToJSON": self.script_to_JSON,
 				"logout": None # should close connection
 			}
 
@@ -168,14 +179,10 @@ class AuthenticationService(service.Service):
 		deferred = maybeDeferred(sim.build_sim, params, self.username)
 		deferred.addCallback(sim.run_sim, params)
 
-		# TEMPORARY..
-		self.response = 'Successful sim launch.'
+		self.response = {"request": "launchSim", "response": "success"}
 		# TODO: add errback for failed sim launch
 
 		return deferred
-
-		# Should automatically stream sim data out on same connection
-		# Should also be able to send request to receive current streaming data, queued data that hasn't been viewed, old data?
 
 	# This checks if creating new model or updating an existing
 	def save_model(self, params):
@@ -196,12 +203,12 @@ class AuthenticationService(service.Service):
 		elif location == 'global':
 			collection = 'global_models'
 		else:
-			self.response = 'Failed model save. Invalid location.'
+			self.response = {"request": "saveModel", "response": "failure", "reason": "Invalid location."}
 			return defer.fail(Exception('Invalid model location'))
 
 		deferred = self.db.query_by_field(collection, {'$and': [author_field, name_field]})
 		deferred.addCallback(self.insert_model, params = params, collection = collection)
-		self.response = 'Successful model save.'
+		self.response = {"request": "saveModel", "response": "success"}
 		return deferred
 
 
@@ -266,7 +273,8 @@ class AuthenticationService(service.Service):
 				models[group].append(result.get('model_rev_1'))
 
 		if group == 'global':
-			self.response = json.dumps(models)
+			self.response = {"request": "getModels", "response": "success"}
+			self.response["models"] = models
 
 	def undo_model_change(self, params):
 
@@ -286,7 +294,7 @@ class AuthenticationService(service.Service):
 		elif location == 'global':
 			collection = 'global_models'
 		else:
-			self.response = 'Failed model revert. Invalid location.'
+			self.response = {"request": "undoModelChange", "response": "failure", "reason": "Invalid location."}
 			return defer.fail(Exception('Invalid model location'))
 
 		deferred = self.db.query_by_field(collection, {'$and': [author_field, name_field]})
@@ -305,8 +313,22 @@ class AuthenticationService(service.Service):
 			# update model
 			self.db.update_doc(collection, {'_id': doc_id}, reverted_model)
 			del reverted_model['_id']
-			self.response = json.dumps(reverted_model)
+			self.response = {"request": "undoModelChange", "response": "success"}
+			self.response["model"] = reverted_model["model_rev_1"].get("model")
 
 		else:
-			self.response = 'Failed model revert. Model not in database.'
+			self.response = {"request": "undoModelChange", "response": "failure", "reason": "Model not in database."}
 			return defer.fail(Exception('Model not in database'))
+
+	def export_script(self, params):
+		sim = Simulation()
+		deferred = maybeDeferred(sim.build_sim, params, self.username)
+		self.response = {"request": "exportScript", "response": "success"}
+		self.response['script'] = sim.script_str
+
+		# TODO: add errback for failed export script
+
+		return deferred
+
+	def script_to_JSON(self, script):
+		pass

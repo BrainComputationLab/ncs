@@ -48,10 +48,10 @@ class AddUserProtocol(Protocol):
                 self.deferred.addBoth(lambda ign: self.transport.loseConnection())
 
             else:
-                self.transport.write('Invalid request. Goodbye.')
+                self.transport.write(json.dumps({"request": "addUser", "response": "failure", "reason": "Invalid request."}))
                 self.transport.loseConnection()
         else:
-            self.transport.write('Invalid request format. Goodbye.')
+            self.transport.write(json.dumps({"request": "addUser", "response": "failure", "reason": "Invalid request format."}))
             self.transport.loseConnection()
 
 class AddUserProtocolFactory(ServerFactory):
@@ -85,7 +85,7 @@ class AddUserService(service.Service):
                     print doc
 
             # notify client of error
-            return 'Add new user failed.'
+            return json.dumps({"request": "addUser", "response": "failure", "reason": "User already exists."})
 
         else:
 
@@ -104,9 +104,9 @@ class AddUserService(service.Service):
             self.db.insert("users", user_params)
 
             # notify client of successful new user
-            return 'Add new user successful.'
+            return json.dumps({"request": "addUser", "response": "success"})
 
     def add_user_error(self, query_results, user_params, deferred):
         if DEBUG:
             print 'In add user errorback'
-        return 'Add new user failed.'
+        return json.dumps({"request": "addUser", "response": "failure", "reason": "Unknown failure when attempting to add new user."})
