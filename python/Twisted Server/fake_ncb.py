@@ -4,100 +4,299 @@ import json
 
 def launch_sim(socket):
 	params = {
-		"request": "launchSim",
-	  	"model": 
-	  	{
-	    "author": "", 
-	    "cellAliases": [], 
-	    "cellGroups": {
-	      "cellGroups": [
-	        {
-	          "hashKey": "09B", 
-	          "classification": "cells", 
-	          "description": "Description", 
-	          "geometry": "Sphere", 
-	          "name": "Cell 3", 
-	          "num": 150, 
-	          "parameters": {
-	            "a": {
-	              "maxValue": 0, 
-	              "mean": 0, 
-	              "minValue": 0, 
-	              "stddev": 0, 
-	              "type": "exact", 
-	              "value": 0.2
-	            }, 
-	            "b": {
-	              "maxValue": 0, 
-	              "mean": 0, 
-	              "minValue": 0, 
-	              "stddev": 0, 
-	              "type": "exact", 
-	              "value": 0.2
-	            }, 
-	            "c": {
-	              "maxValue": 0, 
-	              "mean": 0, 
-	              "minValue": 0, 
-	              "stddev": 0, 
-	              "type": "exact", 
-	              "value": -65
-	            }, 
-	            "d": {
-	              "maxValue": 0, 
-	              "mean": 0, 
-	              "minValue": 0, 
-	              "stddev": 0, 
-	              "type": "exact", 
-	              "value": 8
-	            }, 
-	            "threshold": {
-	              "maxValue": 0, 
-	              "mean": 0, 
-	              "minValue": 0, 
-	              "stddev": 0, 
-	              "type": "exact", 
-	              "value": 30
-	            }, 
-	            "type": "Izhikevich", 
-	            "u": {
-	              "maxValue": -11, 
-	              "mean": 0, 
-	              "minValue": -15, 
-	              "stddev": 0, 
-	              "type": "uniform", 
-	              "value": 0
-	            }, 
-	            "v": {
-	              "maxValue": -55, 
-	              "mean": 0, 
-	              "minValue": -75, 
-	              "stddev": 0, 
-	              "type": "uniform", 
-	              "value": 0
-	            }
+	"request": "launchSim",
+	"model":
+	{
+	  "author": "", 
+	  "cellAliases": [], 
+	  "cellGroups": {
+	    "cellGroups": [
+	      {
+	        "$$hashKey": "052", 
+	        "classification": "cells", 
+	        "description": "Description", 
+	        "geometry": "Box", 
+	        "name": "Cell 1", 
+	        "num": 100, 
+	        "parameters": {
+	          "calcium": {
+	            "maxValue": 0, 
+	            "minValue": 0, 
+	            "type": "exact", 
+	            "value": -65
+	          }, 
+	          "calciumSpikeIncrement": {
+	            "maxValue": 0, 
+	            "minValue": 0, 
+	            "type": "exact", 
+	            "value": 8
+	          }, 
+	          "channel": [], 
+	          "leakReversalPotential": {
+	            "maxValue": -55, 
+	            "minValue": -75, 
+	            "type": "uniform", 
+	            "value": 0
+	          }, 
+	          "rMembrane": {
+	            "maxValue": 0, 
+	            "minValue": 0, 
+	            "type": "exact", 
+	            "value": 30
+	          }, 
+	          "restingPotential": {
+	            "maxValue": 0, 
+	            "minValue": 0, 
+	            "type": "exact", 
+	            "value": 0.2
+	          }, 
+	          "spikeShape": {
+	            "maxValue": 0, 
+	            "minValue": 0, 
+	            "type": "exact", 
+	            "value": 30
+	          }, 
+	          "tauCalcium": {
+	            "maxValue": -11, 
+	            "minValue": -15, 
+	            "type": "uniform", 
+	            "value": 0
+	          }, 
+	          "tauMembrane": {
+	            "maxValue": 0, 
+	            "minValue": 0, 
+	            "type": "exact", 
+	            "value": 30
+	          }, 
+	          "threshold": {
+	            "maxValue": 0, 
+	            "minValue": 0, 
+	            "type": "exact", 
+	            "value": 0.2
+	          }, 
+	          "type": "NCS"
+	        }
+	      }, 
+	      {
+	        "$$hashKey": "05A", 
+	        "classification": "cells", 
+	        "description": "Description", 
+	        "geometry": "Sphere", 
+	        "name": "Cell 3", 
+	        "num": 150, 
+	        "parameters": {
+	          "a": {
+	            "maxValue": 0, 
+	            "minValue": 0, 
+	            "type": "exact", 
+	            "value": 0.2
+	          }, 
+	          "b": {
+	            "maxValue": 0, 
+	            "minValue": 0, 
+	            "type": "exact", 
+	            "value": 0.2
+	          }, 
+	          "c": {
+	            "maxValue": 0, 
+	            "minValue": 0, 
+	            "type": "exact", 
+	            "value": -65
+	          }, 
+	          "d": {
+	            "maxValue": 0, 
+	            "minValue": 0, 
+	            "type": "exact", 
+	            "value": 8
+	          }, 
+	          "threshold": {
+	            "maxValue": 0, 
+	            "minValue": 0, 
+	            "type": "exact", 
+	            "value": 30
+	          }, 
+	          "type": "Izhikevich", 
+	          "u": {
+	            "maxValue": -11, 
+	            "minValue": -15, 
+	            "type": "uniform", 
+	            "value": 0
+	          }, 
+	          "v": {
+	            "maxValue": -55, 
+	            "minValue": -75, 
+	            "type": "uniform", 
+	            "value": 0
 	          }
 	        }
-	      ], 
-	      "classification": "cellGroup", 
-	      "description": "Description", 
-	      "name": "Home"
-	    }, 
-	    "classification": "model", 
+	      }
+	    ], 
+	    "classification": "cellGroup", 
 	    "description": "Description", 
-	    "name": "Current Model", 
-	    "synapses": []
+	    "name": "Home"
 	  }, 
-	  "simulation": {
-	    "duration": 1, 
-	    "fsv": None, 
-	    "includeDistance": "No", 
-	    "inputs": [], 
-	    "interactive": "No", 
-	    "name": None, 
-	    "outputs": [], 
-	    "seed": None
-	  }
+	  "classification": "model", 
+	  "description": "Description", 
+	  "name": "Current Model", 
+	  "synapses": [
+	    {
+	      "$$hashKey": "05Z", 
+	      "classification": "synapseGroup", 
+	      "description": "Description", 
+	      "parameters": {
+	        "aLtdMinimum": {
+	          "maxValue": 0, 
+	          "minValue": 0, 
+	          "type": "exact", 
+	          "value": 30
+	        }, 
+	        "aLtpMinimum": {
+	          "maxValue": 0, 
+	          "minValue": 0, 
+	          "type": "exact", 
+	          "value": 30
+	        }, 
+	        "delay": {
+	          "maxValue": 0, 
+	          "minValue": 0, 
+	          "type": "exact", 
+	          "value": 30
+	        }, 
+	        "lastPostfireTime": {
+	          "maxValue": 0, 
+	          "minValue": 0, 
+	          "type": "exact", 
+	          "value": 30
+	        }, 
+	        "lastPrefireTime": {
+	          "maxValue": 0, 
+	          "minValue": 0, 
+	          "type": "exact", 
+	          "value": 30
+	        }, 
+	        "maxConductance": {
+	          "maxValue": 0, 
+	          "minValue": 0, 
+	          "type": "exact", 
+	          "value": 30
+	        }, 
+	        "name": "ncsSynapse", 
+	        "psgWaveformDuration": {
+	          "maxValue": 0, 
+	          "minValue": 0, 
+	          "type": "exact", 
+	          "value": 30
+	        }, 
+	        "redistribution": {
+	          "maxValue": 0, 
+	          "minValue": 0, 
+	          "type": "exact", 
+	          "value": 30
+	        }, 
+	        "reversalPotential": {
+	          "maxValue": 0, 
+	          "minValue": 0, 
+	          "type": "exact", 
+	          "value": 30
+	        }, 
+	        "tauDepression": {
+	          "maxValue": 0, 
+	          "minValue": 0, 
+	          "type": "exact", 
+	          "value": 30
+	        }, 
+	        "tauFacilitation": {
+	          "maxValue": 0, 
+	          "minValue": 0, 
+	          "type": "exact", 
+	          "value": 30
+	        }, 
+	        "tauLtd": {
+	          "maxValue": 0, 
+	          "minValue": 0, 
+	          "type": "exact", 
+	          "value": 30
+	        }, 
+	        "tauLtp": {
+	          "maxValue": 0, 
+	          "minValue": 0, 
+	          "type": "exact", 
+	          "value": 30
+	        }, 
+	        "tauPostSynapticConductance": {
+	          "maxValue": 0, 
+	          "minValue": 0, 
+	          "type": "exact", 
+	          "value": 30
+	        }, 
+	        "utilization": {
+	          "maxValue": 0, 
+	          "minValue": 0, 
+	          "type": "exact", 
+	          "value": 30
+	        }
+	      }, 
+	      "post": "Cell 3", 
+	      "postPath": [
+	        {
+	          "$$hashKey": "05X", 
+	          "index": 0, 
+	          "name": "Home"
+	        }
+	      ], 
+	      "pre": "Cell 1", 
+	      "prePath": [
+	        {
+	          "$$hashKey": "05V", 
+	          "index": 0, 
+	          "name": "Home"
+	        }
+	      ], 
+	      "prob": 0.5
+	    }
+	  ]
+	},
+	"simulation":
+	{
+	  "duration": 1, 
+	  "fsv": None, 
+	  "includeDistance": "No", 
+	  "inputs": [
+	    {
+	      "$$hashKey": "061", 
+	      "amplitude": 2, 
+	      "className": "simulationInput", 
+	      "endTime": 1000000, 
+	      "frequency": 10, 
+	      "inputTarget": "No Cell Groups Available", 
+	      "name": "Input1", 
+	      "probability": 0.5, 
+	      "startTime": 500000, 
+	      "stimulusType": "Rectangular Current", 
+	      "width": 3
+	    }
+	  ], 
+	  "interactive": "No", 
+	  "name": "Sim", 
+	  "outputs": [
+	    {
+	      "$$hashKey": "064", 
+	      "className": "simulationOutput", 
+	      "endTime": 1, 
+	      "fileName": "output", 
+	      "frequency": 10, 
+	      "name": "Output1", 
+	      "numberFormat": "ascii", 
+	      "outputType": "Save As File", 
+	      "saveAsFile": True,
+	      "probability": 0.5, 
+	      "reportTarget": "target", 
+	      "reportType": "neuron_voltage", 
+	      "startTime": 0
+	    }
+	  ], 
+	  "seed": None
+	}
 	}
 
 	message = json.dumps(params)

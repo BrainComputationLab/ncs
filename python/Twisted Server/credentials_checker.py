@@ -5,6 +5,7 @@ from twisted.cred.checkers import ICredentialsChecker
 from twisted.cred.credentials import IUsernameHashedPassword 
 from twisted.internet.defer import Deferred
 from zope.interface import implements
+from twisted.python import log
 import bcrypt
 
 DEBUG = True
@@ -69,6 +70,5 @@ class DBCredentialsChecker(object):
 				deferred.errback(error.UnauthorizedLogin('Incorrect password')) 
 
 	def _ebAuthenticate(self, failure, credentials, deferred):
-		if DEBUG:
-			print 'In authentication errorback'
+		log.msg('Uknown error in authentication.')
 		deferred.errback(error.LoginFailed(failure))

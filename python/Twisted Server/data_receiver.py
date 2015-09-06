@@ -28,6 +28,8 @@ class RecvDataProtocol(Protocol):
         self.testfile = None
         self.routing_key = None
         self.first_message = True
+        self.byte_count = 0
+        self.sim_data = SimData_pb2.SimData();
 
     @inlineCallbacks
     def gotConnection(self, connection, username, password):
@@ -45,10 +47,11 @@ class RecvDataProtocol(Protocol):
         msg = Content(message)
         msg["delivery mode"] = 2
 
-        yield channel.basic_publish(exchange='datastream', routing_key=self.routing_key, content=msg)
+        if message:
+            yield channel.basic_publish(exchange='datastream', routing_key=self.routing_key, content=msg)
 
-        if DEBUG:
-            print "Sending message: %s" % message
+        #if DEBUG:
+        #    print "Sending message: %s" % message
         returnValue(result)
 
     @inlineCallbacks
@@ -86,25 +89,72 @@ class RecvDataProtocol(Protocol):
                 print "ROUTING KEY: " + self.routing_key
         else:
 
+            '''if dataReceived.message_start:
+                msg_size = int(data[0])
+                test = len(data)
+                print 'SIZE: ' + str(test) '''
+            '''
+            # receive the message length
+            msg = (clientSocket.recvfrom(1))[0]
+            if not msg:
+                break
+            msg_size = int(msg) 
+
+            # receive the report name
+            #report_name_size = int((connectionSocket.recvfrom(2))[0])
+            #report_name = (connectionSocket.recvfrom(report_name_size))[0]
+            #msg_size -= (report_name_size + 2)
+
+            # ensure we received the entire message before deserializing
+            buffer = ''
+            while len(buffer) < msg_size:
+                chunk = clientSocket.recv(msg_size - len(buffer))
+                if chunk == '':
+                    break
+                buffer += chunk
+
             # deserialize the protocol buffer
-            sim_data = SimData_pb2.SimData();
-            sim_data.ParseFromString(data)
+            sim_data.ParseFromString(buffer)
+            if not buffer:
+                break
+            '''
 
-            # unpack the bytes into floats
-            temp = data.split()
-            bytes = temp[len(temp) - 1] 
-            if len(bytes) < 4:
-                bytes = bytes.zfill(4)
+            packets = data.split('::END')
+            for packet in packets:
+                # deserialize the protocol buffer
+                if packet:
+                    try:
+                        self.sim_data.ParseFromString(packet)
 
-            value = struct.unpack('f', bytes)[0]
+                        self.byte_count += len(packet)
 
-            if DEBUG:
-                self.testfile.write(str(value)+'\n')
-            self.deferred.addCallback(self.send_message, str(value))
+                        # unpack the bytes into floats
+                        temp = packet.split()
+                        bytes = temp[len(temp) - 1] 
+                        if len(bytes) < 4:
+                            bytes = bytes.zfill(4)
+
+                        try:
+                            value = struct.unpack('f', bytes)[0]
+                        except:
+                            log.msg("Unpack error:", sys.exc_info()[0])
+
+                        if DEBUG:
+                            self.testfile.write(str(value)+'\n')
+
+                        self.deferred.addCallback(self.send_message, str(value))
+                        self.deferred.addErrback(self.errorBack)
+
+                    except:
+                        log.msg("Deserialize error:", sys.exc_info()[0])
+
+    def errorBack(self, error):
+        log.msg("Error enqueueing simulation data: ", error)
 
     def connectionLost(self, reason):
         if DEBUG:
             self.testfile.close()
+            print 'Python byte count: ' + str(self.byte_count)
         self.deferred.addCallback(self.cleanup)
 
 class RecvDataProtocolFactory(ServerFactory):

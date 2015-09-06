@@ -20,7 +20,7 @@ def gotConnection(conn, username, password):
     yield chan.queue_declare(queue="data", durable=True, exclusive=False, auto_delete=False)
     yield chan.exchange_declare(exchange="datastream", type="direct", durable=True, auto_delete=False)
 
-    yield chan.queue_bind(queue="data", exchange="datastream", routing_key="testuser@gmail.com..regular_spiking_izh")
+    yield chan.queue_bind(queue="data", exchange="datastream", routing_key="testuser2@gmail.com..Output1")
 
     yield chan.basic_consume(queue='data', no_ack=True, consumer_tag="testtag")
 

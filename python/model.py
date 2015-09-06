@@ -1,4 +1,4 @@
-import os, sys, json
+import os, sys, json, re
 from string import whitespace
 
 #specify the location of ncs.py in ncs_lib_path
@@ -7,9 +7,6 @@ sys.path.append(ncs_lib_path)
 import ncs
 
 class ModelService(object):
-
-    # TODO: ADD FUNCTIONS FOR BUILD SIM AND EXPORT TO FILE INSTEAD OF HAVING IT BUILD THE SIM AS 
-    # SOON AS IT HAS THE PARAMETERS
 
     @classmethod
     def process_model(self, sim, entity_dicts, neuron_groups, synapse_groups, script):
@@ -26,15 +23,12 @@ class ModelService(object):
         except ValidationError:
             errors.append("Improper json format")'''
 
-        # models on DB can be found by <author, model name> key? hash key is a part of cell group (single in total groups)
-        # WHEN THE MODEL IS STORED IN THE DB, NEED TO STORE DESCRIPTIONS, ETC.
-
         # get the lists of entities
         neurons = entity_dicts['cellGroups']['cellGroups']
         synapses = entity_dicts['synapses']
 
-        # add neurons to sim
-        groups = []
+        # add neurons
+        neuron_types = 0
         for index, group in enumerate(neurons):
             # TODO: Validate neuron spec
             pass
@@ -48,31 +42,32 @@ class ModelService(object):
             # dictionary for neuron parameters which vary depending on cell type
             if neuron_type == 'izhikevich':
                 spec = {
-                    "a": 0.0,
-                    "b": 0.0,
-                    "c": 0.0,
-                    "d": 0.0,
-                    "u": 0.0,
-                    "v": 0.0,
-                    "threshold": 0,
+                    "a": '0.0',
+                    "b": '0.0',
+                    "c": '0.0',
+                    "d": '0.0',
+                    "u": '0.0',
+                    "v": '0.0',
+                    "threshold": '0',
                 }
-                self.convert_params_to_specification_format(neuron_params, spec)
+                self.convert_params_to_str_specification_format(neuron_params, spec)
                 self.convert_unicode_ascii(spec)
 
             elif neuron_type == 'ncs':
                 spec = {
-                    "calcium": 0.0,
-                    "calciumSpikeIncrement": 0.0,
-                    "capacitance": 0.0,
-                    "leakConductance": 0.0,
-                    "leakReversalPotential": 0.0,
-                    "rMembrane": 0.0,
-                    "restingPotential": 0.0,
-                    "tauCalcium": 0.0,
-                    "tauMembrane": 0.0,
-                    "threshold": 0,
+                    "calcium": '0.0',
+                    "calciumSpikeIncrement": '0.0',
+                    "capacitance": '0.0',
+                    "leakConductance": '0.0',
+                    "leakReversalPotential": '0.0',
+                    "rMembrane": '0.0',
+                    "restingPotential": '0.0',
+                    "tauCalcium": '0.0',
+                    "tauMembrane": '0.0',
+                    "threshold": '0.0',
                 }
-                self.convert_params_to_specification_format(neuron_params, spec)
+
+                self.convert_params_to_str_specification_format(neuron_params, spec)
                 self.convert_unicode_ascii(spec)
 
                 # convert dict keys to match what simulator takes
@@ -81,38 +76,39 @@ class ModelService(object):
                 # loop through channels
                 channels = []
                 for channel in neuron_params['channel']:
+
                     # determine channel type so parameters can be populated
                     if channel['name'] == "Calcium Dependant Channel":
                         channel_type = 'calcium_dependent'
 
                         channel_spec = {
-                            "backwardsRate": 0.0,
-                            "conductance": 0.0,
-                            "forwardExponent": 0.0,
-                            "forwardScale": 0.0,
-                            "mInitial": 0.0,
-                            "mPower": 0.0,
-                            "reversalPotential": 0.0,
-                            "tauScale": 0.0
+                            "backwardsRate": '0.0',
+                            "conductance": '0.0',
+                            "forwardExponent": '0.0',
+                            "forwardScale": '0.0',
+                            "mInitial": '0.0',
+                            "mPower": '0.0',
+                            "reversalPotential": '0.0',
+                            "tauScale": '0.0'
                         }
 
                     elif channel['name'] == "Voltage Gated Ion Channel":
                         channel_type = 'voltage_gated_ion'
 
                         channel_spec = {
-                            "activationSlope": 0.0,
-                            "conductance": 0.0,
-                            "deactivationSlope": 0.0,
-                            "equilibriumSlope": 0.0,
-                            "mInitial": 0.0,
-                            "mPower": 0.0,
-                            "r": 0.0,
-                            "reversalPotential": 0.0,
-                            "vHalf": 0.0
+                            "activationSlope": '0.0',
+                            "conductance": '0.0',
+                            "deactivationSlope": '0.0',
+                            "equilibriumSlope": '0.0',
+                            "mInitial": '0.0',
+                            "mPower": '0.0',
+                            "r": '0.0',
+                            "reversalPotential": '0.0',
+                            "vHalf": '0.0'
                         }
 
                     # convert channels to spec format
-                    self.convert_params_to_specification_format(channel, channel_spec)
+                    self.convert_params_to_str_specification_format(channel, channel_spec)
                     self.convert_unicode_ascii(channel_spec)
                     self.convert_keys_to_sim_input(channel_spec)
 
@@ -126,7 +122,7 @@ class ModelService(object):
                     '''spike_shape_vals = []
                     for value in neuron_params['spikeShape']:
                         spike_shape_vals.append(value)'''
-                    # DEFAULTED UNTIL NCB CAN SEND AN ARRAY
+                    # DEFAULTED UNTIL NCB CAN SEND AN ARRAY****************
                     spike_shape_vals = [-33, 30, -42]
 
                     # add arrays to the spec map
@@ -135,12 +131,12 @@ class ModelService(object):
  
             else: #Hodgkin Huxley
                 spec = {
-                    "capacitance": 0.0,
-                    "restingPotential": 0.0,
-                    "threshold": 0
+                    "capacitance": '0.0',
+                    "restingPotential": '0.0',
+                    "threshold": '0.0'
                 }
 
-                self.convert_params_to_specification_format(neuron_params, spec)
+                self.convert_params_to_str_specification_format(neuron_params, spec)
                 self.convert_unicode_ascii(spec)
                 self.convert_keys_to_sim_input(spec)
 
@@ -154,35 +150,35 @@ class ModelService(object):
 
                         particles = channel['particles']
                         particle_spec = {
-                            "power": 0.0,
-                            "xInitial": 0.0,
+                            "power": '',
+                            "xInitial": '',
                         }
                         # convert particles to spec format
-                        self.convert_params_to_specification_format(particles, particle_spec)
+                        self.convert_params_to_str_specification_format(particles, particle_spec)
                         self.convert_unicode_ascii(particle_spec)
                         self.convert_keys_to_sim_input(particle_spec)
 
                         alpha_spec = {
-                            "a": 0.0,
-                            "b": 0.0,
-                            "c": 0.0,
-                            "d": 0.0,
-                            "f": 0.0,
-                            "h": 0.0
+                            "a": '0.0',
+                            "b": '0.0',
+                            "c": '0.0',
+                            "d": '0.0',
+                            "f": '0.0',
+                            "h": '0.0'
                         }
                         beta_spec = {
-                            "a": 0.0,
-                            "b": 0.0,
-                            "c": 0.0,
-                            "d": 0.0,
-                            "f": 0.0,
-                            "h": 0.0
+                            "a": '0.0',
+                            "b": '0.0',
+                            "c": '0.0',
+                            "d": '0.0',
+                            "f": '0.0',
+                            "h": '0.0'
                         }
                         # convert alpha and beta to spec format
-                        self.convert_params_to_specification_format(particles['alpha'], alpha_spec)
+                        self.convert_params_to_str_specification_format(particles['alpha'], alpha_spec)
                         self.convert_unicode_ascii(alpha_spec)
                         self.convert_keys_to_sim_input(alpha_spec)
-                        self.convert_params_to_specification_format(particles['beta'], beta_spec)
+                        self.convert_params_to_str_specification_format(particles['beta'], beta_spec)
                         self.convert_unicode_ascii(beta_spec)
                         self.convert_keys_to_sim_input(beta_spec)
 
@@ -190,12 +186,12 @@ class ModelService(object):
                         particle_spec['beta'] = beta_spec
 
                         channel_spec = {
-                            "conductance": 0.0,
-                            "reversalPotential": 0.0
+                            "conductance": '',
+                            "reversalPotential": ''
                         }
 
                     # convert channels to spec format
-                    self.convert_params_to_specification_format(channel, channel_spec)
+                    self.convert_params_to_str_specification_format(channel, channel_spec)
                     self.convert_unicode_ascii(channel_spec)
                     self.convert_keys_to_sim_input(channel_spec)
                     # this must be added after the conversion to spec format
@@ -208,74 +204,78 @@ class ModelService(object):
                     spec['channels'] = channels
 
             # store this neuron type
-            print('ADDING NEURON: ')
-            print group['name']
-            print neuron_type
-            print spec
-            print '\n'
-            #index
-            #spec_json = json.dumps(spec)
-            script += '\tparameters_' + str(index) + ' = sim.addNeuron("' + str(group['name'].encode('ascii', 'ignore')) + '", "' + str(neuron_type.encode('ascii', 'ignore')) + '", ' + str(spec) + ')\n'
-            groups.append(sim.addNeuron(group['name'].encode('ascii', 'ignore'), neuron_type.encode('ascii', 'ignore'), spec))
+            script += '\tparameters_' + str(index) + ' = sim.addNeuron("' + str(group['name'].encode('ascii', 'ignore')) + '", "' + str(neuron_type.encode('ascii', 'ignore')) + '", ' + self.create_spec_str(spec) + ')\n'
+            neuron_types += 1
 
         # add synapses
-        connections = []
-        for synapse in synapses:
+        synapse_types = 0
+        for index, synapse in enumerate(synapses):
             # TODO: Validate synapse spec
             pass
 
             # get synapse parameters
             synapse_params = synapse['parameters']
 
-            # TODO: add this to model class in NCB
+            # TODO: add this to model class in NCB ***************
             # Get synapse type from the model (NCS or flat)
             #synapse_type = synapse_params['type']
             synapse_type = 'ncs'
 
             # dictionary for synapse parameters
             spec = {          
-                "utilization": 0.0,
-                "redistribution": 0.0,
-                "lastPrefireTime": 0.0,
-                "lastPostfireTime": 0.0,
-                "tauFacilitation": 0.0,
-                "tauDepression": 0.0,
-                "tauLtp": 0.0,
-                "tauLtd": 0.0,
-                "aLtpMinimum": 0.0,
-                "aLtdMinimum": 0.0,
-                "maxConductance": 0.0,
-                "reversalPotential":0.0,
-                "tauPostSynapticConductance": 0.0,
-                "psgWaveformDuration": 0.0,
-                "delay": 0,
+                "utilization": '0.0',
+                "redistribution": '0.0',
+                "lastPrefireTime": '0.0',
+                "lastPostfireTime": '0.0',
+                "tauFacilitation": '0.0',
+                "tauDepression": '0.0',
+                "tauLtp": '0.0',
+                "tauLtd": '0.0',
+                "aLtpMinimum": '0.0',
+                "aLtdMinimum": '0.0',
+                "maxConductance": '0.0',
+                "reversalPotential":'0.0',
+                "tauPostSynapticConductance": '0.0',
+                "psgWaveformDuration": '0.0',
+                "delay": '0',
             }
 
-            self.convert_params_to_specification_format(synapse_params, spec)
+            self.convert_params_to_str_specification_format(synapse_params, spec)
             self.convert_unicode_ascii(spec)
+            self.convert_keys_to_sim_input(spec)
+            spec['tau_postsynaptic_conductance'] = spec.pop('tau_post_synaptic_conductance')
+            spec['A_ltp_minimum'] = spec.pop('a_ltp_minimum')
+            spec['A_ltd_minimum'] = spec.pop('a_ltd_minimum')
+            spec['delay'] = spec['delay'].split('.')[0]
 
             # store this synapse
-            script += '\tconnections_' + str(index) + ' = sim.addSynapse("' + str(synapse_params['name'].encode('ascii', 'ignore')) + '", "' + str(synapse_type.encode('ascii', 'ignore')) + '", ' + str(spec) + ')\n'
-            connections.append(sim.addSynapse(synapse_params['name'].encode('ascii', 'ignore'), synapse_type.encode('ascii', 'ignore'), spec))
+            script += '\tconnections_' + str(index) + ' = sim.addSynapse("' + str(synapse_params['name'].encode('ascii', 'ignore')) + '", "' + str(synapse_type.encode('ascii', 'ignore')) + '", ' + self.create_spec_str(spec) + ')\n'
+            synapse_types += 1
 
         # create neuron groups
-        for i in range(len(groups)):
-            print "ADDING TO GROUP..."
-            print neurons[i]['name']
-            print neurons[i]['num']
+        for i in range(neuron_types):
 
             # final parameter is optional geometry generator? neurons[i]['geometry']
             group_name = 'group_' + str(i)
             script += '\t' + group_name + ' = sim.addNeuronGroup("' + group_name + '", ' + str(int(neurons[i]['num'])) + ', parameters_' + str(i) + ', None)\n'
-            neuron_groups.append(sim.addNeuronGroup(group_name,int(neurons[i]['num']),groups[i],None))
+            neuron_groups.append(group_name)
 
-        # do the same for the synapse groups
-        for i in range(len(connections)):
-            script += '\t' + synapses[i]['parameters']['name'] + ' = sim.addSynapseGroup("' + synapses[i]['parameters']['name'] + '", ' + str(synapses[i]['pre']) + ', ' + str(synapses[i]['post']) + str(synapses[i]['prob']) + 'connections_' + str(i) + ')\n'
-            synapse_groups.append(sim.addSynapseGroup(synapses[i]['parameters']['name'], synapses[i]['pre'], synapses[i]['post'], synapses[i]['prob'], connections[i]))
+        # create synapse groups
+        for i in range(synapse_types):
+
+            # determine presynaptic and postsynaptic neuron groups
+            pre = ''
+            post = ''
+            for index, group in enumerate(neurons):
+              if group['name'] == synapses[i]['pre']:
+                pre = neuron_groups[index]
+              if group['name'] == synapses[i]['post']:
+                post = neuron_groups[index]
+
+            script += '\t' + synapses[i]['parameters']['name'] + ' = sim.addSynapseGroup("' + synapses[i]['parameters']['name'] + '", "' + pre + '", "' + post + '", ' + str(synapses[i]['prob']) + ', connections_' + str(i) + ')\n'
+            synapse_groups.append(synapses[i]['parameters']['name'])
 
         return script
-
 
     # This function takes in the neuron and synapse groups created in the process_model function
     @classmethod
@@ -284,36 +284,35 @@ class ModelService(object):
         neurons = model_entity_dicts['cellGroups']['cellGroups']
         synapses = model_entity_dicts['synapses']
         stimuli = entity_dicts['inputs']
+
         for stimulus in stimuli:
             # TODO: Validate stimulus spec
-            pass
+
 
             # Get stimulus type from the model
-            # STIM TYPE NEEDS TO BE IN THE FORMAT "rectangular_current" not "Rectangular Current"?
             # rectangular_current, rectangular_voltage, linear_current, linear_voltage, sine_current, or sine_voltage
-            stimulus_type = stimulus['stimulusType'].encode('ascii', 'ignore')
-            stimulus_type = "rectangular_current"
+            stimulus_type = self.convert_stim_type(stimulus['stimulusType'].encode('ascii', 'ignore'))
             prob = float(stimulus['probability'])
             time_start = float(stimulus['startTime'])
             time_end = float(stimulus['endTime'])
-            targets = stimulus['inputTargets']
+            targets = stimulus['inputTarget']
 
             # these parameters will mostly change depending on the stimulus type
             spec = {
-                "amplitude": 10.0, # THIS IS 10 BECAUSE IT IS NOT SET BY NCB
-                "amplitude_scale": 0.0,
-                "amplitude_shift": 0.0,
-                "current": 0.0,
-                "delay": 0.0,
-                "end_amplitude": 0.0,
-                "frequency": 0.0,
-                "phase": 0.0,
-                "start_amplitude": 0.0,
-                "time_scale": 0.0,
-                "width": 0.0
+                "amplitude": str(stimulus['amplitude']),
+                "amplitude_scale": '0.0',
+                "amplitude_shift": '0.0',
+                "current": '0.0',
+                "delay": '0',
+                "end_amplitude": '0.0',
+                "frequency": str(stimulus['frequency']),
+                "phase": '0.0',
+                "start_amplitude": '0.0',
+                "time_scale": '0.0',
+                "width": str(stimulus['width']),
             }
 
-            self.convert_params_to_specification_format(stimulus, spec)
+            #self.convert_params_to_str_specification_format(stimulus, spec)  CAN'T USE THIS FUNCTION BECAUSE NCB JSON DOES NOT MATCH STIM SPEC FIELDS**********
             self.convert_unicode_ascii(spec)
 
             # Determine target group
@@ -322,17 +321,16 @@ class ModelService(object):
             for target in targets:
                 for i in range(len(neurons)):
                     if neurons[i]['name'] == target:
-                        script += '\tsim.addStimulus("' + str(stimulus_type) + '", ' + str(spec) + ', ' + str(neuron_groups[i]) + ', ' + str(prob) + ', ' + str(time_start) + ', ' + str(time_end) + ')\n'
-                        sim.addStimulus(stimulus_type, spec, neuron_groups[i], prob, time_start, time_end)
-            # DEFAULT THIS UNTIL IT CAN BE SET BY NCB
-            script += '\tsim.addStimulus("' + str(stimulus_type) + '", ' + str(spec) + ', ' + str(neuron_groups[0]) + ', ' + str(prob) + ', ' + str(time_start) + ', ' + str(time_end) + ')\n'
-            sim.addStimulus(stimulus_type, spec, neuron_groups[0], prob, time_start, time_end)
+                        script += '\tsim.addStimulus("' + str(stimulus_type) + '", ' + self.create_spec_str(spec) + ', ' + neuron_groups[i] + ', ' + str(prob) + ', ' + str(time_start) + ', ' + str(time_end) + ')\n'
+
+            # DEFAULT THIS UNTIL IT CAN BE SET BY NCB************
+            script += '\tsim.addStimulus("' + str(stimulus_type) + '", ' + self.create_spec_str(spec) + ', ' + neuron_groups[0] + ', ' + str(prob) + ', ' + str(time_start) + ', ' + str(time_end) + ')\n'
 
         # reports
         reports = entity_dicts['outputs']
         for index, report in enumerate(reports):
             # TODO: Validate report spec
-            pass
+
 
             # get report type
             report_type = self.convert_report_type(report['reportType'].encode('ascii', 'ignore'))
@@ -350,33 +348,23 @@ class ModelService(object):
                 if synapses[i]['name'] == report['reportTarget']:
                     report_target = synapse_groups[i]
                     target_type = 'synapses'''
-            # DEFAULTED BECAUSE THIS IS STILL SAYING NO GROUPS AVAILABLE
+            # DEFAULTED BECAUSE THIS IS STILL SAYING NO GROUPS AVAILABLE************
             report_target = neuron_groups[0]
             target_type = 'neuron'
 
             probability = float(report['probability'])
             time_start = float(report['startTime'])
             time_end = float(report['endTime'])
-            # DEFAULT THESE UNTIL THEY CAN BE SET BY NCB
-            probability = 1.0
-            time_start = 0.0
-            time_end = 1.0
 
-            print 'ADDING REPORT...'
-            script += '\treport_' + str(index) + '= sim.addReport("' + str(report_target) + '", "' + str(target_type) + '", "' + str(report_type) + '", ' + str(probability) + ', ' + str(time_start) + ', ' + str(time_end) + ')\n'
-            rpt = sim.addReport(report_target, target_type, report_type, probability, time_start, time_end)
-            print 'ADDING OUTPUT FILE...'
-            # TODO: determine if other formats other than ASCII are available
+            script += '\treport_' + str(index) + ' = sim.addReport("' + report_target + '", "' + target_type + '", "' + str(report_type) + '", ' + str(probability) + ', ' + str(time_start) + ', ' + str(time_end) + ')\n'
+            
             sim_identifier = username + '..' + report['name']
+
             if report['saveAsFile'] == True:
                 script += '\treport_' + str(index) + '.toAsciiFileReportName("./' + str(report['fileName'].encode('ascii', 'ignore')) + '", "' + str(sim_identifier) + '")\n'
-                rpt.toAsciiFile("./" + report['fileName'].encode('ascii', 'ignore'), sim_identifier)
-
-        print "ATTEMPTING TO RUN"
 
         # duration (in seconds) - each time step is 1 ms       
-        script += '\tsim.run(duration=' + str(float(entity_dicts['duration'])) + ')' + '\n'
-        sim.run(duration=float(entity_dicts['duration']))         
+        script += '\tsim.run(duration=' + str(float(entity_dicts['duration'])) + ')' + '\n' 
 
         return script
 
@@ -416,14 +404,46 @@ class ModelService(object):
                     spec[param] = ncs.Uniform(float(value['minValue']), float(value['maxValue']))
 
     @classmethod
+    def convert_params_to_str_specification_format(self, params, spec):
+        # exact example : "a": 0.02
+        # uniform example: "a": ncs.Uniform(min, max)
+        # normal example: "a": ncs.Normal(mean, standard deviation)
+
+        for param, value in params.iteritems():
+            if type(value) is dict and 'type' in value:
+                if value['type'] == 'exact':
+                    spec[param] = str(float(value['value']))
+                elif value['type'] == 'normal':
+                    spec[param] = 'ncs.Normal(' + str(float(value['mean'])) + ', ' + str(float(value['stddev'])) + ')'
+                elif value['type'] == 'uniform':
+                    spec[param] = 'ncs.Uniform(' + str(float(value['minValue'])) + ', ' + str(float(value['maxValue'])) + ')'
+
+    @classmethod
     def convert_keys_to_sim_input(self, spec):
         for key, value in spec.iteritems():
-            spec[self.convert_camel_case_to_underscore(key)] = spec.pop(key)
+          spec[self.convert_camel_case_to_underscore(key)] = spec.pop(key)
 
     @classmethod
     def convert_camel_case_to_underscore(self, string):
         s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', string)
         return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+
+    @classmethod
+    def convert_stim_type(self, stim_type):
+        if stim_type == 'Rectangular Current':
+            return 'rectangular_current'
+        elif stim_type == 'Rectangular Voltage':
+            return 'rectangular_voltage'
+        elif stim_type == 'Linear Current':
+            return 'linear_current'
+        elif stim_type == 'Linear Voltage':
+            return 'linear_voltage'
+        elif stim_type == 'Sine Current':
+            return 'sine_current'
+        elif stim_type == 'Sine Voltage':
+            return 'sine_voltage'
+        else:
+            return stim_type
 
     @classmethod
     def convert_report_type(self, report_type):
@@ -438,7 +458,15 @@ class ModelService(object):
         else:
             return report_type
 
-    ''' ******************This method should not be used***************************** '''
+    @classmethod
+    def create_spec_str(self, spec_dict):
+      spec_str = '{'
+      for key, val in spec_dict.iteritems():
+        spec_str += "'" + key + "': " + val + ", "
+      spec_str += '}'
+      return spec_str
+
+    ''' ******************This method is only for testing***************************** '''
     @classmethod
     def sim_test(self):
         sim = ncs.Simulation()

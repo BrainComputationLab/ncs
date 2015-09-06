@@ -16,25 +16,6 @@ AsciiStream<T>::AsciiStream(std::ostream& stream,
 
   auto thread_function = [this]() {
 
-    // protobuf object instance
-    SimData simData;
-    std::string buffer;
-
-    // Attempt to open socket to stream data
-    ncs::spec::ClientSocket client_socket;
-    bool connected = client_socket.bindWithoutThrow( "127.0.1.1", 8005 ); // THIS IS THE PORT THE DAEMON IS LISTENING ON
-    std::cout << "Connection status: " << connected << std::endl;
-
-    // testing username send
-    if (connected) {
-      std::string sim_identifier("testuser@gmail.com..regular_spiking_izh");
-      std::string lenStr = std::to_string(sim_identifier.length());
-      if (lenStr.length() < 3)
-        lenStr = '0' + lenStr;
-
-      client_socket << lenStr + sim_identifier;
-    }
-
     size_t num_elements = data_source_->getTotalNumberOfElements();
 
     while(true) {
@@ -44,42 +25,14 @@ AsciiStream<T>::AsciiStream(std::ostream& stream,
       }
       const T* d = static_cast<const T*>(data);
 
-      // serialize the data so it can be sent through a socket
-      simData.set_data(d[0]);
-      if (!simData.SerializeToString(&buffer)) {
-        std::cout << "failed to serialize data\n";
-        break;
-      }
-      else {
-
-        // send the message
-        if (connected) {
-          client_socket << buffer;
-        }
-      }
-
       stream_ << d[0];
       for (size_t i = 1; i < num_elements; ++i) {
 
-        // this is called when the data has multiple columns?
-        simData.set_data(d[i]);
-        if (!simData.SerializeToString(&buffer)) {
-          std::cout << "failed to serialize data\n";
-          break;
-        }
-        else {
-
-        // send the message
-        if (connected)
-            client_socket << buffer;
-        }
         stream_ << " " << d[i];
       }
       stream_ << std::endl;
       data_source_->release();
     }
-    if (connected)
-      client_socket.close();
     delete data_source_;
     data_source_ = nullptr;
   };
@@ -106,6 +59,7 @@ AsciiStream<T>::AsciiStream(std::ostream& stream, const std::string report_name,
     ncs::spec::ClientSocket client_socket;
     bool connected = client_socket.bindWithoutThrow( "127.0.1.1", 8005 );
     std::cout << "Connection to daemon: " << connected << std::endl;
+    int byteCount = 0;
 
     // send simulation identifier
     if (connected) {
@@ -133,16 +87,12 @@ AsciiStream<T>::AsciiStream(std::ostream& stream, const std::string report_name,
       }
       else {
 
-        // append the size of the message to the message
-        /*std::string report_name_size = std::to_string(report_name_.length());
-        if (report_name_.length() < 10)
-          report_name_size = '0' + report_name_size;
-        buffer = report_name_size + report_name_ + buffer;
-        buffer = std::to_string(buffer.length()) + buffer;*/
-
-        // send the message
+        // append the size of the message and send the message
         if (connected) {
+          //buffer = std::to_string(buffer.length()) + buffer;
+          byteCount += buffer.length();
           client_socket << buffer;
+          client_socket << "::END";
         }
       }
 
@@ -156,9 +106,13 @@ AsciiStream<T>::AsciiStream(std::ostream& stream, const std::string report_name,
         }
         else {
 
-        // send the message
-          if (connected)
+          // send the message
+          if (connected) {
+            //buffer = std::to_string(buffer.length()) + buffer;
+            byteCount += buffer.length();
             client_socket << buffer;
+            client_socket << "::END";
+          }
         }
         stream_ << " " << d[i];
       }
@@ -167,6 +121,7 @@ AsciiStream<T>::AsciiStream(std::ostream& stream, const std::string report_name,
     }
     if (connected)
       client_socket.close();
+    //std::cout << "BYTE COUNT: " << byteCount << std::endl;
     delete data_source_;
     data_source_ = nullptr;
   };
