@@ -6,7 +6,8 @@ from twisted.internet import protocol, reactor, defer
 from twisted.internet.protocol import ClientFactory, ServerFactory, Protocol
 from twisted.protocols import basic
 from twisted.python import log
-import json, time
+from twisted.internet import task
+import json, time, uuid, os
 
 from simulation import Simulation
 from credentials_checker import DBCredentialsChecker
@@ -160,14 +161,13 @@ class AuthenticationService(service.Service):
 		self.portal.registerChecker(self.checker)
 
 		self.options = {
-		        "login" : None, # should send models
+		        "login" : None, # handled above
 				"launchSim" : self.launch_sim,
 				"saveModel" : self.save_model,
 				"getModels": self.get_models,
 				"undoModelChange": self.undo_model_change,
 				"exportScript": self.export_script,
-				"scriptToJSON": self.script_to_JSON,
-				"logout": None # should close connection
+				"scriptToJSON": self.script_to_JSON
 			}
 
 	def startService(self):
@@ -177,12 +177,25 @@ class AuthenticationService(service.Service):
 	def launch_sim(self, params):
 		sim = Simulation()
 		deferred = maybeDeferred(sim.build_sim, params, self.username)
-		deferred.addCallback(sim.run_sim, params)
+		script_file = str(uuid.uuid4()) + '.py'
+		deferred.addCallback(sim.run_sim, params, script_file)
 
 		self.response = {"request": "launchSim", "response": "success"}
 		# TODO: add errback for failed sim launch
 
+		reactor.callLater(5, self.remove_script_file, script_file)
+
 		return deferred
+
+	def remove_script_file(self, script_file):
+
+		# delete the script file
+		print script_file
+		try:
+			os.remove(script_file)
+			print 'Removed script file.'
+		except OSError:
+			log.msg("Could not delete script file.")
 
 	# This checks if creating new model or updating an existing
 	def save_model(self, params):

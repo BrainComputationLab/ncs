@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 
-import optparse, os, subprocess
+import optparse, os, subprocess, stat, sys
+from subprocess import Popen, PIPE
 from twisted.python import log
-import json
-import sys, ncs
+from twisted.internet import reactor
+import json, ncs, uuid
 
+from sim_subprocess import SubProcessProtocol
 from model import ModelService
 
 DEBUG = True
@@ -21,14 +23,14 @@ class Simulation:
 		json_model = params['model']
 		json_sim_input_and_output = params['simulation']
 
-		# temporarily write the JSON to a file for comparision
-		file = open("json_recvd.txt", "w")
-		file.write(json.dumps(params, sort_keys=True, indent=2) + '\n\n\n')
-		file.write('MODEL:\n')
-		file.write(json.dumps(json_model, sort_keys=True, indent=2) + '\n\n\n')
-		file.write('SIMULATION:\n')
-		file.write(json.dumps(json_sim_input_and_output, sort_keys=True, indent=2) + '\n')
-		file.close()
+		if DEBUG:
+			file = open("json_recvd.txt", "w")
+			file.write(json.dumps(params, sort_keys=True, indent=2) + '\n\n\n')
+			file.write('MODEL:\n')
+			file.write(json.dumps(json_model, sort_keys=True, indent=2) + '\n\n\n')
+			file.write('SIMULATION:\n')
+			file.write(json.dumps(json_sim_input_and_output, sort_keys=True, indent=2) + '\n')
+			file.close()
 
 		# add initial contents to script string
 		self.script_str += '#!/usr/bin/python\n'
@@ -39,31 +41,27 @@ class Simulation:
 		self.script_str += 'if __name__ == "__main__":\n'
 		self.script_str += '\tsim = ncs.Simulation()\n'
 
-		#print self.script_str
-
-		# this function takes dictionaries (converted json objects) and handles assigning neurons, synapses, and groups
+		# takes the model and simulation dictionaries and builds a simulation script
 		neuron_groups = []
 		synapse_groups = []
 		self.script_str = self.modelService.process_model(self.sim, json_model, neuron_groups, synapse_groups, self.script_str)
-		#print self.script_str
-		if DEBUG:
-			print "ATTEMPTING TO INIT SIM..."
 
-		self.script_str += '\tif not sim.init(sys.argv):\n\t\tprint "failed to initialize simulation."\n\t\treturn\n'
-		#print self.script_str
-		if not self.sim.init(sys.argv):
-		    print "Failed to initialize simulation." # THIS SHOULD BE AN ERROR CALLBACK
-		    log.msg("Failed to initialize simulation.")
-		    return 
-
-		if DEBUG: 
-			print "ATTEMPTING TO ADD STIMS AND REPORTS"
+		self.script_str += '\tif not sim.init(sys.argv):\n\t\tprint "failed to initialize simulation."\n\t\tsys.exit(1)\n'
 
 		self.script_str = self.modelService.add_stims_and_reports(self.sim, json_sim_input_and_output, json_model, neuron_groups, synapse_groups, username, self.script_str)
-		#print self.script_str
-	def run_sim(self, params, ign):
-		self.script = open("script.py", "w")
+
+	def run_sim(self, params, ign, script_file):
+		self.script = open(script_file, "w")
 		self.script.write(self.script_str)
 		self.script.close()
-		#subprocess.call("./script.py", shell=True)
-		#os.remove("script.py")
+
+		st = os.stat(script_file)
+		os.chmod(script_file, st.st_mode | stat.S_IEXEC)
+
+		# set the subprocess environment to the location of pyncs
+		pp = SubProcessProtocol()
+		pyncs_env = os.environ.copy()
+		pyncs_env["PATH"] = '../../../../' + pyncs_env["PATH"]
+
+		# run the simulation script as a subprocess
+		reactor.spawnProcess(pp, "./" + script_file, env=pyncs_env)
