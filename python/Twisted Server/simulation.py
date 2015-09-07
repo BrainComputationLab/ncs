@@ -4,7 +4,7 @@ import optparse, os, subprocess, stat, sys
 from subprocess import Popen, PIPE
 from twisted.python import log
 from twisted.internet import reactor
-import json, ncs, uuid
+import json, ncs
 
 from sim_subprocess import SubProcessProtocol
 from model import ModelService
