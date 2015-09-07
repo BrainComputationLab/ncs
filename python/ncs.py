@@ -548,9 +548,13 @@ class Simulation:
     if self.getCellGroup(label):
       print "NeuronGroup %s already exists." % label
       return None
-    cell_group = CellGroup(label, count, parameters, geometry)
+    if isinstance(parameters, dict):
+      cell_group = CellGroup(label, count, parameters, geometry)
+    else:
+      neuron_params = self.neuron_parameters[parameters]
+      cell_group = CellGroup(label, count, neuron_params, geometry)
     self.cell_groups[label] = cell_group
-    return self.addNeuronAlias(label, cell_group)
+    return self.parseNeuronAlias(label, cell_group)
 
   def parseNeuronAlias(self, label, subgroups):
     if label in self.cell_aliases:
@@ -564,11 +568,21 @@ class Simulation:
     if self.getConnection(label):
       print "Connection %s already exists." % label
       return None
-    connection = Connection(label,
+
+    if isinstance(parameters, dict):
+      connection = Connection(label,
                             presynaptic,
                             postsynaptic,
                             probability,
                             parameters)
+    else:
+      synapse_params = self.synapse_parameters[parameters]
+      connection = Connection(label,
+                            presynaptic,
+                            postsynaptic,
+                            probability,
+                            synapse_params)
+
     self.connections[label] = connection
     return self.addSynapseAlias(label, connection)
 

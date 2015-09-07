@@ -1,0 +1,353 @@
+{
+  "model": {
+    "author": "", 
+    "cellAliases": [], 
+    "cellGroups": {
+      "cellGroups": [
+        {
+          "$$hashKey": "052", 
+          "classification": "cells", 
+          "description": "Description", 
+          "geometry": null, 
+          "name": "regular_spiking", 
+          "num": 1, 
+          "parameters": {
+            "a": {
+              "maxValue": 0, 
+              "mean": 0, 
+              "minValue": 0, 
+              "stddev": 0, 
+              "type": "exact", 
+              "value": 0.02
+            }, 
+            "b": {
+              "maxValue": 0, 
+              "mean": 0, 
+              "minValue": 0, 
+              "stddev": 0, 
+              "type": "exact", 
+              "value": 0.2
+            }, 
+            "c": {
+              "maxValue": 0, 
+              "mean": 0, 
+              "minValue": 0, 
+              "stddev": 0, 
+              "type": "exact", 
+              "value": -65.0
+            }, 
+            "d": {
+              "maxValue": 0, 
+              "mean": 0, 
+              "minValue": 0, 
+              "stddev": 0, 
+              "type": "exact", 
+              "value": 8.0
+            }, 
+            "threshold": {
+              "maxValue": 0, 
+              "mean": 0, 
+              "minValue": 0, 
+              "stddev": 0, 
+              "type": "exact", 
+              "value": 30
+            }, 
+            "type": "izhikevich", 
+            "u": {
+              "maxValue": 0, 
+              "mean": 0, 
+              "minValue": 0, 
+              "stddev": 0, 
+              "type": "exact", 
+              "value": -12.0
+            }, 
+            "v": {
+              "maxValue": 0, 
+              "mean": 0, 
+              "minValue": 0, 
+              "stddev": 0, 
+              "type": "exact", 
+              "value": -60.0
+            }
+          }
+        }, 
+        {
+          "$$hashKey": "052", 
+          "classification": "cells", 
+          "description": "Description", 
+          "geometry": null, 
+          "name": "regular_spiking", 
+          "num": 1, 
+          "parameters": {
+            "a": {
+              "maxValue": 0, 
+              "mean": 0, 
+              "minValue": 0, 
+              "stddev": 0, 
+              "type": "exact", 
+              "value": 0.02
+            }, 
+            "b": {
+              "maxValue": 0, 
+              "mean": 0, 
+              "minValue": 0, 
+              "stddev": 0, 
+              "type": "exact", 
+              "value": 0.2
+            }, 
+            "c": {
+              "maxValue": 0, 
+              "mean": 0, 
+              "minValue": 0, 
+              "stddev": 0, 
+              "type": "exact", 
+              "value": -65.0
+            }, 
+            "d": {
+              "maxValue": 0, 
+              "mean": 0, 
+              "minValue": 0, 
+              "stddev": 0, 
+              "type": "exact", 
+              "value": 8.0
+            }, 
+            "threshold": {
+              "maxValue": 0, 
+              "mean": 0, 
+              "minValue": 0, 
+              "stddev": 0, 
+              "type": "exact", 
+              "value": 30
+            }, 
+            "type": "izhikevich", 
+            "u": {
+              "maxValue": 0, 
+              "mean": 0, 
+              "minValue": 0, 
+              "stddev": 0, 
+              "type": "exact", 
+              "value": -12.0
+            }, 
+            "v": {
+              "maxValue": 0, 
+              "mean": 0, 
+              "minValue": 0, 
+              "stddev": 0, 
+              "type": "exact", 
+              "value": -60.0
+            }
+          }
+        }
+      ], 
+      "classification": "cellGroup", 
+      "description": "Description", 
+      "name": "Home"
+    }, 
+    "classification": "model", 
+    "description": "Description", 
+    "name": "Current Model", 
+    "synapses": [
+      {
+        "$$hashKey": "05V", 
+        "classification": "synapseGroup", 
+        "description": "Description", 
+        "parameters": {
+          "ALtdMinimum": {
+            "maxValue": 0, 
+            "mean": 0, 
+            "minValue": 0, 
+            "stddev": 0, 
+            "type": "exact", 
+            "value": 0.003
+          }, 
+          "ALtpMinimum": {
+            "maxValue": 0, 
+            "mean": 0, 
+            "minValue": 0, 
+            "stddev": 0, 
+            "type": "exact", 
+            "value": 0.003
+          }, 
+          "delay": {
+            "maxValue": 0, 
+            "mean": 0, 
+            "minValue": 0, 
+            "stddev": 0, 
+            "type": "exact", 
+            "value": 1
+          }, 
+          "lastPostfireTime": {
+            "maxValue": 0, 
+            "mean": 0, 
+            "minValue": 0, 
+            "stddev": 0, 
+            "type": "exact", 
+            "value": 0.0
+          }, 
+          "lastPrefireTime": {
+            "maxValue": 0, 
+            "mean": 0, 
+            "minValue": 0, 
+            "stddev": 0, 
+            "type": "exact", 
+            "value": 0.0
+          }, 
+          "maxConductance": {
+            "maxValue": 0, 
+            "mean": 0, 
+            "minValue": 0, 
+            "stddev": 0, 
+            "type": "exact", 
+            "value": 0.3
+          }, 
+          "name": "flat_synapse", 
+          "psgWaveformDuration": {
+            "maxValue": 0, 
+            "mean": 0, 
+            "minValue": 0, 
+            "stddev": 0, 
+            "type": "exact", 
+            "value": 0.05
+          }, 
+          "redistribution": {
+            "maxValue": 0, 
+            "mean": 0, 
+            "minValue": 0, 
+            "stddev": 0, 
+            "type": "exact", 
+            "value": 1.0
+          }, 
+          "reversalPotential": {
+            "maxValue": 0, 
+            "mean": 0, 
+            "minValue": 0, 
+            "stddev": 0, 
+            "type": "exact", 
+            "value": 0.0
+          }, 
+          "tauDepression": {
+            "maxValue": 0, 
+            "mean": 0, 
+            "minValue": 0, 
+            "stddev": 0, 
+            "type": "exact", 
+            "value": 0.001
+          }, 
+          "tauFacilitation": {
+            "maxValue": 0, 
+            "mean": 0, 
+            "minValue": 0, 
+            "stddev": 0, 
+            "type": "exact", 
+            "value": 0.001
+          }, 
+          "tauLtd": {
+            "maxValue": 0, 
+            "mean": 0, 
+            "minValue": 0, 
+            "stddev": 0, 
+            "type": "exact", 
+            "value": 0.03
+          }, 
+          "tauLtp": {
+            "maxValue": 0, 
+            "mean": 0, 
+            "minValue": 0, 
+            "stddev": 0, 
+            "type": "exact", 
+            "value": 0.015
+          }, 
+          "tauPostsynapticConductance": {
+            "maxValue": 0, 
+            "mean": 0, 
+            "minValue": 0, 
+            "stddev": 0, 
+            "type": "exact", 
+            "value": 0.02
+          }, 
+          "type": "ncs", 
+          "utilization": {
+            "maxValue": 0, 
+            "mean": 0.5, 
+            "minValue": 0, 
+            "stddev": 0.05, 
+            "type": "uniform", 
+            "value": 0
+          }
+        }, 
+        "post": "regular_spiking", 
+        "postPath": [
+          {
+            "$$hashKey": "05R", 
+            "index": 0, 
+            "name": "Home"
+          }
+        ], 
+        "pre": "regular_spiking", 
+        "prePath": [
+          {
+            "$$hashKey": "05N", 
+            "index": 0, 
+            "name": "Home"
+          }
+        ], 
+        "prob": 1
+      }
+    ]
+  }, 
+  "request": "scriptToJSON", 
+  "response": "success", 
+  "simulation": {
+    "duration": 1.0, 
+    "fsv": null, 
+    "includeDistance": "No", 
+    "inputs": [
+      {
+        "$$hashKey": "05L", 
+        "className": "simulationInput", 
+        "endTime": 1.0, 
+        "inputTarget": [
+          "group_1"
+        ], 
+        "name": "Input1", 
+        "parameters": {
+          "amplitude": {
+            "maxValue": 0, 
+            "mean": 0, 
+            "minValue": 0, 
+            "stddev": 0, 
+            "type": "exact", 
+            "value": 10
+          }, 
+          "type": "rectangular_current"
+        }, 
+        "probability": 1, 
+        "startTime": 0.01, 
+        "stimulusType": "rectangular_current"
+      }
+    ], 
+    "interactive": "No", 
+    "name": "sim", 
+    "outputs": [
+      {
+        "$$hashKey": "05O", 
+        "className": "simulationOutput", 
+        "endTime": 1.0, 
+        "fileName": "./reg_voltage.txt", 
+        "name": "Output1", 
+        "numberFormat": "ascii", 
+        "outputType": "Save As File", 
+        "probability": 1.0, 
+        "reportTarget": [
+          "group_2", 
+          "group_1"
+        ], 
+        "reportType": "neuron_voltage", 
+        "startTime": 0.0
+      }
+    ], 
+    "seed": null
+  }
+}
+
+
