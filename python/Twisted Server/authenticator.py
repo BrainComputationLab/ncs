@@ -10,6 +10,7 @@ from twisted.internet import task
 import json, time, uuid, os
 
 from simulation import Simulation
+from script_to_json import Parser
 from credentials_checker import DBCredentialsChecker
 import sys
 sys.path.append('txmongo/ncs_db')
@@ -343,5 +344,22 @@ class AuthenticationService(service.Service):
 
 		return deferred
 
-	def script_to_JSON(self, script):
-		pass
+	def script_to_JSON(self, params):
+
+		if 'script' not in params:
+			self.response = {"request": "scriptToJSON", "response": "failure", "reason": "Invalid Python script."}
+			return None
+
+		else:
+			parser = Parser(params['script'])
+			deferred = parser.modify_script_file()
+			deferred2 = task.deferLater(reactor, 1, parser.build_ncb_json)
+			deferred2.addCallback(parser.delete_files)
+			deferred2.addCallback(self.get_ncb_json)
+			return deferred2
+
+	def get_ncb_json(self, parser):
+		ncb_json = parser.sim_params
+		self.response = {"request": "scriptToJSON", "response": "success", "model": ncb_json["model"], "simulation": ncb_json["simulation"]}
+		# TODO: add errback for failed sim launch
+

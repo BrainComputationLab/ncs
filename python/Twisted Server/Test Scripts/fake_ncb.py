@@ -792,25 +792,22 @@ def export_to_script(socket):
 	print data
 
 def script_to_json(socket):
+	input = open('../../samples/models/izh/regular_spiking_synapse.py')
+	#input = open('../../samples/models/lif/regular_spiking_lif.py')
+	text = input.read()
+	input.close()
 	params = {
-		"request": "scriptToJSON"
+		"request": "scriptToJSON",
+		"script": text
 	}
 
 	message = json.dumps(params)
 	socket.send(message)
-	data = socket.recv(4096)
-
-	print data
-
-def logout(socket):
-	params = {
-		"request": "logout"
-	}
-
-	message = json.dumps(params)
-	socket.send(message)
-	data = socket.recv(4096)
-	print data
+	data = socket.recv(8192)
+	params = json.loads(data)
+	converted_json = open('ncb_json.json', 'w')
+	converted_json.write(json.dumps(params, sort_keys=True, indent=2) + "\n\n\n")
+	print 'The JSON has been outputted to ncb_json.json\n'
 
 if __name__ == '__main__':
 
@@ -847,8 +844,7 @@ if __name__ == '__main__':
 		4.Get current models
 		5.Export to Python script
 		6.Convert Python script to JSON 
-		7.Logout 
-		8.Quit
+		7.Quit
 		""")
 
 		ans=raw_input("Request: ")
@@ -865,8 +861,6 @@ if __name__ == '__main__':
 		elif ans=="6":
 			script_to_json(clientSocket)
 		elif ans=="7":
-			logout(clientSocket)
-		elif ans=="8":
 			ans = None
 		else:
 			print("\n Invalid Choice.")

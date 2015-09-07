@@ -1,16 +1,24 @@
 # -*- coding: utf-8 -*-
 
 import os, stat, sys
+import optparse, subprocess
+from subprocess import Popen, PIPE
+import ncs
 from twisted.python import log
 from twisted.internet import reactor
-import json, uuid, re
+from twisted.internet.defer import Deferred
+import json, uuid, re, types
 
 from sim_subprocess import SubProcessProtocol
+
+DEBUG = True
 
 class Parser:
 
 	script_name = None
 	sim_params = None
+	report_paths = {}
+	reports_list = []
 
 	def __init__(self, script_str):
 		self.script_name = str(uuid.uuid4()) + '.py'
@@ -25,14 +33,15 @@ class Parser:
 
             # get sim variable name and report path
             sim = ''
-            report_paths = []
             for line in line_list:
             	if 'ncs.Simulation()' in line:
             		space_free = re.sub(r'\s', '', line)
             		sim = space_free.split('=ncs.Simulation()')[0]
 
             	elif 'toAsciiFile' in line:
-            		report_paths.append(re.findall(r'"(.*?)"', line)[0])
+            		space_free = re.sub(r'\s', '', line)
+            		report_obj = space_free.split('.toAsciiFile')[0]
+            		self.report_paths[report_obj] = re.findall(r'"(.*?)"', line)[0]
 
             # replace build function calls with parse functions
             insert_index = None
@@ -48,6 +57,8 @@ class Parser:
                 elif sim + '.addStimulus' in line:
                     new_line_list.append(line.replace('addStimulus', 'parseStimulus'))
                 elif sim + '.addReport' in line:
+        	    space_free = re.sub(r'\s', '', line)
+    		    self.reports_list.append(space_free.split('=' + sim +'.addReport')[0])
                     new_line_list.append(line.replace('addReport', 'parseReport'))
                 elif 'toAsciiFile' in line:
                     new_line_list.append(line.replace('toAsciiFile', 'parseToAsciiFile'))
@@ -64,6 +75,8 @@ class Parser:
             	tabs += '\t'
 
             # insert lines that will output the sim structure to a file
+            new_line_list[insert_index:insert_index] = [tabs + 'import json\n']
+            insert_index += 1
             new_line_list[insert_index:insert_index] = [tabs + 'sim_spec = {}\n']
             insert_index += 1
             new_line_list[insert_index:insert_index] = [tabs + 'sim_spec["inputs"] = sim.parse_stim_spec\n']
@@ -77,31 +90,32 @@ class Parser:
     	    new_line_list[insert_index:insert_index] = [tabs + 'json_file = open("' + self.script_name.split('.py')[0] + '.json", "w")\n']
             insert_index += 1
     	    new_line_list[insert_index:insert_index] = [tabs + 'json_file.write(json.dumps(sim_json, sort_keys=True, indent=2) + "\\n\\n\\n")\n']
-            new_line_list[:0] = ['import json\n']
 
 	    # create modified file
 	    script_file = open(self.script_name, "w")
 	    for line in new_line_list:
 	        script_file.write(line)
 	    script_file.close()
+	    
+	    d = Deferred()
+	    d.addCallback(self.create_json_file)
+	    d.callback('ign')
+	    return d
 
-	def create_json_file(self):
+	def create_json_file(self, ign):
+		st = os.stat(self.script_name)
+		os.chmod(self.script_name, st.st_mode | stat.S_IEXEC)
 
-	    st = os.stat(self.script_name)
-	    os.chmod(self.script_name, st.st_mode | stat.S_IEXEC)
+		# set the subprocess environment to the location of pyncs
+		pp = SubProcessProtocol()
+		pyncs_env = os.environ.copy()
+		pyncs_env["PATH"] = '../../../../' + pyncs_env["PATH"]
 
-	    # set the subprocess environment to the location of pyncs
-	    pp = SubProcessProtocol()
-	    pyncs_env = os.environ.copy()
-	    pyncs_env["PATH"] = '../../../../' + pyncs_env["PATH"]
-
-	    # run the simulation script as a subprocess
-	    reactor.spawnProcess(pp, "./" + self.script_name, env=pyncs_env)
+		# run the simulation script as a subprocess
+		reactor.spawnProcess(pp, "./" + self.script_name, env=pyncs_env)
 		
-	def build_ncb_json(self, file):
-			# REMOVE FILE INPUT PARAM AFTER TESTING
-            #json_file = open(self.script_name.split('.py')[0] + '.json')
-            json_file = open(file)
+	def build_ncb_json(self):
+            json_file = open(self.script_name.split('.py')[0] + '.json')
 	    try:
 	        script_data = json.load(json_file)
 	    except ValueError:
@@ -194,52 +208,81 @@ class Parser:
     							})
 
 	        # add reports
-	        # FIGURE OUT HOW TO GET THE REPORT PATH WITH THE REPORT IN NCS.PY
 	        script_reports = script_data['simulation']['outputs']
 	        for index, report in enumerate(script_reports):
-	        	reports.append({"$$hashKey": "05O", 
-						        "className": "simulationOutput", 
-						        "endTime": report['end_time'], 
-						      	"fileName": "report.txt", 
-						      	"name": "Output" + str(index + 1), 
-						      	"numberFormat": "ascii", 
-						      	"outputType": "Save As File", 
-						      	"probability": report['probability'], 
-						      	"reportTarget": report['target_names'], 
-						      	"reportType": report['report_type'], 
-						      	"startTime": report['start_time']
-    							})
+	        	if self.reports_list[index] in self.report_paths:
+		        	reports.append({"$$hashKey": "05O", 
+							        "className": "simulationOutput", 
+							        "endTime": report['end_time'], 
+							      	"fileName": self.report_paths[self.reports_list[index]], 
+							      	"name": "Output" + str(index + 1), 
+							      	"numberFormat": "ascii", 
+							      	"outputType": "Save As File", 
+							      	"probability": report['probability'], 
+							      	"reportTarget": report['target_names'], 
+							      	"reportType": report['report_type'], 
+							      	"startTime": report['start_time']
+	    							})
+		        else:
+		        	reports.append({"$$hashKey": "05O", 
+							        "className": "simulationOutput", 
+							        "endTime": report['end_time'], 
+							      	"fileName": "", 
+							      	"name": "Output" + str(index + 1), 
+							      	"numberFormat": "ascii", 
+							      	"outputType": "", 
+							      	"probability": report['probability'], 
+							      	"reportTarget": report['target_names'], 
+							      	"reportType": report['report_type'], 
+							      	"startTime": report['start_time']
+	    							})	
 
 	        sim['duration'] = script_data['simulation']['run']['duration']
 
-	        # TESTING
-	        converted_json = open('converted_json.json', 'w')
-	        converted_json.write(json.dumps(self.sim_params, sort_keys=True, indent=2) + "\n\n\n")
+	        # convert keys to NCB format
+	        for neuron in neurons:
+	        	if neuron['parameters']:
+	        		self.convert_keys_to_ncb_input(neuron['parameters'])
+	        for synapse in synapses:
+	        	if synapse['parameters']:
+	        		self.convert_keys_to_ncb_input(synapse['parameters'])
+	        for stimulus in stimuli:
+	        	if stimulus['parameters']:
+	        		self.convert_keys_to_ncb_input(stimulus['parameters'])
 
+	    d = Deferred()
+	    d.callback('ign')
+	    return d
 
-	def delete_files(self):
+	def delete_files(self, ign):
 		try:
 			os.remove(self.script_name)
-			print 'Removed script file.'
+			if DEBUG:
+				print 'Removed script file.'
 		except OSError:
 			log.msg("Could not delete script file.")
 
-		json_file_name = self.script_name.split('.py')[0] + 'json'
+		json_file_name = self.script_name.split('.py')[0] + '.json'
 		try:
 			os.remove(json_file_name)
-			print 'Removed json file.'
+			if DEBUG:
+				print 'Removed json file.'
 		except OSError:
 			log.msg("Could not delete json file.")
 
-# testing testing
-if __name__ == "__main__":
+		d = Deferred()
+	        d.callback(self)
+	        return d
 
-	input = open('../samples/models/izh/regular_spiking_synapse.py')
-	text = input.read()
-	input.close()
+	def convert_keys_to_ncb_input(self, dict):
+		for key, value in dict.iteritems():
+				if '_' in key:
+					dict[self.underscore_to_camelcase(key)] = dict.pop(key)
+					
+				if type(value) is types.DictType:
+					self.convert_keys_to_ncb_input(value)
 
-	parser = Parser(text)
 
-	#parser.modify_script_file()
-
-	parser.build_ncb_json('ae75ca9d-19d9-4354-9878-f5f1fca14fe9.json')
+	def underscore_to_camelcase(self, str):
+	    components = str.split('_')
+	    return components[0] + "".join(x.title() for x in components[1:])

@@ -75,7 +75,7 @@ def run(argv):
 	#	3. Postsynaptic NeuronAlias or NeuronGroup
 	#	4. Probability of connection
 	#	5. Parameters for synapse
-	connection1=sim.addSynapseGroup("connection1","group_1","group_2",1,ncs_synapse_parameters);
+	connection1=sim.addSynapseGroup("connection1","group_1","group_2",1,"flat_synapse");
 
 	#initialize simulation	
 	if not sim.init(argv):
