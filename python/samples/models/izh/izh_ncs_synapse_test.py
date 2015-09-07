@@ -19,7 +19,7 @@ def run(argv):
                                                   "threshold": 30
                                                  }
                                                 )
-  group_1 = sim.addNeuronGroup("group_1", 100, "label_excitatory", None) # last param is geometry
+  group_1 = sim.addNeuronGroup("group_1", 100, excitatory_parameters, None) # last param is geometry
   group_2 = sim.addNeuronGroup("group_2", 100, excitatory_parameters)
 
   all_cells = sim.addNeuronAlias("all_cells", [group_1, "group_2"])
