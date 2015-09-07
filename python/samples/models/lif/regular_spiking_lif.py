@@ -55,7 +55,7 @@ def run(argv):
 	sim=ncs.Simulation()
 	
 	neuron_parameters = sim.addNeuron("ncs_neuron","ncs",ncs_cell)
-	group_1 = sim.addNeuronGroup("group_1",1,"ncs_neuron",None)	
+	group_1 = sim.addNeuronGroup("group_1",1,neuron_parameters,None)	
 
 	#initialize
 	if not sim.init(argv):

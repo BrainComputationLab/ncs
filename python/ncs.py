@@ -623,7 +623,7 @@ class Simulation:
       return False
 
     input_group = { "group_names": group_names,
-                    "model_parameters": model_parameters,
+                    "parameters": model_parameters,
                     "probability": probability,
                     "start_time": start_time,
                     "end_time": end_time
@@ -688,8 +688,6 @@ class Simulation:
       if not all(generators):
         print "Failed to build a generator inside a list generator"
         return False
-      for x in generators:
-        x.thisown = False
       gen_list = []
       for g in generators:
         gen_list.append(g)
@@ -744,8 +742,8 @@ class Simulation:
       if not model_parameters:
         print "ModelParameters %s not found" % cell_group.parameters
         return False
-      neuron_group = {"count": cell_group.count,
-                      "model_parameters": model_parameters,
+      neuron_group = {"num": cell_group.count,
+                      "parameters": model_parameters,
                       "geometry": cell_group.geometry
                       }
 
@@ -789,7 +787,7 @@ class Simulation:
 
       synapse_group = { "presynaptic": presynaptic,
                         "postsynaptic": postsynaptic,
-                        "model_parameters": model_parameters,
+                        "parameters": model_parameters,
                         "probability": connection.probability
                       }
       connection.synapse_group = synapse_group
