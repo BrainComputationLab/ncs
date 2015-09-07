@@ -1,0 +1,180 @@
+{
+  "model": {
+    "neuron_aliases": {
+      "group_1": [
+        {
+          "count": 1, 
+          "geometry": null, 
+          "model_parameters": {
+            "a": {
+              "maxValue": 0, 
+              "mean": 0, 
+              "minValue": 0, 
+              "stddev": 0, 
+              "type": "exact", 
+              "value": 0.02
+            }, 
+            "b": {
+              "maxValue": 0, 
+              "mean": 0, 
+              "minValue": 0, 
+              "stddev": 0, 
+              "type": "exact", 
+              "value": 0.2
+            }, 
+            "c": {
+              "maxValue": 0, 
+              "mean": 0, 
+              "minValue": 0, 
+              "stddev": 0, 
+              "type": "exact", 
+              "value": -65.0
+            }, 
+            "d": {
+              "maxValue": 0, 
+              "mean": 0, 
+              "minValue": 0, 
+              "stddev": 0, 
+              "type": "exact", 
+              "value": 8.0
+            }, 
+            "name": "regular_spiking", 
+            "threshold": {
+              "maxValue": 0, 
+              "mean": 0, 
+              "minValue": 0, 
+              "stddev": 0, 
+              "type": "exact", 
+              "value": 30
+            }, 
+            "type": "izhikevich", 
+            "u": {
+              "maxValue": 0, 
+              "mean": 0, 
+              "minValue": 0, 
+              "stddev": 0, 
+              "type": "exact", 
+              "value": -12.0
+            }, 
+            "v": {
+              "maxValue": 0, 
+              "mean": 0.5, 
+              "minValue": 0, 
+              "stddev": 0.05, 
+              "type": "uniform", 
+              "value": 0
+            }
+          }
+        }
+      ]
+    }, 
+    "neuron_groups": {
+      "group_1": {
+        "count": 1, 
+        "geometry": null, 
+        "model_parameters": {
+          "a": {
+            "maxValue": 0, 
+            "mean": 0, 
+            "minValue": 0, 
+            "stddev": 0, 
+            "type": "exact", 
+            "value": 0.02
+          }, 
+          "b": {
+            "maxValue": 0, 
+            "mean": 0, 
+            "minValue": 0, 
+            "stddev": 0, 
+            "type": "exact", 
+            "value": 0.2
+          }, 
+          "c": {
+            "maxValue": 0, 
+            "mean": 0, 
+            "minValue": 0, 
+            "stddev": 0, 
+            "type": "exact", 
+            "value": -65.0
+          }, 
+          "d": {
+            "maxValue": 0, 
+            "mean": 0, 
+            "minValue": 0, 
+            "stddev": 0, 
+            "type": "exact", 
+            "value": 8.0
+          }, 
+          "name": "regular_spiking", 
+          "threshold": {
+            "maxValue": 0, 
+            "mean": 0, 
+            "minValue": 0, 
+            "stddev": 0, 
+            "type": "exact", 
+            "value": 30
+          }, 
+          "type": "izhikevich", 
+          "u": {
+            "maxValue": 0, 
+            "mean": 0, 
+            "minValue": 0, 
+            "stddev": 0, 
+            "type": "exact", 
+            "value": -12.0
+          }, 
+          "v": {
+            "maxValue": 0, 
+            "mean": 0.5, 
+            "minValue": 0, 
+            "stddev": 0.05, 
+            "type": "uniform", 
+            "value": 0
+          }
+        }
+      }
+    }, 
+    "synapse_aliases": {}, 
+    "synapse_groups": {}
+  }, 
+  "simulation": {
+    "inputs": [
+      {
+        "end_time": 1.0, 
+        "group_names": [
+          "group_1"
+        ], 
+        "model_parameters": {
+          "amplitude": {
+            "maxValue": 0, 
+            "mean": 0, 
+            "minValue": 0, 
+            "stddev": 0, 
+            "type": "exact", 
+            "value": 10
+          }, 
+          "type": "rectangular_current"
+        }, 
+        "probability": 1, 
+        "start_time": 0.01
+      }
+    ], 
+    "outputs": [
+      {
+        "end_time": 1.0, 
+        "probability": 1, 
+        "report_type": "neuron_voltage", 
+        "start_time": 0.0, 
+        "target_names": [
+          "group_1"
+        ], 
+        "target_type": "neuron"
+      }
+    ], 
+    "run": {
+      "duration": 1.0
+    }
+  }
+}
+
+
