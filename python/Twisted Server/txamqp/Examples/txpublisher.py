@@ -22,7 +22,7 @@ def gotConnection(conn, username, password, body, count=1):
                 content = body + "-%d" % i
                 msg = Content(content)
                 msg["delivery mode"] = 2
-                chan.basic_publish(exchange="chatservice", content=msg, routing_key="txamqp_chatroom")
+                chan.basic_publish(exchange="datastream", content=msg, routing_key="c@r..Output1")
                 print "Sending message: %s" % content
                 yield None
         return task.coiterate(message_iterator())
@@ -32,7 +32,7 @@ def gotConnection(conn, username, password, body, count=1):
     stopToken = "STOP"
     msg = Content(stopToken)
     msg["delivery mode"] = 2
-    chan.basic_publish(exchange="chatservice", content=msg, routing_key="txamqp_chatroom")
+    chan.basic_publish(exchange="datastream", content=msg, routing_key="c@r..Output1")
     print "Sending message: %s" % stopToken
 
     yield chan.channel_close()
