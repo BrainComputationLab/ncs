@@ -74,7 +74,7 @@ class RecvDataProtocol(Protocol):
         delegate = TwistedDelegate()
 
         self.deferred = ClientCreator(reactor, AMQClient, delegate=delegate, vhost='/', spec=spec).connectTCP("localhost", 5672)
-        self.deferred.addCallback(self.gotConnection, "guest", "guest")
+        self.deferred.addCallback(self.gotConnection, "test", "test")
 
     def dataReceived(self, data):
 

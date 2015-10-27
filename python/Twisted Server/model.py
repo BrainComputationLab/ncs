@@ -30,8 +30,8 @@ class ModelService(object):
         # add neurons
         neuron_types = 0
         for index, group in enumerate(neurons):
+
             # TODO: Validate neuron spec
-            pass
 
             # get neuron parameters
             neuron_params = group['parameters']
@@ -119,11 +119,9 @@ class ModelService(object):
 
                     channels.append(channel_spec)
 
-                    '''spike_shape_vals = []
+                    spike_shape_vals = []
                     for value in neuron_params['spikeShape']:
-                        spike_shape_vals.append(value)'''
-                    # DEFAULTED UNTIL NCB CAN SEND AN ARRAY****************
-                    spike_shape_vals = [-33, 30, -42]
+                        spike_shape_vals.append(value)
 
                     # add arrays to the spec map
                     spec['channels'] = channels
@@ -194,6 +192,7 @@ class ModelService(object):
                     self.convert_params_to_str_specification_format(channel, channel_spec)
                     self.convert_unicode_ascii(channel_spec)
                     self.convert_keys_to_sim_input(channel_spec)
+
                     # this must be added after the conversion to spec format
                     channel_spec['type'] = channel_type
                     if channel['name'] == "Voltage Gated Channel":
@@ -210,8 +209,8 @@ class ModelService(object):
         # add synapses
         synapse_types = 0
         for index, synapse in enumerate(synapses):
+
             # TODO: Validate synapse spec
-            pass
 
             # get synapse parameters
             synapse_params = synapse['parameters']
@@ -255,7 +254,7 @@ class ModelService(object):
         # create neuron groups
         for i in range(neuron_types):
 
-            # final parameter is optional geometry generator? neurons[i]['geometry']
+            # final parameter is optional geometry generator (neurons[i]['geometry']) but NCS does not use this at this time
             group_name = 'group_' + str(i)
             script += '\t' + group_name + ' = sim.addNeuronGroup("' + group_name + '", ' + str(int(neurons[i]['num'])) + ', parameters_' + str(i) + ', None)\n'
             neuron_groups.append(group_name)
@@ -286,33 +285,36 @@ class ModelService(object):
         stimuli = entity_dicts['inputs']
 
         for stimulus in stimuli:
+
             # TODO: Validate stimulus spec
 
-
             # Get stimulus type from the model
-            # rectangular_current, rectangular_voltage, linear_current, linear_voltage, sine_current, or sine_voltage
             stimulus_type = self.convert_stim_type(stimulus['stimulusType'].encode('ascii', 'ignore'))
             prob = float(stimulus['probability'])
             time_start = float(stimulus['startTime'])
             time_end = float(stimulus['endTime'])
-            targets = stimulus['inputTarget']
+            targets = stimulus['inputTargets']
 
-            # these parameters will mostly change depending on the stimulus type
+            # get synapse parameters
+            stim_params = stimulus['parameters']
+
+            # these parameters will mostly likely change depending on the stimulus type
             spec = {
-                "amplitude": str(stimulus['amplitude']),
+                "amplitude": '0.0',
                 "amplitude_scale": '0.0',
                 "amplitude_shift": '0.0',
                 "current": '0.0',
                 "delay": '0',
                 "end_amplitude": '0.0',
-                "frequency": str(stimulus['frequency']),
+                "frequency": '0.0',
                 "phase": '0.0',
                 "start_amplitude": '0.0',
                 "time_scale": '0.0',
-                "width": str(stimulus['width']),
+                "width": '0.0',
             }
 
-            #self.convert_params_to_str_specification_format(stimulus, spec)  CAN'T USE THIS FUNCTION BECAUSE NCB JSON DOES NOT MATCH STIM SPEC FIELDS**********
+            self.convert_params_to_str_specification_format(stim_params, spec)  #CAN'T USE THIS FUNCTION BECAUSE NCB JSON DOES NOT MATCH STIM SPEC FIELDS**********
+            # NEED TO PUT PARAMETERS VALUES INSIDE A PARAMETER DICTIONARY LIKE THE OTHERS
             self.convert_unicode_ascii(spec)
 
             # Determine target group
@@ -323,40 +325,41 @@ class ModelService(object):
                     if neurons[i]['name'] == target:
                         script += '\tsim.addStimulus("' + str(stimulus_type) + '", ' + self.create_spec_str(spec) + ', ' + neuron_groups[i] + ', ' + str(prob) + ', ' + str(time_start) + ', ' + str(time_end) + ')\n'
 
-            # DEFAULT THIS UNTIL IT CAN BE SET BY NCB************
-            script += '\tsim.addStimulus("' + str(stimulus_type) + '", ' + self.create_spec_str(spec) + ', ' + neuron_groups[0] + ', ' + str(prob) + ', ' + str(time_start) + ', ' + str(time_end) + ')\n'
-
         # reports
         reports = entity_dicts['outputs']
         for index, report in enumerate(reports):
-            # TODO: Validate report spec
 
+            # TODO: Validate report spec
 
             # get report type
             report_type = self.convert_report_type(report['reportType'].encode('ascii', 'ignore'))
+            report_target_type = report['possibleReportType']
 
-            # determine target group
-            # TODO: This can be multiple groups. How to handle this?
-            '''report_target = None
+            # determine target groups
+            report_targets = []
             target_type = None
-            for i in range(len(neurons)):
-                if neurons[i]['name'] == report['reportTarget']:
-                    report_target = neuron_groups[i]
-                    target_type = 'neuron'
 
-            for i in range(len(synapses)):
-                if synapses[i]['name'] == report['reportTarget']:
-                    report_target = synapse_groups[i]
-                    target_type = 'synapses'''
-            # DEFAULTED BECAUSE THIS IS STILL SAYING NO GROUPS AVAILABLE************
-            report_target = neuron_groups[0]
-            target_type = 'neuron'
+            if report_target_type == 1:
+                for i in range(len(neurons)):
+                    if neurons[i]['name'] == report['reportTarget']:
+                        report_targets.append(neuron_groups[i])
+                        target_type = 'neuron'
+
+            elif report_target_type == 2:
+                # TODO: handle aliases
+                pass
+
+            elif report_target_type == 3:
+                for i in range(len(synapses)):
+                    if synapses[i]['name'] == report['reportTarget']:
+                        report_targets.append(synapse_groups[i])
+                        target_type = 'synapse'
 
             probability = float(report['probability'])
             time_start = float(report['startTime'])
             time_end = float(report['endTime'])
 
-            script += '\treport_' + str(index) + ' = sim.addReport("' + report_target + '", "' + target_type + '", "' + str(report_type) + '", ' + str(probability) + ', ' + str(time_start) + ', ' + str(time_end) + ')\n'
+            script += '\treport_' + str(index) + ' = sim.addReport(' + str(report_targets) + ', "' + target_type + '", "' + str(report_type) + '", ' + str(probability) + ', ' + str(time_start) + ', ' + str(time_end) + ')\n'
             
             sim_identifier = username + '..' + report['name']
 

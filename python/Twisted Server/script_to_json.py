@@ -156,11 +156,22 @@ class Parser:
 	        stimuli = sim['inputs']
 	        reports = sim['outputs']
 
+	        # ALL PARAMETERS NEED TO BE IN THE DICTIONARY EVEN IF THEY WERE NOT SET IN THE SCRIPT**************************
+
 	        # add neurons
 	        script_neurons = script_data['model']['neuron_groups']
 	        for group_name, neuron in script_neurons.iteritems():
 	        	name = neuron['parameters']['name']
 	        	del neuron['parameters']['name']
+
+	        	# convert neuron types
+	        	if neuron['parameters']['type'] == 'izhikevich':
+	        		neuron['parameters']['type'] = 'Izhikevich'
+	        	elif neuron['parameters']['type'] == 'ncs':
+	        		neuron['parameters']['type'] = 'NCS'
+	        	elif neuron['parameters']['type'] == 'hh':
+	        		neuron['parameters']['type'] = 'HodgkinHuxley'
+
 	        	neurons.append({"$$hashKey": "052", 
           						"classification": "cells", 
           						"description": "Description", 
@@ -171,9 +182,19 @@ class Parser:
           						})
 
 	        # add synapses
-	        # DOES NCB WANT MORE INFORMATION THEN JUST THE NAMES OF THE PRE AND POST?
 	        script_synapses = script_data['model']['synapse_groups']
 	        for synape_name, synapse in script_synapses.iteritems():
+
+	        	# convert mismatch key names
+	        	if synapse['parameters']['type'] == 'flat':
+	        		synapse['parameters']['type'] = 'Flat'
+	        	elif synapse['parameters']['type'] == 'ncs':
+	        		synapse['parameters']['type'] = 'NCS'
+
+	        	synapse['parameters']["aLtdMinimum"] = synapse['parameters'].pop("ALtdMinimum")
+	        	synapse['parameters']["aLtpMinimum"] = synapse['parameters'].pop("ALtpMinimum")
+	        	synapse['parameters']["tauPostSynapticConductance"] = synapse['parameters'].pop("tauPostsynapticConductance")
+
 	        	synapses.append({"$$hashKey": "05V", 
 								 "classification": "synapseGroup", 
        							 "description": "Description", 
@@ -196,6 +217,23 @@ class Parser:
 	        # add stimulus
 	        script_stimuli = script_data['simulation']['inputs']
 	        for index, stimulus in enumerate(script_stimuli):
+
+	        	# convert stimulus types
+	        	stimulus["stimulusType"] = stimulus['parameters']['type']
+	        	del stimulus['parameters']['type']
+	        	if stimulus['stimulusType'] == 'rectangular_current':
+	        		stimulus['stimulusType'] = 'Rectangular Current'
+	        	elif stimulus['stimulusType'] == 'rectangular_voltage':
+	        		stimulus['stimulusType'] = 'Rectangular Voltage'
+	        	elif stimulus['stimulusType'] == 'linear_current':
+	        		stimulus['stimulusType'] = 'Linear Current'
+	        	elif stimulus['stimulusType'] == 'linear_voltage':
+	        		stimulus['stimulusType'] = 'Linear Voltage'
+	        	elif stimulus['stimulusType'] == 'sine_current':
+	        		stimulus['stimulusType'] = 'Sine Current'
+	        	elif stimulus['stimulusType'] == 'sine_voltage':
+	        		stimulus['stimulusType'] = 'Sine Voltage'
+
 	        	stimuli.append({"$$hashKey": "05L",  
       							"className": "simulationInput", 
       							"endTime": stimulus['end_time'], 
@@ -203,36 +241,50 @@ class Parser:
       							"name": "Input" + str(index + 1), 
       							"probability": stimulus['probability'], 
       							"startTime": stimulus['start_time'], 
-      							"stimulusType": stimulus['parameters']['type'], 
+      							"stimulusType": stimulus['stimulusType'], 
       							"parameters": stimulus['parameters']
     							})
 
 	        # add reports
 	        script_reports = script_data['simulation']['outputs']
 	        for index, report in enumerate(script_reports):
+
+	        	# convert report types
+	        	if report['report_type'] == 'neuron_voltage':
+	        		report['report_type'] = 'Neuron Voltage'
+	        	elif report['report_type'] == 'synaptic_current':
+	        		report['report_type'] = 'Synaptic Current'
+	        	elif report['report_type'] == 'neuron_fire':
+	        		report['report_type'] = 'Neuron Fire'
+	        	elif report['report_type'] == 'input_current':
+	        		report['report_type'] = 'Input Current'
+
+	        	# TODO: FIGURE OUT WHERE THE TARGET FIELD IS IN THE PARAMETERS************************************
+	        	target_report_type = 1
+
 	        	if self.reports_list[index] in self.report_paths:
 		        	reports.append({"$$hashKey": "05O", 
 							        "className": "simulationOutput", 
-							        "endTime": report['end_time'], 
-							      	"fileName": self.report_paths[self.reports_list[index]], 
+							        "endTime": str(report['end_time']), 
 							      	"name": "Output" + str(index + 1), 
 							      	"numberFormat": "ascii", 
-							      	"outputType": "Save As File", 
+							      	"saveAsFile": 1, 
+							      	"possibleReportType": target_report_type, 
 							      	"probability": report['probability'], 
-							      	"reportTarget": report['target_names'], 
+							      	"reportTargets": report['target_names'], 
 							      	"reportType": report['report_type'], 
 							      	"startTime": report['start_time']
 	    							})
 		        else:
 		        	reports.append({"$$hashKey": "05O", 
 							        "className": "simulationOutput", 
-							        "endTime": report['end_time'], 
-							      	"fileName": "", 
+							        "endTime": str(report['end_time']), 
 							      	"name": "Output" + str(index + 1), 
 							      	"numberFormat": "ascii", 
-							      	"outputType": "", 
+							      	"saveAsFile": 0, 
+						      		"possibleReportType": target_report_type, 
 							      	"probability": report['probability'], 
-							      	"reportTarget": report['target_names'], 
+							      	"reportTargets": report['target_names'], 
 							      	"reportType": report['report_type'], 
 							      	"startTime": report['start_time']
 	    							})	
