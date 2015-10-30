@@ -360,6 +360,12 @@ class AuthenticationService(service.Service):
 
 	def get_ncb_json(self, parser):
 		ncb_json = parser.sim_params
+
+		if DEBUG:
+			file = open("going to ncb.txt", "w")
+			file.write(json.dumps(ncb_json, sort_keys=True, indent=2) + '\n\n\n')
+			file.close()
+
 		self.response = {"request": "scriptToJSON", "response": "success", "model": ncb_json["model"], "simulation": ncb_json["simulation"]}
 		# TODO: add errback for failed sim launch
 

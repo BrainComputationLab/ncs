@@ -17,7 +17,6 @@ class Parser:
 
 	script_name = None
 	sim_params = None
-	report_paths = {}
 	reports_list = []
 
 	def __init__(self, script_str):
@@ -31,21 +30,17 @@ class Parser:
             line_list = input.readlines()
             input.close()
 
-            # get sim variable name and report path
+            # get sim variable name
             sim = ''
             for line in line_list:
             	if 'ncs.Simulation()' in line:
             		space_free = re.sub(r'\s', '', line)
             		sim = space_free.split('=ncs.Simulation()')[0]
 
-            	elif 'toAsciiFile' in line:
-            		space_free = re.sub(r'\s', '', line)
-            		report_obj = space_free.split('.toAsciiFile')[0]
-            		self.report_paths[report_obj] = re.findall(r'"(.*?)"', line)[0]
-
             # replace build function calls with parse functions
             insert_index = None
             num_tabs = 0
+	    num_spaces = 0
             new_line_list = []
             for index, line in enumerate(line_list):
                 if sim + '.addNeuron' in line:
@@ -66,13 +61,18 @@ class Parser:
                     new_line_list.append(line.replace('run', 'parseRun'))
 		    insert_index = index + 1
 		    num_tabs = len(line) - len(line.lstrip('\t'))
+		    num_spaces = len(line) - len(line.lstrip())
                 else:
                     new_line_list.append(line)
 
             # append appropriate number of tabs
             tabs = ''
-            for i in range(num_tabs):
-            	tabs += '\t'
+	    if num_tabs != 0:
+		for i in range(num_tabs):
+			tabs += '\t'
+	    else:
+		for i in range(num_spaces):
+			tabs += ' '
 
             # insert lines that will output the sim structure to a file
             new_line_list[insert_index:insert_index] = [tabs + 'import json\n']
@@ -115,15 +115,22 @@ class Parser:
 		reactor.spawnProcess(pp, "./" + self.script_name, env=pyncs_env)
 		
 	def build_ncb_json(self):
-            json_file = open(self.script_name.split('.py')[0] + '.json')
-	    try:
-	        script_data = json.load(json_file)
-	    except ValueError:
-                log.msg('Could not load JSON file.')
-	        script_data = {} 
 
-            if script_data:
-	    	self.sim_params = {
+            	json_file = open(self.script_name.split('.py')[0] + '.json')
+
+		try:
+			script_data = json.load(json_file)
+		except ValueError:
+			log.msg('Could not load JSON file.')
+			script_data = {} 
+
+		if DEBUG:
+			file = open("pyncs_params.txt", "w")
+			file.write(json.dumps(script_data, sort_keys=True, indent=2) + '\n\n\n')
+			file.close()
+
+		if script_data:
+	    		self.sim_params = {
 		          "model": {
 		            "author": "", 
 		            "cellAliases": [], 
@@ -156,58 +163,720 @@ class Parser:
 	        stimuli = sim['inputs']
 	        reports = sim['outputs']
 
-	        # ALL PARAMETERS NEED TO BE IN THE DICTIONARY EVEN IF THEY WERE NOT SET IN THE SCRIPT**************************
-
 	        # add neurons
 	        script_neurons = script_data['model']['neuron_groups']
 	        for group_name, neuron in script_neurons.iteritems():
-	        	name = neuron['parameters']['name']
+			name = neuron['parameters']['name']
 	        	del neuron['parameters']['name']
 
-	        	# convert neuron types
+	        	# assign neuron parameters
 	        	if neuron['parameters']['type'] == 'izhikevich':
-	        		neuron['parameters']['type'] = 'Izhikevich'
-	        	elif neuron['parameters']['type'] == 'ncs':
-	        		neuron['parameters']['type'] = 'NCS'
-	        	elif neuron['parameters']['type'] == 'hh':
-	        		neuron['parameters']['type'] = 'HodgkinHuxley'
+					spec = {
+					    "a": {
+					        "maxValue": 0, 
+					        "mean": 0, 
+					        "minValue": 0, 
+					        "stddev": 0, 
+					        "type": "exact", 
+					        "value": 0
+				      	},
+					    "b": {
+					        "maxValue": 0, 
+					        "mean": 0, 
+					        "minValue": 0, 
+					        "stddev": 0, 
+					        "type": "exact", 
+					        "value": 0
+				      	},
+					    "c": {
+					        "maxValue": 0, 
+					        "mean": 0, 
+					        "minValue": 0, 
+					        "stddev": 0, 
+					        "type": "exact", 
+					        "value": 0
+				      	},
+					    "d": {
+					        "maxValue": 0, 
+					        "mean": 0, 
+					        "minValue": 0, 
+					        "stddev": 0, 
+					        "type": "exact", 
+					        "value": 0
+				      	},
+					    "u": {
+					        "maxValue": 0, 
+					        "mean": 0, 
+					        "minValue": 0, 
+					        "stddev": 0, 
+					        "type": "exact", 
+					        "value": 0
+				      	},
+					    "v": {
+					        "maxValue": 0, 
+					        "mean": 0, 
+					        "minValue": 0, 
+					        "stddev": 0, 
+					        "type": "exact", 
+					        "value": 0
+				      	},
+					    "threshold": {
+					        "maxValue": 0, 
+					        "mean": 0, 
+					        "minValue": 0, 
+					        "stddev": 0, 
+					        "type": "exact", 
+					        "value": 0
+				      	},
+					}
 
-	        	neurons.append({"$$hashKey": "052", 
-          						"classification": "cells", 
+					for key, value in neuron['parameters'].iteritems():
+						spec[key] = value
+
+					spec['type'] = 'Izhikevich'
+
+			elif neuron['parameters']['type'] == 'ncs':
+
+	                	spec = {
+			          "calcium": {
+			            "maxValue": 0, 
+			            "mean": 0, 
+			            "minValue": 0, 
+			            "stddev": 0, 
+			            "type": "exact", 
+			            "value": 0
+			          }, 
+			          "calcium_spike_increment": {
+			            "maxValue": 0, 
+			            "mean": 0, 
+			            "minValue": 0, 
+			            "stddev": 0, 
+			            "type": "exact", 
+			            "value": 0
+			          }, 
+			          "capacitance": {
+			            "maxValue": 0, 
+			            "mean": 0, 
+			            "minValue": 0, 
+			            "stddev": 0, 
+			            "type": "exact", 
+			            "value": 0
+			          }, 
+			          "leak_conductance": {
+			            "maxValue": 0, 
+			            "mean": 0, 
+			            "minValue": 0, 
+			            "stddev": 0, 
+			            "type": "exact", 
+			            "value":30
+			          }, 
+			          "leak_reversal_potential": {
+			            "maxValue": 0, 
+			            "mean": 0, 
+			            "minValue": 0, 
+			            "stddev": 0, 
+			            "type": "exact", 
+			            "value": 0
+			          }, 
+			          "r_membrane": {
+			            "maxValue": 0, 
+			            "mean": 0, 
+			            "minValue": 0, 
+			            "stddev": 0, 
+			            "type": "exact", 
+			            "value": 0
+			          }, 
+			          "resting_potential": {
+			            "maxValue": 0, 
+			            "mean": 0, 
+			            "minValue": 0, 
+			            "stddev": 0, 
+			            "type": "exact", 
+			            "value": 0
+			          },  
+			          "tau_calcium": {
+			            "maxValue": 0, 
+			            "mean": 0, 
+			            "minValue": 0, 
+			            "stddev": 0, 
+			            "type": "exact", 
+			            "value": 0
+			          }, 
+			          "tau_membrane": {
+			            "maxValue": 0, 
+			            "mean": 0, 
+			            "minValue": 0, 
+			            "stddev": 0, 
+			            "type": "exact", 
+			            "value": 0
+			          }, 
+			          "threshold": {
+			            "maxValue": 0, 
+			            "mean": 0, 
+			            "minValue": 0, 
+			            "stddev": 0, 
+			            "type": "exact", 
+			            "value": 0
+			          }
+	                	}
+
+	                	spike_shape_vals = []
+				for key, value in neuron['parameters'].iteritems():
+					if key == 'spike_shape':
+						for val in value:
+							spike_shape_vals.append(val['value'])
+
+					spec[key] = value
+
+				if not spike_shape_vals:
+					spike_shape_vals.append(0)
+
+				spec["spike_shape"] = spike_shape_vals
+
+	                	channels = []
+	                	if 'channels' in neuron['parameters']:
+					del spec['channels']
+	                		for ch in neuron['parameters']['channels']:
+
+						if ch['type'] == 'calcium_dependent':
+	                				channel = {
+							      "backwards_rate": {
+							        "maxValue": 0, 
+							        "mean": 0, 
+							        "minValue": 0, 
+							        "stddev": 0, 
+							        "type": "exact", 
+							        "value": 0
+							      }, 
+							      "className": "calciumDependantChannel", 
+							      "conductance": {
+							        "maxValue": 0, 
+							        "mean": 0, 
+							        "minValue": 0, 
+							        "stddev": 0, 
+							        "type": "exact", 
+							        "value": 0
+							      }, 
+							      "description": "Description", 
+							      "forward_exponent": {
+							        "maxValue": 0, 
+							        "mean": 0, 
+							        "minValue": 0, 
+							        "stddev": 0, 
+							        "type": "exact", 
+							        "value": 0
+							      }, 
+							      "forward_scale": {
+							        "maxValue": 0, 
+							        "mean": 0, 
+							        "minValue": 0, 
+							        "stddev": 0, 
+							        "type": "exact", 
+							        "value": 0
+							      }, 
+							      "m_initial": {
+							        "maxValue": 0, 
+							        "mean": 0, 
+							        "minValue": 0, 
+							        "stddev": 0, 
+							        "type": "exact", 
+							        "value": 0
+							      }, 
+							      "m_power": {
+							        "maxValue": 0, 
+							        "mean": 0, 
+							        "minValue": 0, 
+							        "stddev": 0, 
+							        "type": "exact", 
+							        "value": 0
+							      }, 
+							      "name": "Calcium Dependant Channel", 
+							      "reversal_potential": {
+							        "maxValue": 0, 
+							        "mean": 0, 
+							        "minValue": 0, 
+							        "stddev": 0, 
+							        "type": "exact", 
+							        "value": 0
+							      }, 
+							      "tau_scale": {
+							        "maxValue": 0, 
+							        "mean": 0, 
+							        "minValue": 0, 
+							        "stddev": 0, 
+							        "type": "exact", 
+							        "value": 0
+							      }
+							    }
+
+							for ch_key, ch_val in ch.iteritems():
+					            		channel[ch_key] = ch_val
+
+							del channel['type']
+
+					            	channels.append(channel)
+
+						elif ch['type'] == 'voltage_gated_ion':
+	                				channel = {
+							      "activation_slope": {
+							        "maxValue": 0, 
+							        "mean": 0, 
+							        "minValue": 0, 
+							        "stddev": 0, 
+							        "type": "exact", 
+							        "value": 0
+							      }, 
+							      "className": "voltageGatedIonChannel", 
+							      "conductance": {
+							        "maxValue": 0, 
+							        "mean": 0, 
+							        "minValue": 0, 
+							        "stddev": 0, 
+							        "type": "exact", 
+							        "value": 0
+							      }, 
+							      "deactivation_slope": {
+							        "maxValue": 0, 
+							        "mean": 0, 
+							        "minValue": 0, 
+							        "stddev": 0, 
+							        "type": "exact", 
+							        "value": 0
+							      }, 
+							      "description": "Description", 
+							      "equilibrium_slope": {
+							        "maxValue": 0, 
+							        "mean": 0, 
+							        "minValue": 0, 
+							        "stddev": 0, 
+							        "type": "exact", 
+							        "value": 0
+							      }, 
+							      "m_initial": {
+							        "maxValue": 0, 
+							        "mean": 0, 
+							        "minValue": 0, 
+							        "stddev": 0, 
+							        "type": "exact", 
+							        "value": 0
+							      }, 
+							      "r": {
+							        "maxValue": 0, 
+							        "mean": 0, 
+							        "minValue": 0, 
+							        "stddev": 0, 
+							        "type": "exact", 
+							        "value": 0
+							      }, 
+							      "reversal_potential": {
+							        "maxValue": 0, 
+							        "mean": 0, 
+							        "minValue": 0, 
+							        "stddev": 0, 
+							        "type": "exact", 
+							        "value": 0
+							      }, 
+							      "v_half": {
+							        "maxValue": 0, 
+							        "mean": 0, 
+							        "minValue": 0, 
+							        "stddev": 0, 
+							        "type": "exact", 
+							        "value": 0
+							      }
+							    }
+
+							for ch_key, ch_val in ch.iteritems():
+					            		channel[ch_key] = ch_val
+
+							del channel['type']
+
+							channels.append(channel)
+
+				spec['channel'] = channels 
+
+				spec['type'] = 'NCS'
+
+			elif neuron['parameters']['type'] == 'hh':
+
+	        		spec = {
+			          "capacitance": {
+			            "maxValue": 0, 
+			            "mean": 0, 
+			            "minValue": 0, 
+			            "stddev": 0, 
+			            "type": "exact", 
+			            "value": 0
+			          }, 
+			          "resting_potential": {
+			            "maxValue": 0, 
+			            "mean": 0, 
+			            "minValue": 0, 
+			            "stddev": 0, 
+			            "type": "exact", 
+			            "value": 0
+			          }, 
+			          "threshold": {
+			            "maxValue": 0, 
+			            "mean": 0, 
+			            "minValue": 0, 
+			            "stddev": 0, 
+			            "type": "exact", 
+			            "value": 0
+			          }
+	        		}
+
+				for key, value in neuron['parameters'].iteritems():
+					spec[key] = value
+
+				spec['type'] = 'HodgkinHuxley'
+
+				spec['channel'] = []
+
+				if 'channels' in neuron['parameters']:
+					del spec['channels']
+					for ch in neuron['parameters']['channels']:
+						channel = {
+						      "className": "voltageGatedChannel",  
+						      "description": "Description", 
+						      "name": "Voltage Gated Channel"
+						    }
+
+						for key, value in ch.iteritems():
+							channel[key] = value
+
+						particles = []
+						if 'particles' in ch:
+							for p in ch['particles']:
+								particle = {
+									"alpha": {
+									  "a": {
+									    "maxValue": 0, 
+									    "mean": 0, 
+									    "minValue": 0, 
+									    "stddev": 0, 
+									    "type": "exact", 
+									    "value": 0
+									  }, 
+									  "b": {
+									    "maxValue": 0, 
+									    "mean": 0, 
+									    "minValue": 0, 
+									    "stddev": 0, 
+									    "type": "exact", 
+									    "value": 0
+									  }, 
+									  "c": {
+									    "maxValue": 0, 
+									    "mean": 0, 
+									    "minValue": 0, 
+									    "stddev": 0, 
+									    "type": "exact", 
+									    "value": 0
+									  }, 
+									  "d": {
+									    "maxValue": 0, 
+									    "mean": 0, 
+									    "minValue": 0, 
+									    "stddev": 0, 
+									    "type": "exact", 
+									    "value": 0
+									  }, 
+									  "f": {
+									    "maxValue": 0, 
+									    "mean": 0, 
+									    "minValue": 0, 
+									    "stddev": 0, 
+									    "type": "exact", 
+									    "value": 0
+									  }, 
+									  "h": {
+									    "maxValue": 0, 
+									    "mean": 0, 
+									    "minValue": 0, 
+									    "stddev": 0, 
+									    "type": "exact", 
+									    "value": 0
+									  }
+									}, 
+									"beta": {
+									  "a": {
+									    "maxValue": 0, 
+									    "mean": 0, 
+									    "minValue": 0, 
+									    "stddev": 0, 
+									    "type": "exact", 
+									    "value": 0
+									  }, 
+									  "b": {
+									    "maxValue": 0, 
+									    "mean": 0, 
+									    "minValue": 0, 
+									    "stddev": 0, 
+									    "type": "exact", 
+									    "value": 0
+									  }, 
+									  "c": {
+									    "maxValue": 0, 
+									    "mean": 0, 
+									    "minValue": 0, 
+									    "stddev": 0, 
+									    "type": "exact", 
+									    "value": 0
+									  }, 
+									  "d": {
+									    "maxValue": 0, 
+									    "mean": 0, 
+									    "minValue": 0, 
+									    "stddev": 0, 
+									    "type": "exact", 
+									    "value": 0
+									  }, 
+									  "f": {
+									    "maxValue": 0, 
+									    "mean": 0, 
+									    "minValue": 0, 
+									    "stddev": 0, 
+									    "type": "exact", 
+									    "value": 0
+									  }, 
+									  "h": {
+									    "maxValue": 0, 
+									    "mean": 0, 
+									    "minValue": 0, 
+									    "stddev": 0, 
+									    "type": "exact", 
+									    "value": 0
+									  }
+									}, 
+									"className": "voltageGatedParticle", 
+									"m_power": {
+									  "maxValue": 0, 
+									  "mean": 0, 
+									  "minValue": 0, 
+									  "stddev": 0, 
+									  "type": "exact", 
+									  "value": 0
+									}, 
+									"power": {
+									  "maxValue": 0, 
+									  "mean": 0, 
+									  "minValue": 0, 
+									  "stddev": 0, 
+									  "type": "exact", 
+									  "value": 0
+									}, 
+									"x_initial": {
+									  "maxValue": 0, 
+									  "mean": 0, 
+									  "minValue": 0, 
+									  "stddev": 0, 
+									  "type": "exact", 
+									  "value": 0
+									}
+								      }
+
+								for p_key, p_value in p.iteritems():
+									if 'type' in p_value:
+										del p_value['type']
+						      			particle[p_key] = p_value
+						      			
+								del particle['type']
+						      		particles.append(particle)
+
+						channel['particles'] = particles
+						del channel['type']
+						spec['channel'].append(channel)
+
+			neurons.append({"classification": "cells", 
           						"description": "Description", 
           						"geometry": neuron['geometry'], 
           						"name": name, 
           						"num": neuron['num'], 
-          						"parameters": neuron['parameters']
+          						"parameters": spec
           						})
 
 	        # add synapses
+	        count = 0
 	        script_synapses = script_data['model']['synapse_groups']
-	        for synape_name, synapse in script_synapses.iteritems():
+		for synape_name, synapse in script_synapses.iteritems():
 
-	        	# convert mismatch key names
+	        	count += 1
+
+	        	# get synapse parameters
 	        	if synapse['parameters']['type'] == 'flat':
-	        		synapse['parameters']['type'] = 'Flat'
+
+				spec = {
+				        "current": {
+				          "maxValue": 0, 
+				          "mean": 0, 
+				          "minValue": 0, 
+				          "stddev": 0, 
+				          "type": "exact", 
+				          "value": 0
+				        }, 
+				        "delay": {
+				          "maxValue": 0, 
+				          "mean": 0, 
+				          "minValue": 0, 
+				          "stddev": 0, 
+				          "type": "exact", 
+				          "value": 0
+				        }, 
+				        "name": "flatSynapse"
+				      }
+
+				for key, value in synapse['parameters'].iteritems():
+					spec[key] = value
+
+				spec['name'] = "flatSynapse" + str(count)
+				spec['type'] = 'Flat'
+
 	        	elif synapse['parameters']['type'] == 'ncs':
-	        		synapse['parameters']['type'] = 'NCS'
 
-	        	synapse['parameters']["aLtdMinimum"] = synapse['parameters'].pop("ALtdMinimum")
-	        	synapse['parameters']["aLtpMinimum"] = synapse['parameters'].pop("ALtpMinimum")
-	        	synapse['parameters']["tauPostSynapticConductance"] = synapse['parameters'].pop("tauPostsynapticConductance")
+				spec = {
+				        "A_ltd_minimum": {
+				          "maxValue": 0, 
+				          "mean": 0, 
+				          "minValue": 0, 
+				          "stddev": 0, 
+				          "type": "exact", 
+				          "value": 0
+				        }, 
+				        "A_ltp_minimum": {
+				          "maxValue": 0, 
+				          "mean": 0, 
+				          "minValue": 0, 
+				          "stddev": 0, 
+				          "type": "exact", 
+				          "value": 0
+				        }, 
+				        "delay": {
+				          "maxValue": 0, 
+				          "mean": 0, 
+				          "minValue": 0, 
+				          "stddev": 0, 
+				          "type": "exact", 
+				          "value": 0
+				        }, 
+				        "last_postfire_time": {
+				          "maxValue": 0, 
+				          "mean": 0, 
+				          "minValue": 0, 
+				          "stddev": 0, 
+				          "type": "exact", 
+				          "value": 0
+				        }, 
+				        "last_prefire_time": {
+				          "maxValue": 0, 
+				          "mean": 0, 
+				          "minValue": 0, 
+				          "stddev": 0, 
+				          "type": "exact", 
+				          "value": 0
+				        }, 
+				        "max_conductance": {
+				          "maxValue": 0, 
+				          "mean": 0, 
+				          "minValue": 0, 
+				          "stddev": 0, 
+				          "type": "exact", 
+				          "value": 0
+				        },  
+				        "psg_waveform_duration": {
+				          "maxValue": 0, 
+				          "mean": 0, 
+				          "minValue": 0, 
+				          "stddev": 0, 
+				          "type": "exact", 
+				          "value": 0
+				        }, 
+				        "redistribution": {
+				          "maxValue": 0, 
+				          "mean": 0, 
+				          "minValue": 0, 
+				          "stddev": 0, 
+				          "type": "exact", 
+				          "value": 0
+				        }, 
+				        "reversal_potential": {
+				          "maxValue": 0, 
+				          "mean": 0, 
+				          "minValue": 0, 
+				          "stddev": 0, 
+				          "type": "exact", 
+				          "value": 0
+				        }, 
+				        "tau_depression": {
+				          "maxValue": 0, 
+				          "mean": 0, 
+				          "minValue": 0, 
+				          "stddev": 0, 
+				          "type": "exact", 
+				          "value": 0
+				        }, 
+				        "tau_facilitation": {
+				          "maxValue": 0, 
+				          "mean": 0, 
+				          "minValue": 0, 
+				          "stddev": 0, 
+				          "type": "exact", 
+				          "value": 0
+				        }, 
+				        "tau_ltd": {
+				          "maxValue": 0, 
+				          "mean": 0, 
+				          "minValue": 0, 
+				          "stddev": 0, 
+				          "type": "exact", 
+				          "value": 0
+				        }, 
+				        "tau_ltp": {
+				          "maxValue": 0, 
+				          "mean": 0, 
+				          "minValue": 0, 
+				          "stddev": 0, 
+				          "type": "exact", 
+				          "value": 0
+				        }, 
+				        "tau_postsynaptic_conductance": {
+				          "maxValue": 0, 
+				          "mean": 0, 
+				          "minValue": 0, 
+				          "stddev": 0, 
+				          "type": "exact", 
+				          "value": 0
+				        }, 
+				        "utilization": {
+				          "maxValue": 0, 
+				          "mean": 0, 
+				          "minValue": 0, 
+				          "stddev": 0, 
+				          "type": "exact", 
+				          "value": 0
+				        }
+				      }
 
-	        	synapses.append({"$$hashKey": "05V", 
-								 "classification": "synapseGroup", 
+				for key, value in synapse['parameters'].iteritems():
+					spec[key] = value
+
+				spec['name'] = "ncsSynapse" + str(count)
+	        		spec['type'] = 'NCS'
+
+	        		spec["a_ltd_minimum"] = spec.pop("A_ltd_minimum")
+	        		spec["a_ltp_minimum"] = spec.pop("A_ltp_minimum")
+	        		spec["tau_post_synaptic_conductance"] = spec.pop("tau_postsynaptic_conductance")
+
+	        	synapses.append({"classification": "synapseGroup", 
        							 "description": "Description", 
-								 "parameters":synapse['parameters'],
+								 "parameters": spec,
 								 "post": synapse['postsynaptic'][0]['parameters']['name'], 
 								 "postPath": [{
-								  	"$$hashKey": "05R", 
 								  	"index": 0, 
 								  	"name": "Home"
 									}], 
 								"pre": synapse['presynaptic'][0]['parameters']['name'],
 								"prePath": [{
-								  	"$$hashKey": "05N", 
 								  	"index": 0, 
 								  	"name": "Home"
 									}], 
@@ -234,15 +903,110 @@ class Parser:
 	        	elif stimulus['stimulusType'] == 'sine_voltage':
 	        		stimulus['stimulusType'] = 'Sine Voltage'
 
-	        	stimuli.append({"$$hashKey": "05L",  
-      							"className": "simulationInput", 
-      							"endTime": stimulus['end_time'], 
-      							"inputTarget": stimulus['group_names'], 
+			spec = {
+			      "amplitude": {
+			        "maxValue": 0, 
+			        "mean": 0, 
+			        "minValue": 0, 
+			        "stddev": 0, 
+			        "type": "exact", 
+			        "value": 0
+			      }, 
+			      "amplitude_scale": {
+			        "maxValue": 0, 
+			        "mean": 0, 
+			        "minValue": 0, 
+			        "stddev": 0, 
+			        "type": "exact", 
+			        "value": 0
+			      }, 
+			      "amplitude_shift": {
+			        "maxValue": 0, 
+			        "mean": 0, 
+			        "minValue": 0, 
+			        "stddev": 0, 
+			        "type": "exact", 
+			        "value": 0
+			      }, 
+			      "current": {
+			        "maxValue": 0, 
+			        "mean": 0, 
+			        "minValue": 0, 
+			        "stddev": 0, 
+			        "type": "exact", 
+			        "value": 0
+			      }, 
+			      "delay": {
+			        "maxValue": 0, 
+			        "mean": 0, 
+			        "minValue": 0, 
+			        "stddev": 0, 
+			        "type": "exact", 
+			        "value": 0
+			      },  
+			      "end_amplitude": {
+			        "maxValue": 0, 
+			        "mean": 0, 
+			        "minValue": 0, 
+			        "stddev": 0, 
+			        "type": "exact", 
+			        "value": 0
+			      }, 
+			      "frequency": {
+			        "maxValue": 0, 
+			        "mean": 0, 
+			        "minValue": 0, 
+			        "stddev": 0, 
+			        "type": "exact", 
+			        "value": 0
+			      },  
+			      "phase": {
+			        "maxValue": 0, 
+			        "mean": 0, 
+			        "minValue": 0, 
+			        "stddev": 0, 
+			        "type": "exact", 
+			        "value": 0
+			      }, 
+			      "probability": 0.5, 
+			      "startTime": 0, 
+			      "start_amplitude": {
+			        "maxValue": 0, 
+			        "mean": 0, 
+			        "minValue": 0, 
+			        "stddev": 0, 
+			        "type": "exact", 
+			        "value": 0
+			      }, 
+			      "time_scale": {
+			        "maxValue": 0, 
+			        "mean": 0, 
+			        "minValue": 0, 
+			        "stddev": 0, 
+			        "type": "exact", 
+			        "value": 0
+			      }, 
+			      "width": {
+			        "maxValue": 0, 
+			        "mean": 0, 
+			        "minValue": 0, 
+			        "stddev": 0, 
+			        "type": "exact", 
+			        "value": 0
+			      }
+	        	}
+
+	        	for key, val in stimulus['parameters'].iteritems():
+	        		spec[key] = val
+
+	        	stimuli.append({"className": "simulationInput", 
+      							"endTime": str(stimulus['end_time']), 
+      							"inputTargets": stimulus['group_names'], 
       							"name": "Input" + str(index + 1), 
       							"probability": stimulus['probability'], 
       							"startTime": stimulus['start_time'], 
       							"stimulusType": stimulus['stimulusType'], 
-      							"parameters": stimulus['parameters']
+      							"parameters": spec
     							})
 
 	        # add reports
@@ -259,35 +1023,20 @@ class Parser:
 	        	elif report['report_type'] == 'input_current':
 	        		report['report_type'] = 'Input Current'
 
-	        	# TODO: FIGURE OUT WHERE THE TARGET FIELD IS IN THE PARAMETERS************************************
-	        	target_report_type = 1
+	        	if report['target_type'] == 'synapses':
+	        		target_report_type = 3
+	        	else:
+	        		target_report_type = 1
 
-	        	if self.reports_list[index] in self.report_paths:
-		        	reports.append({"$$hashKey": "05O", 
-							        "className": "simulationOutput", 
-							        "endTime": str(report['end_time']), 
-							      	"name": "Output" + str(index + 1), 
-							      	"numberFormat": "ascii", 
-							      	"saveAsFile": 1, 
-							      	"possibleReportType": target_report_type, 
-							      	"probability": report['probability'], 
-							      	"reportTargets": report['target_names'], 
-							      	"reportType": report['report_type'], 
-							      	"startTime": report['start_time']
-	    							})
-		        else:
-		        	reports.append({"$$hashKey": "05O", 
-							        "className": "simulationOutput", 
-							        "endTime": str(report['end_time']), 
-							      	"name": "Output" + str(index + 1), 
-							      	"numberFormat": "ascii", 
-							      	"saveAsFile": 0, 
-						      		"possibleReportType": target_report_type, 
-							      	"probability": report['probability'], 
-							      	"reportTargets": report['target_names'], 
-							      	"reportType": report['report_type'], 
-							      	"startTime": report['start_time']
-	    							})	
+		        reports.append({"className": "simulationOutput", 
+						        "endTime": str(report['end_time']), 
+						      	"name": "Output" + str(index + 1),  
+						      	"possibleReportType": target_report_type, 
+						      	"probability": report['probability'], 
+						      	"reportTargets": report['target_names'], 
+						      	"reportType": report['report_type'], 
+						      	"startTime": report['start_time']
+    							})	
 
 	        sim['duration'] = script_data['simulation']['run']['duration']
 
@@ -295,16 +1044,22 @@ class Parser:
 	        for neuron in neurons:
 	        	if neuron['parameters']:
 	        		self.convert_keys_to_ncb_input(neuron['parameters'])
+	        		if 'channel' in neuron['parameters']:
+		        		for channel in neuron['parameters']['channel']:
+		        			self.convert_keys_to_ncb_input(channel)
+						if 'particles' in channel:
+		        				for particle in channel['particles']:
+		        					self.convert_keys_to_ncb_input(particle)
 	        for synapse in synapses:
 	        	if synapse['parameters']:
 	        		self.convert_keys_to_ncb_input(synapse['parameters'])
-	        for stimulus in stimuli:
+	        '''for stimulus in stimuli:
 	        	if stimulus['parameters']:
-	        		self.convert_keys_to_ncb_input(stimulus['parameters'])
+	        		self.convert_keys_to_ncb_input(stimulus['parameters'])'''
 
-	    d = Deferred()
-	    d.callback('ign')
-	    return d
+		d = Deferred()
+		d.callback('ign')
+		return d
 
 	def delete_files(self, ign):
 		try:

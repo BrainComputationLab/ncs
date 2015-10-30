@@ -29,8 +29,7 @@ sim_port = 8005
 add_user_port = 8009
 ncb_port = 8004
 iface = '127.0.1.1'
-#iface = '134.197.67.160'
-#iface = '10.211.55.4'
+#iface = '134.197.66.109'
 
 # this will hold the services that combine to form the server
 top_service = service.MultiService()
