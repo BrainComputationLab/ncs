@@ -1,4 +1,5 @@
 #include <ncs/sim/Constants.h>
+#include <ncs/sim/Memory.h>
 
 template<ncs::sim::DeviceType::Type MType>
 VoltageGatedChannelSimulator<MType>::VoltageGatedChannelSimulator() {
@@ -325,8 +326,8 @@ initialize(const ncs::spec::SimulationParameters* simulation_parameters) {
   }
 
   const auto CPU = ncs::sim::DeviceType::CPU;
-  auto copy = [num_neurons_](float* src, float* dst) {
-    return Memory<CPU>::To<MType>::copy(src, dst, num_neurons_);
+  auto copy = [this](float* src, float* dst) {
+    return ncs::sim::mem::copy<CPU, MType>(src, dst, num_neurons_);
   };
   result &= copy(threshold, threshold_);
   result &= copy(resting_potential, resting_potential_);
@@ -348,7 +349,7 @@ initialize(const ncs::spec::SimulationParameters* simulation_parameters) {
       std::cerr << "Failed to initialize NeuronBuffer." << std::endl;
       return false;
     }
-    addBlank(blank);
+    this->addBlank(blank);
   }
 
   for (auto simulator : channel_simulators_) {

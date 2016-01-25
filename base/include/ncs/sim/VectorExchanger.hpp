@@ -18,7 +18,7 @@ bool DeviceVectorExtractor<MType>::init(size_t global_vector_offset,
   global_word_offset_ = Bit::num_words(global_vector_offset);
   for (size_t i = 0; i < num_buffers; ++i) {
     auto blank = new Signal();
-    addBlank(blank);
+    this->addBlank(blank);
   }
   source_subscription_ = source_publisher->subscribe();
   destination_subscription_ = destination_publisher->subscribe();
@@ -106,7 +106,7 @@ init(SpecificPublisher<GlobalFireVectorBuffer>* source_publisher,
       delete blank;
       return false;
     }
-    addBlank(blank);
+    this->addBlank(blank);
   }
   source_subscription_ = source_publisher->subscribe();
   return true;

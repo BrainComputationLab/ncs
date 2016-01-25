@@ -21,7 +21,8 @@ AsciiStream<sim::Bit>::AsciiStream(std::ostream& stream,
   auto thread_function = [this]() {
     size_t num_elements = data_source_->getTotalNumberOfElements();
     size_t num_words = sim::Bit::num_words(num_elements);
-    auto print_word = [&stream_](sim::Bit::Word word) {
+    //auto& lambda_stream = &stream_;
+    auto print_word = [this](sim::Bit::Word word) {
       for (size_t i = 0; i < sim::Bit::bits_per_word; ++i) {
         stream_ << sim::Bit::extract(word, i);
       }

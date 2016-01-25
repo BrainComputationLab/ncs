@@ -159,8 +159,8 @@ bool NCSSimulator<MType>::initialize() {
       in->tau_postsynaptic_conductance->generateDouble(&rng);
     psg_waveform_duration[i] = in->psg_waveform_duration->generateDouble(&rng);
   }
-  auto copy = [num_synapses_](float* src, float* dst) {
-    return Memory<CPU>::To<MType>::copy(src, dst, num_synapses_);
+  auto copy = [this](float* src, float* dst) {
+    return ncs::sim::mem::copy<CPU, MType>(src, dst, num_synapses_);
   };
   result &= copy(utilization, utilization_);
   result &= copy(redistribution, redistribution_);
@@ -219,7 +219,7 @@ bool NCSSimulator<MType>::initialize() {
       std::cerr << "Failed to initialize NCSDataBuffer." << std::endl;
       return false;
     }
-    addBlank(blank);
+    this->addBlank(blank);
   }
 
   self_subscription_ = this->subscribe();

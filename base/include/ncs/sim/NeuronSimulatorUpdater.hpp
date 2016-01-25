@@ -30,7 +30,7 @@ init(InputPublisher* input_publisher,
       delete buffer;
       return false;
     }
-    addBlank(buffer);
+    this->addBlank(buffer);
   }
   input_subscription_ = input_publisher->subscribe();
   synaptic_current_subscription_ = synaptic_current_publisher->subscribe();

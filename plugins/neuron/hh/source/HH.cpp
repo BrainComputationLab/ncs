@@ -1,5 +1,6 @@
 #include <ncs/sim/AtomicWriter.h>
 #include <ncs/sim/FactoryMap.h>
+#include <ncs/sim/Memory.h>
 
 #include "HH.h"
 #ifdef NCS_CUDA

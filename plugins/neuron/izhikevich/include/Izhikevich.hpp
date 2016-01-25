@@ -80,7 +80,7 @@ initialize(const ncs::spec::SimulationParameters* simulation_parameters) {
       delete blank;
       return false;
     }
-    addBlank(blank);
+    this->addBlank(blank);
   }
   subscription_ = this->subscribe();
   auto blank = this->getBlank();

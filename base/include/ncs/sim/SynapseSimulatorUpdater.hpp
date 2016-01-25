@@ -56,7 +56,7 @@ init(const std::vector<SynapseSimulator<MType>*>& simulators,
       delete blank;
       return false;
     }
-    addBlank(blank);
+    this->addBlank(blank);
   }
   simulation_parameters_ = simulation_parameters;
   return true;

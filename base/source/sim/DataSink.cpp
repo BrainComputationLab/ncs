@@ -61,7 +61,7 @@ bool DataSink::init(const std::vector<SpecificPublisher<Signal>*> dependents,
 }
 
 bool DataSink::start() {
-  auto syncer_function = [report_syncer_]() {
+  auto syncer_function = [this]() {
     report_syncer_->run();
     delete report_syncer_;
   };

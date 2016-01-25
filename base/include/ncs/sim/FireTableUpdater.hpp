@@ -38,7 +38,7 @@ init(FireTable<MType>* table,
       delete blank;
       return false;
     }
-    addBlank(blank);
+    this->addBlank(blank);
   }
   bool result = true;
   if (!global_presynaptic_neuron_ids.empty()) {
@@ -87,7 +87,7 @@ bool FireTableUpdater<MType>::start(std::function<bool()> thread_init,
       auto blank = this->getBlank();
       blank->setData(fire_table_->getRow(i));
       blank->simulation_step = i;
-      auto prerelease_function = [fire_table_, i]() {
+      auto prerelease_function = [this, i]() {
         fire_table_->releaseRow(i);
       };
       blank->setPrereleaseFunction(prerelease_function);
@@ -114,7 +114,7 @@ bool FireTableUpdater<MType>::start(std::function<bool()> thread_init,
       auto blank = this->getBlank();
       blank->setData(fire_table_->getRow(publishable_row));
       blank->simulation_step = publishable_row;
-      auto prerelease_function = [fire_table_, publishable_row]() {
+      auto prerelease_function = [this, publishable_row]() {
         fire_table_->releaseRow(publishable_row);
       };
       blank->setPrereleaseFunction(prerelease_function);

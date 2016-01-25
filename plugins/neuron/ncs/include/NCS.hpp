@@ -173,7 +173,7 @@ initialize(const ncs::spec::SimulationParameters* simulation_parameters) {
       std::cerr << "Failed to initialize NeuronBuffer." << std::endl;
       return false;
     }
-    addBlank(blank);
+    this->addBlank(blank);
   }
 
   state_subscription_ = this->subscribe();

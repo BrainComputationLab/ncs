@@ -130,7 +130,7 @@ init(std::vector<ChannelSimulator<MType>*> simulators,
       delete blank;
       return false;
     }
-    addBlank(blank);
+    this->addBlank(blank);
   }
   neuron_subscription_ = source_publisher->subscribe();
   return true;

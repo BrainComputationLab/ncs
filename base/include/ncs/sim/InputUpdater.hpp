@@ -25,7 +25,7 @@ init(SpecificPublisher<StepSignal>* signal_publisher,
       delete buffer;
       return false;
     }
-    addBlank(buffer);
+    this->addBlank(buffer);
   }
   step_subscription_ = signal_publisher->subscribe();
   if (nullptr == step_subscription_) {

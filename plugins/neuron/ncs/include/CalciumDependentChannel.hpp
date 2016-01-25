@@ -98,7 +98,7 @@ bool CalciumDependentSimulator<MType>::init_() {
       delete blank;
       return false;
     }
-    addBlank(blank);
+    this->addBlank(blank);
   }
   auto blank = this->getBlank();
   const auto CPU = ncs::sim::DeviceType::CPU;
