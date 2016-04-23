@@ -28,183 +28,184 @@ class ModelService(object):
         synapses = entity_dicts['synapses']
 
         # add neurons
-        neuron_types = 0
+	neuron_types = 0
         for index, group in enumerate(neurons):
 
-            # TODO: Validate neuron spec
+		# TODO: Validate neuron spec
 
-            # get neuron parameters
-            neuron_params = group['parameters']
+		# get neuron parameters
+		neuron_params = group['parameters']
 
-            # Get neuron type from the model
-            neuron_type = self.convert_neuron_type(neuron_params['type'])
+		# Get neuron type from the model
+		neuron_type = self.convert_neuron_type(neuron_params['type'])
 
-            # dictionary for neuron parameters which vary depending on cell type
-            if neuron_type == 'izhikevich':
-                spec = {
-                    "a": '0.0',
-                    "b": '0.0',
-                    "c": '0.0',
-                    "d": '0.0',
-                    "u": '0.0',
-                    "v": '0.0',
-                    "threshold": '0',
-                }
-                self.convert_params_to_str_specification_format(neuron_params, spec)
-                self.convert_unicode_ascii(spec)
+		# dictionary for neuron parameters which vary depending on cell type
+		if neuron_type == 'izhikevich':
+			spec = {
+			    "a": '0.0',
+			    "b": '0.0',
+			    "c": '0.0',
+			    "d": '0.0',
+			    "u": '0.0',
+			    "v": '0.0',
+			    "threshold": '0',
+			}
 
-            elif neuron_type == 'ncs':
-                spec = {
-                    "calcium": '0.0',
-                    "calciumSpikeIncrement": '0.0',
-                    "capacitance": '0.0',
-                    "leakConductance": '0.0',
-                    "leakReversalPotential": '0.0',
-                    "rMembrane": '0.0',
-                    "restingPotential": '0.0',
-                    "tauCalcium": '0.0',
-                    "tauMembrane": '0.0',
-                    "threshold": '0.0',
-                }
+			self.convert_params_to_str_specification_format(neuron_params, spec)
+			self.convert_unicode_ascii(spec)
 
-                self.convert_params_to_str_specification_format(neuron_params, spec)
-                self.convert_unicode_ascii(spec)
+		elif neuron_type == 'ncs':
+			spec = {
+			    "calcium": '0.0',
+			    "calciumSpikeIncrement": '0.0',
+			    "capacitance": '0.0',
+			    "leakConductance": '0.0',
+			    "leakReversalPotential": '0.0',
+			    "rMembrane": '0.0',
+			    "restingPotential": '0.0',
+			    "tauCalcium": '0.0',
+			    "tauMembrane": '0.0',
+			    "threshold": '0.0',
+			}
 
-                # convert dict keys to match what simulator takes
-                self.convert_keys_to_sim_input(spec)
+			self.convert_params_to_str_specification_format(neuron_params, spec)
+			self.convert_unicode_ascii(spec)
 
-                # loop through channels
-                channels = []
-                for channel in neuron_params['channel']:
+			# convert dict keys to match what simulator takes
+			self.convert_keys_to_sim_input(spec)
 
-                    # determine channel type so parameters can be populated
-                    if channel['name'] == "Calcium Dependant Channel":
-                        channel_type = 'calcium_dependent'
+			# loop through channels
+			channels = []
+			for channel in neuron_params['channel']:
 
-                        channel_spec = {
-                            "backwardsRate": '0.0',
-                            "conductance": '0.0',
-                            "forwardExponent": '0.0',
-                            "forwardScale": '0.0',
-                            "mInitial": '0.0',
-                            "mPower": '0.0',
-                            "reversalPotential": '0.0',
-                            "tauScale": '0.0'
-                        }
+			    # determine channel type so parameters can be populated
+			    if channel['name'] == "Calcium Dependant Channel":
+				channel_type = 'calcium_dependent'
 
-                    elif channel['name'] == "Voltage Gated Ion Channel":
-                        channel_type = 'voltage_gated_ion'
+				channel_spec = {
+				    "backwardsRate": '0.0',
+				    "conductance": '0.0',
+				    "forwardExponent": '0.0',
+				    "forwardScale": '0.0',
+				    "mInitial": '0.0',
+				    "mPower": '0.0',
+				    "reversalPotential": '0.0',
+				    "tauScale": '0.0'
+				}
 
-                        channel_spec = {
-                            "activationSlope": '0.0',
-                            "conductance": '0.0',
-                            "deactivationSlope": '0.0',
-                            "equilibriumSlope": '0.0',
-                            "mInitial": '0.0',
-                            "mPower": '0.0',
-                            "r": '0.0',
-                            "reversalPotential": '0.0',
-                            "vHalf": '0.0'
-                        }
+			    elif channel['name'] == "Voltage Gated Ion Channel":
+				channel_type = 'voltage_gated_ion'
 
-                    # convert channels to spec format
-                    self.convert_params_to_str_specification_format(channel, channel_spec)
-                    self.convert_unicode_ascii(channel_spec)
-                    self.convert_keys_to_sim_input(channel_spec)
+				channel_spec = {
+				    "activationSlope": '0.0',
+				    "conductance": '0.0',
+				    "deactivationSlope": '0.0',
+				    "equilibriumSlope": '0.0',
+				    "mInitial": '0.0',
+				    "mPower": '0.0',
+				    "r": '0.0',
+				    "reversalPotential": '0.0',
+				    "vHalf": '0.0'
+				}
 
-                    # this must be added after the conversion to spec format
-                    channel_spec['type'] = channel_type
-                    if channel['name'] == "Voltage Gated Channel":
-                        channel_spec['particles'] = particle_spec
+			    # convert channels to spec format
+			    self.convert_params_to_str_specification_format(channel, channel_spec)
+			    self.convert_unicode_ascii(channel_spec)
+			    self.convert_keys_to_sim_input(channel_spec)
 
-                    channels.append(channel_spec)
+			    # this must be added after the conversion to spec format
+			    channel_spec['type'] = channel_type
 
-                    spike_shape_vals = []
-                    for value in neuron_params['spikeShape']:
-                        spike_shape_vals.append(value)
+			    channels.append(channel_spec)
 
-                    # add arrays to the spec map
-                    spec['channels'] = channels
-                    spec['spike_shape'] = spike_shape_vals
- 
-            else: #Hodgkin Huxley
-                spec = {
-                    "capacitance": '0.0',
-                    "restingPotential": '0.0',
-                    "threshold": '0.0'
-                }
+			spike_shape_vals = []
+			for value in neuron_params['spikeShape']:
+				spike_shape_vals.append(float(value))
 
-                self.convert_params_to_str_specification_format(neuron_params, spec)
-                self.convert_unicode_ascii(spec)
-                self.convert_keys_to_sim_input(spec)
+			# add arrays to the spec map
+			spec['channels'] = channels
+			spec['spike_shape'] = spike_shape_vals
 
-                # loop through channels
-                # This is the only cell that accepts the Voltage Gated channels
-                channels = []
-                for channel in neuron_params['channel']:
-                    # TODO: else throw an error
-                    if channel['name'] == "Voltage Gated Channel":
-                        channel_type = 'voltage_gated'
 
-                        particles = channel['particles']
-                        particle_spec = {
-                            "power": '',
-                            "xInitial": '',
-                        }
-                        # convert particles to spec format
-                        self.convert_params_to_str_specification_format(particles, particle_spec)
-                        self.convert_unicode_ascii(particle_spec)
-                        self.convert_keys_to_sim_input(particle_spec)
+		else: #Hodgkin Huxley
+			spec = {
+			    "capacitance": '0.0',
+			    "restingPotential": '0.0',
+			    "threshold": '0.0'
+			}
 
-                        alpha_spec = {
-                            "a": '0.0',
-                            "b": '0.0',
-                            "c": '0.0',
-                            "d": '0.0',
-                            "f": '0.0',
-                            "h": '0.0'
-                        }
-                        beta_spec = {
-                            "a": '0.0',
-                            "b": '0.0',
-                            "c": '0.0',
-                            "d": '0.0',
-                            "f": '0.0',
-                            "h": '0.0'
-                        }
-                        # convert alpha and beta to spec format
-                        self.convert_params_to_str_specification_format(particles['alpha'], alpha_spec)
-                        self.convert_unicode_ascii(alpha_spec)
-                        self.convert_keys_to_sim_input(alpha_spec)
-                        self.convert_params_to_str_specification_format(particles['beta'], beta_spec)
-                        self.convert_unicode_ascii(beta_spec)
-                        self.convert_keys_to_sim_input(beta_spec)
+			self.convert_params_to_str_specification_format(neuron_params, spec)
+			self.convert_unicode_ascii(spec)
+			self.convert_keys_to_sim_input(spec)
 
-                        particle_spec['alpha'] = alpha_spec
-                        particle_spec['beta'] = beta_spec
+			# loop through channels
+			# This is the only cell that accepts the Voltage Gated channels
+			channels = []
+			for channel in neuron_params['channel']:
+				# TODO: else throw an error
+				if channel['name'] == "Voltage Gated Channel":
+					channel_type = 'voltage_gated'
 
-                        channel_spec = {
-                            "conductance": '',
-                            "reversalPotential": ''
-                        }
+					for particle in channel['particles']:
+						particle_spec = {
+						"power": '',
+						"xInitial": '',
+						}
+						# convert particles to spec format
+						self.convert_params_to_str_specification_format(particle, particle_spec)
+						self.convert_unicode_ascii(particle_spec)
+						self.convert_keys_to_sim_input(particle_spec)
 
-                    # convert channels to spec format
-                    self.convert_params_to_str_specification_format(channel, channel_spec)
-                    self.convert_unicode_ascii(channel_spec)
-                    self.convert_keys_to_sim_input(channel_spec)
+						alpha_spec = {
+						"a": '0.0',
+						"b": '0.0',
+						"c": '0.0',
+						"d": '0.0',
+						"f": '0.0',
+						"h": '0.0'
+						}
+						beta_spec = {
+						"a": '0.0',
+						"b": '0.0',
+						"c": '0.0',
+						"d": '0.0',
+						"f": '0.0',
+						"h": '0.0'
+						}
+						# convert alpha and beta to spec format
+						self.convert_params_to_str_specification_format(particle['alpha'], alpha_spec)
+						self.convert_unicode_ascii(alpha_spec)
+						self.convert_keys_to_sim_input(alpha_spec)
+						self.convert_params_to_str_specification_format(particle['beta'], beta_spec)
+						self.convert_unicode_ascii(beta_spec)
+						self.convert_keys_to_sim_input(beta_spec)
 
-                    # this must be added after the conversion to spec format
-                    channel_spec['type'] = channel_type
-                    if channel['name'] == "Voltage Gated Channel":
-                        channel_spec['particles'] = particle_spec
+						particle_spec['alpha'] = alpha_spec
+						particle_spec['beta'] = beta_spec
 
-                    # add arrays to the spec map
-                    channels.append(channel_spec)
-                    spec['channels'] = channels
+					channel_spec = {
+					    "conductance": '',
+					    "reversalPotential": ''
+					}
 
-            # store this neuron type
-            script += '\tparameters_' + str(index) + ' = sim.addNeuron("' + str(group['name'].encode('ascii', 'ignore')) + '", "' + str(neuron_type.encode('ascii', 'ignore')) + '", ' + self.create_spec_str(spec) + ')\n'
-            neuron_types += 1
+					# convert channels to spec format
+					self.convert_params_to_str_specification_format(channel, channel_spec)
+					self.convert_unicode_ascii(channel_spec)
+					self.convert_keys_to_sim_input(channel_spec)
+
+					# this must be added after the conversion to spec format
+					channel_spec['type'] = channel_type
+					if channel['name'] == "Voltage Gated Channel":
+						channel_spec['particles'] = particle_spec
+
+					# add arrays to the spec map
+					channels.append(channel_spec)
+
+			spec['channels'] = channels
+
+		# store this neuron type
+		script += '\tparameters_' + str(index) + ' = sim.addNeuron("' + str(group['name'].encode('ascii', 'ignore')) + '", "' + str(neuron_type.encode('ascii', 'ignore')) + '", ' + self.create_spec_str(spec) + ')\n'
+		neuron_types += 1
 
         # add synapses
         synapse_types = 0
@@ -284,19 +285,20 @@ class ModelService(object):
         synapses = model_entity_dicts['synapses']
         stimuli = entity_dicts['inputs']
 
-        for stimulus in stimuli:
+        for index, stimulus in enumerate(stimuli):
 
             # TODO: Validate stimulus spec
 
-            # Get stimulus type from the model
-            stimulus_type = self.convert_stim_type(stimulus['stimulusType'].encode('ascii', 'ignore'))
-            prob = float(stimulus['probability'])
-            time_start = float(stimulus['startTime'])
-            time_end = float(stimulus['endTime'])
-            targets = stimulus['inputTargets']
-
             # get synapse parameters
             stim_params = stimulus['parameters']
+
+            # Get stimulus type from the model
+            stimulus_type = self.convert_stim_type(stimulus['stimulusType'].encode('ascii', 'ignore'))
+            prob = float(stim_params['probability'])
+            time_start = float(stim_params['startTime'])
+            time_end = float(stim_params['endTime'])
+            targets = stimulus['inputTargets']
+
 
             # these parameters will mostly likely change depending on the stimulus type
             spec = {
@@ -313,8 +315,7 @@ class ModelService(object):
                 "width": '0.0',
             }
 
-            self.convert_params_to_str_specification_format(stim_params, spec)  #CAN'T USE THIS FUNCTION BECAUSE NCB JSON DOES NOT MATCH STIM SPEC FIELDS**********
-            # NEED TO PUT PARAMETERS VALUES INSIDE A PARAMETER DICTIONARY LIKE THE OTHERS
+            self.convert_params_to_str_specification_format(stim_params, spec)
             self.convert_unicode_ascii(spec)
 
             # Determine target group
@@ -341,30 +342,33 @@ class ModelService(object):
 
             if report_target_type == 1:
                 for i in range(len(neurons)):
-                    if neurons[i]['name'] == report['reportTarget']:
-                        report_targets.append(neuron_groups[i])
-                        target_type = 'neuron'
+		    for target in report['reportTargets']:
+		            if neurons[i]['name'] == target:
+		                report_targets.append(neuron_groups[i])
+		                target_type = 'neuron'
 
             elif report_target_type == 2:
                 # TODO: handle aliases
                 pass
 
             elif report_target_type == 3:
+
                 for i in range(len(synapses)):
-                    if synapses[i]['name'] == report['reportTarget']:
-                        report_targets.append(synapse_groups[i])
-                        target_type = 'synapse'
+		    for target in report['reportTargets']:
+		            if synapses[i]['parameters']['name'] == target:
+		                report_targets.append(synapse_groups[i])
+		                target_type = 'synapse'
+
 
             probability = float(report['probability'])
             time_start = float(report['startTime'])
             time_end = float(report['endTime'])
 
             script += '\treport_' + str(index) + ' = sim.addReport(' + str(report_targets) + ', "' + target_type + '", "' + str(report_type) + '", ' + str(probability) + ', ' + str(time_start) + ', ' + str(time_end) + ')\n'
-            
+
             sim_identifier = username + '..' + report['name']
 
-            if report['saveAsFile'] == True:
-                script += '\treport_' + str(index) + '.toAsciiFileReportName("./' + str(report['fileName'].encode('ascii', 'ignore')) + '", "' + str(sim_identifier) + '")\n'
+            script += '\treport_' + str(index) + '.toAsciiFileReportName("./' + report['name'] + '.txt' + '", "' + str(sim_identifier) + '")\n'
 
         # duration (in seconds) - each time step is 1 ms       
         script += '\tsim.run(duration=' + str(float(entity_dicts['duration'])) + ')' + '\n' 
@@ -463,10 +467,37 @@ class ModelService(object):
 
     @classmethod
     def create_spec_str(self, spec_dict):
+
       spec_str = '{'
-      for key, val in spec_dict.iteritems():
-        spec_str += "'" + key + "': " + val + ", "
+
+      try:
+          for key, val in spec_dict.iteritems():
+        	spec_str += "'" + key + "': "
+        	if isinstance(val,list):
+			if val:
+				if isinstance(val[0], dict):
+					spec_str += '['
+					for x in val:
+						spec_str += (self.create_spec_str(x) + ',')
+					spec_str += '],'
+				else:
+					spec_str += (str(val) + ',')
+			else:
+				spec_str += (str(val) + ',')
+        	elif isinstance(val, dict):
+        		spec_str += (self.create_spec_str(val) + ',')
+        	else:
+			if key == 'type':
+				spec_str += "'" + str(val) + "', "
+			else:
+                		spec_str += str(val) + ", "
+
+      except Exception as e:
+        print 'Exception: ' + str(e)
+        pass
+
       spec_str += '}'
+
       return spec_str
 
     ''' ******************This method is only for testing***************************** '''

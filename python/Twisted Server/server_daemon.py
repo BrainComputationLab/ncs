@@ -28,8 +28,10 @@ from authenticator import AuthenticationService, AuthenticationServiceFactory
 sim_port = 8005
 add_user_port = 8009
 ncb_port = 8004
-iface = '127.0.1.1'
-#iface = '134.197.66.109'
+
+#iface = '10.0.1.40'
+iface = '192.168.1.4'
+ncs_iface = '127.0.1.1' # if NCS and the daemon on running on the same machine
 
 # this will hold the services that combine to form the server
 top_service = service.MultiService()
@@ -38,7 +40,7 @@ top_service = service.MultiService()
 data_service = RecvDataService()
 data_service.setServiceParent(top_service)
 factory = RecvDataProtocolFactory(data_service)
-tcp_service = internet.TCPServer(sim_port, factory, interface=iface)
+tcp_service = internet.TCPServer(sim_port, factory, interface=ncs_iface)
 tcp_service.setServiceParent(top_service)
 
 # service that handles request from NCB to add a new user

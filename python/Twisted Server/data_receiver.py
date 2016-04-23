@@ -68,12 +68,13 @@ class RecvDataProtocol(Protocol):
     def connectionMade(self):
 
         if DEBUG:
+            print 'Connection made with data receiver'
             self.testfile = open("testing-1-2-3.txt", "w")
 
         spec = txamqp.spec.load("txamqp/amqp0-8.stripped.rabbitmq.xml")
         delegate = TwistedDelegate()
-
-        self.deferred = ClientCreator(reactor, AMQClient, delegate=delegate, vhost='/', spec=spec).connectTCP("localhost", 5672)
+	iface = '192.168.1.4'
+        self.deferred = ClientCreator(reactor, AMQClient, delegate=delegate, vhost='/', spec=spec).connectTCP("10.0.1.40", 5672)
         self.deferred.addCallback(self.gotConnection, "test", "test")
 
     def dataReceived(self, data):
