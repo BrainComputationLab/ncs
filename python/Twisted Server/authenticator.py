@@ -50,6 +50,7 @@ class AuthenicationServiceProtocol(Protocol):
 	avatar = None
 	logout = None
 	service = None
+	request = ''
 
 	# a callback that is invoked after a client opens a connection
 	def connectionMade(self):
@@ -69,40 +70,49 @@ class AuthenicationServiceProtocol(Protocol):
 	def dataReceived(self, data):
 
 		# deserialize the data
-		message = json.loads(data)
+		self.request += data
 
-		if "request" in message:
-			if message.get("request") in self.service.options:
+		try:
+			message = json.loads(self.request)
 
-				# User has not been granted an avatar (logging in)
-				if not self.avatar and message.get("request") == "login":
-					self.service.username = message.get('username')
-					password = message.get('password')
+			self.request = ''
 
-					if DEBUG:
-						print 'Received username: ' + self.service.username
-						print 'Received password: ' + password
+			if "request" in message:
+				if message.get("request") in self.service.options:
 
-					self.tryLogin(self.service.username, password) 
+					# User has not been granted an avatar (logging in)
+					if not self.avatar and message.get("request") == "login":
+						self.service.username = message.get('username')
+						password = message.get('password')
 
-				# execute request	
+						if DEBUG:
+							print 'Received username: ' + self.service.username
+							print 'Received password: ' + password
+
+						self.tryLogin(self.service.username, password) 
+
+					# execute request	
+					else:
+						if DEBUG:
+							print 'Performing request: ' + message.get("request")
+
+	 					deferred = self.service.options[message.get("request")](message)
+
+	 					# notify client of success or failure
+	 					deferred.addCallbacks(self.request_done, self.request_done)
+
 				else:
-					if DEBUG:
-						print 'Performing request: ' + message.get("request")
-
- 					deferred = self.service.options[message.get("request")](message)
-
- 					# notify client of success or failure
- 					deferred.addCallbacks(self.request_done, self.request_done)
-
+					response = {"response": "failure", "reason": "Invalid request."}
+					response["request"] = message.get("request")
+					self.transport.write(json.dumps(response))
+					self.transport.loseConnection()
 			else:
-				response = {"response": "failure", "reason": "Invalid request."}
-				response["request"] = message.get("request")
-				self.transport.write(json.dumps(response))
+				self.transport.write(json.dumps({"request": "", "response": "failure", "reason": "Invalid request format."}))
 				self.transport.loseConnection()
-		else:
-			self.transport.write(json.dumps({"request": "", "response": "failure", "reason": "Invalid request format."}))
-			self.transport.loseConnection()
+
+		except Exception, e:
+			print 'JSON loads exception: ' + str(e)
+			pass
 
 	def request_done(self, ign):
 		self.transport.write(json.dumps(self.service.response))

@@ -460,6 +460,7 @@ class Parser:
 							        "type": "exact", 
 							        "value": 0
 							      }, 
+							      "name": "Voltage Gated Ion Channel", 
 							      "r": {
 							        "maxValue": 0, 
 							        "mean": 0, 

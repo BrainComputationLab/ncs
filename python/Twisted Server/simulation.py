@@ -55,6 +55,12 @@ class Simulation:
 		self.script.write(self.script_str)
 		self.script.close()
 
+		if DEBUG:
+			print "Writing created script file..."
+			file = open("created_script.py", "w")
+			file.write(self.script_str)
+			file.close()
+
 		st = os.stat(script_file)
 		os.chmod(script_file, st.st_mode | stat.S_IEXEC)
 
