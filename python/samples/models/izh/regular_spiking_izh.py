@@ -18,8 +18,8 @@ def run(argv):
 								 "v": -60.0,
 								 "threshold": 30
 								})
-	group_1=sim.addNeuronGroup("group_1",1,regular_spiking_parameters,None)
-	
+	group_1=sim.addNeuronGroup("group_1",15,regular_spiking_parameters,None)
+
 	if not sim.init(argv):
 		print "failed to initialize simulation."
 		return
@@ -30,8 +30,8 @@ def run(argv):
 
 	sim.addStimulus("rectangular_current", input_parameters, group_1, 1, 0.01, 1.0)
 	voltage_report=sim.addReport("group_1", "neuron", "neuron_voltage", 1, 0.0, 1.0)
-	voltage_report.toAsciiFile("./regular_spiking_izh.txt")	
-	
+	voltage_report.toAsciiFile("./regular_spiking_izh.txt")
+
 	sim.run(duration=1.0)
 
 	return

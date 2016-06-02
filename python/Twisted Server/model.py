@@ -222,7 +222,7 @@ class ModelService(object):
             synapse_type = 'ncs'
 
             # dictionary for synapse parameters
-            spec = {          
+            spec = {
                 "utilization": '0.0',
                 "redistribution": '0.0',
                 "lastPrefireTime": '0.0',
@@ -307,10 +307,10 @@ class ModelService(object):
                 "amplitude_shift": '0.0',
                 "current": '0.0',
                 "delay": '0',
-                "end_amplitude": '0.0',
+                "ending_amplitude": '0.0',
                 "frequency": '0.0',
                 "phase": '0.0',
-                "start_amplitude": '0.0',
+                "starting_amplitude": '0.0',
                 "time_scale": '0.0',
                 "width": '0.0',
             }
@@ -370,8 +370,8 @@ class ModelService(object):
 
             script += '\treport_' + str(index) + '.toAsciiFileReportName("./' + report['name'] + '.txt' + '", "' + str(sim_identifier) + '")\n'
 
-        # duration (in seconds) - each time step is 1 ms       
-        script += '\tsim.run(duration=' + str(float(entity_dicts['duration'])) + ')' + '\n' 
+        # duration (in seconds) - each time step is 1 ms
+        script += '\tsim.run(duration=' + str(float(entity_dicts['duration'])) + ')' + '\n'
 
         return script
 
@@ -515,7 +515,7 @@ class ModelService(object):
                                  "threshold": 30
                                 })
         group_1=sim.addNeuronGroup("group_1",1,regular_spiking_parameters,None)
-    
+
         if not sim.init(sys.argv):
             print "failed to initialize simulation."
             return
@@ -526,8 +526,8 @@ class ModelService(object):
 
         sim.addStimulus("rectangular_current", input_parameters, group_1, 1, 0.01, 1.0)
         voltage_report=sim.addReport("group_1", "neuron", "neuron_voltage", 1, 0.0, 1.0)
-        voltage_report.toAsciiFile("./regular_spiking_izh.txt") 
+        voltage_report.toAsciiFile("./regular_spiking_izh.txt")
 
-        sim.run(duration=1.0) 
+        sim.run(duration=1.0)
 
         return

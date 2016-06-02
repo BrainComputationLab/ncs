@@ -96,7 +96,7 @@ class Parser:
 	    for line in new_line_list:
 	        script_file.write(line)
 	    script_file.close()
-	    
+
 	    d = Deferred()
 	    d.addCallback(self.create_json_file)
 	    d.callback('ign')
@@ -113,7 +113,7 @@ class Parser:
 
 		# run the simulation script as a subprocess
 		reactor.spawnProcess(pp, "./" + self.script_name, env=pyncs_env)
-		
+
 	def build_ncb_json(self):
 
             	json_file = open(self.script_name.split('.py')[0] + '.json')
@@ -122,7 +122,7 @@ class Parser:
 			script_data = json.load(json_file)
 		except ValueError:
 			log.msg('Could not load JSON file.')
-			script_data = {} 
+			script_data = {}
 
 		if DEBUG:
 			file = open("pyncs_params.txt", "w")
@@ -132,27 +132,27 @@ class Parser:
 		if script_data:
 	    		self.sim_params = {
 		          "model": {
-		            "author": "", 
-		            "cellAliases": [], 
+		            "author": "",
+		            "cellAliases": [],
 		            "cellGroups": {
-		              "cellGroups": [], 
-		              "classification": "cellGroup", 
-		              "description": "Description", 
+		              "cellGroups": [],
+		              "classification": "cellGroup",
+		              "description": "Description",
 		              "name": "Home"
-		            }, 
-		            "classification": "model", 
-		            "description": "Description", 
-		            "name": "Current Model", 
+		            },
+		            "classification": "model",
+		            "description": "Description",
+		            "name": "Current Model",
 		            "synapses": []
-		          }, 
+		          },
 		          "simulation": {
-		            "duration": None, 
-		            "fsv": None, 
-		            "includeDistance": "No", 
-		            "inputs": [], 
-		            "interactive": "No", 
-		            "name": "sim", 
-		            "outputs": [], 
+		            "duration": None,
+		            "fsv": None,
+		            "includeDistance": "No",
+		            "inputs": [],
+		            "interactive": "No",
+		            "name": "sim",
+		            "outputs": [],
 		            "seed": None
 		          }
 		        }
@@ -173,59 +173,59 @@ class Parser:
 	        	if neuron['parameters']['type'] == 'izhikevich':
 					spec = {
 					    "a": {
-					        "maxValue": 0, 
-					        "mean": 0, 
-					        "minValue": 0, 
-					        "stddev": 0, 
-					        "type": "exact", 
+					        "maxValue": 0,
+					        "mean": 0,
+					        "minValue": 0,
+					        "stddev": 0,
+					        "type": "exact",
 					        "value": 0
 				      	},
 					    "b": {
-					        "maxValue": 0, 
-					        "mean": 0, 
-					        "minValue": 0, 
-					        "stddev": 0, 
-					        "type": "exact", 
+					        "maxValue": 0,
+					        "mean": 0,
+					        "minValue": 0,
+					        "stddev": 0,
+					        "type": "exact",
 					        "value": 0
 				      	},
 					    "c": {
-					        "maxValue": 0, 
-					        "mean": 0, 
-					        "minValue": 0, 
-					        "stddev": 0, 
-					        "type": "exact", 
+					        "maxValue": 0,
+					        "mean": 0,
+					        "minValue": 0,
+					        "stddev": 0,
+					        "type": "exact",
 					        "value": 0
 				      	},
 					    "d": {
-					        "maxValue": 0, 
-					        "mean": 0, 
-					        "minValue": 0, 
-					        "stddev": 0, 
-					        "type": "exact", 
+					        "maxValue": 0,
+					        "mean": 0,
+					        "minValue": 0,
+					        "stddev": 0,
+					        "type": "exact",
 					        "value": 0
 				      	},
 					    "u": {
-					        "maxValue": 0, 
-					        "mean": 0, 
-					        "minValue": 0, 
-					        "stddev": 0, 
-					        "type": "exact", 
+					        "maxValue": 0,
+					        "mean": 0,
+					        "minValue": 0,
+					        "stddev": 0,
+					        "type": "exact",
 					        "value": 0
 				      	},
 					    "v": {
-					        "maxValue": 0, 
-					        "mean": 0, 
-					        "minValue": 0, 
-					        "stddev": 0, 
-					        "type": "exact", 
+					        "maxValue": 0,
+					        "mean": 0,
+					        "minValue": 0,
+					        "stddev": 0,
+					        "type": "exact",
 					        "value": 0
 				      	},
 					    "threshold": {
-					        "maxValue": 0, 
-					        "mean": 0, 
-					        "minValue": 0, 
-					        "stddev": 0, 
-					        "type": "exact", 
+					        "maxValue": 0,
+					        "mean": 0,
+					        "minValue": 0,
+					        "stddev": 0,
+					        "type": "exact",
 					        "value": 0
 				      	},
 					}
@@ -239,83 +239,83 @@ class Parser:
 
 	                	spec = {
 			          "calcium": {
-			            "maxValue": 0, 
-			            "mean": 0, 
-			            "minValue": 0, 
-			            "stddev": 0, 
-			            "type": "exact", 
+			            "maxValue": 0,
+			            "mean": 0,
+			            "minValue": 0,
+			            "stddev": 0,
+			            "type": "exact",
 			            "value": 0
-			          }, 
+			          },
 			          "calcium_spike_increment": {
-			            "maxValue": 0, 
-			            "mean": 0, 
-			            "minValue": 0, 
-			            "stddev": 0, 
-			            "type": "exact", 
+			            "maxValue": 0,
+			            "mean": 0,
+			            "minValue": 0,
+			            "stddev": 0,
+			            "type": "exact",
 			            "value": 0
-			          }, 
+			          },
 			          "capacitance": {
-			            "maxValue": 0, 
-			            "mean": 0, 
-			            "minValue": 0, 
-			            "stddev": 0, 
-			            "type": "exact", 
+			            "maxValue": 0,
+			            "mean": 0,
+			            "minValue": 0,
+			            "stddev": 0,
+			            "type": "exact",
 			            "value": 0
-			          }, 
+			          },
 			          "leak_conductance": {
-			            "maxValue": 0, 
-			            "mean": 0, 
-			            "minValue": 0, 
-			            "stddev": 0, 
-			            "type": "exact", 
+			            "maxValue": 0,
+			            "mean": 0,
+			            "minValue": 0,
+			            "stddev": 0,
+			            "type": "exact",
 			            "value":30
-			          }, 
+			          },
 			          "leak_reversal_potential": {
-			            "maxValue": 0, 
-			            "mean": 0, 
-			            "minValue": 0, 
-			            "stddev": 0, 
-			            "type": "exact", 
+			            "maxValue": 0,
+			            "mean": 0,
+			            "minValue": 0,
+			            "stddev": 0,
+			            "type": "exact",
 			            "value": 0
-			          }, 
+			          },
 			          "r_membrane": {
-			            "maxValue": 0, 
-			            "mean": 0, 
-			            "minValue": 0, 
-			            "stddev": 0, 
-			            "type": "exact", 
+			            "maxValue": 0,
+			            "mean": 0,
+			            "minValue": 0,
+			            "stddev": 0,
+			            "type": "exact",
 			            "value": 0
-			          }, 
+			          },
 			          "resting_potential": {
-			            "maxValue": 0, 
-			            "mean": 0, 
-			            "minValue": 0, 
-			            "stddev": 0, 
-			            "type": "exact", 
+			            "maxValue": 0,
+			            "mean": 0,
+			            "minValue": 0,
+			            "stddev": 0,
+			            "type": "exact",
 			            "value": 0
-			          },  
+			          },
 			          "tau_calcium": {
-			            "maxValue": 0, 
-			            "mean": 0, 
-			            "minValue": 0, 
-			            "stddev": 0, 
-			            "type": "exact", 
+			            "maxValue": 0,
+			            "mean": 0,
+			            "minValue": 0,
+			            "stddev": 0,
+			            "type": "exact",
 			            "value": 0
-			          }, 
+			          },
 			          "tau_membrane": {
-			            "maxValue": 0, 
-			            "mean": 0, 
-			            "minValue": 0, 
-			            "stddev": 0, 
-			            "type": "exact", 
+			            "maxValue": 0,
+			            "mean": 0,
+			            "minValue": 0,
+			            "stddev": 0,
+			            "type": "exact",
 			            "value": 0
-			          }, 
+			          },
 			          "threshold": {
-			            "maxValue": 0, 
-			            "mean": 0, 
-			            "minValue": 0, 
-			            "stddev": 0, 
-			            "type": "exact", 
+			            "maxValue": 0,
+			            "mean": 0,
+			            "minValue": 0,
+			            "stddev": 0,
+			            "type": "exact",
 			            "value": 0
 			          }
 	                	}
@@ -341,70 +341,70 @@ class Parser:
 						if ch['type'] == 'calcium_dependent':
 	                				channel = {
 							      "backwards_rate": {
-							        "maxValue": 0, 
-							        "mean": 0, 
-							        "minValue": 0, 
-							        "stddev": 0, 
-							        "type": "exact", 
+							        "maxValue": 0,
+							        "mean": 0,
+							        "minValue": 0,
+							        "stddev": 0,
+							        "type": "exact",
 							        "value": 0
-							      }, 
-							      "className": "calciumDependantChannel", 
+							      },
+							      "className": "calciumDependantChannel",
 							      "conductance": {
-							        "maxValue": 0, 
-							        "mean": 0, 
-							        "minValue": 0, 
-							        "stddev": 0, 
-							        "type": "exact", 
+							        "maxValue": 0,
+							        "mean": 0,
+							        "minValue": 0,
+							        "stddev": 0,
+							        "type": "exact",
 							        "value": 0
-							      }, 
-							      "description": "Description", 
+							      },
+							      "description": "Description",
 							      "forward_exponent": {
-							        "maxValue": 0, 
-							        "mean": 0, 
-							        "minValue": 0, 
-							        "stddev": 0, 
-							        "type": "exact", 
+							        "maxValue": 0,
+							        "mean": 0,
+							        "minValue": 0,
+							        "stddev": 0,
+							        "type": "exact",
 							        "value": 0
-							      }, 
+							      },
 							      "forward_scale": {
-							        "maxValue": 0, 
-							        "mean": 0, 
-							        "minValue": 0, 
-							        "stddev": 0, 
-							        "type": "exact", 
+							        "maxValue": 0,
+							        "mean": 0,
+							        "minValue": 0,
+							        "stddev": 0,
+							        "type": "exact",
 							        "value": 0
-							      }, 
+							      },
 							      "m_initial": {
-							        "maxValue": 0, 
-							        "mean": 0, 
-							        "minValue": 0, 
-							        "stddev": 0, 
-							        "type": "exact", 
+							        "maxValue": 0,
+							        "mean": 0,
+							        "minValue": 0,
+							        "stddev": 0,
+							        "type": "exact",
 							        "value": 0
-							      }, 
+							      },
 							      "m_power": {
-							        "maxValue": 0, 
-							        "mean": 0, 
-							        "minValue": 0, 
-							        "stddev": 0, 
-							        "type": "exact", 
+							        "maxValue": 0,
+							        "mean": 0,
+							        "minValue": 0,
+							        "stddev": 0,
+							        "type": "exact",
 							        "value": 0
-							      }, 
-							      "name": "Calcium Dependant Channel", 
+							      },
+							      "name": "Calcium Dependant Channel",
 							      "reversal_potential": {
-							        "maxValue": 0, 
-							        "mean": 0, 
-							        "minValue": 0, 
-							        "stddev": 0, 
-							        "type": "exact", 
+							        "maxValue": 0,
+							        "mean": 0,
+							        "minValue": 0,
+							        "stddev": 0,
+							        "type": "exact",
 							        "value": 0
-							      }, 
+							      },
 							      "tau_scale": {
-							        "maxValue": 0, 
-							        "mean": 0, 
-							        "minValue": 0, 
-							        "stddev": 0, 
-							        "type": "exact", 
+							        "maxValue": 0,
+							        "mean": 0,
+							        "minValue": 0,
+							        "stddev": 0,
+							        "type": "exact",
 							        "value": 0
 							      }
 							    }
@@ -419,70 +419,70 @@ class Parser:
 						elif ch['type'] == 'voltage_gated_ion':
 	                				channel = {
 							      "activation_slope": {
-							        "maxValue": 0, 
-							        "mean": 0, 
-							        "minValue": 0, 
-							        "stddev": 0, 
-							        "type": "exact", 
+							        "maxValue": 0,
+							        "mean": 0,
+							        "minValue": 0,
+							        "stddev": 0,
+							        "type": "exact",
 							        "value": 0
-							      }, 
-							      "className": "voltageGatedIonChannel", 
+							      },
+							      "className": "voltageGatedIonChannel",
 							      "conductance": {
-							        "maxValue": 0, 
-							        "mean": 0, 
-							        "minValue": 0, 
-							        "stddev": 0, 
-							        "type": "exact", 
+							        "maxValue": 0,
+							        "mean": 0,
+							        "minValue": 0,
+							        "stddev": 0,
+							        "type": "exact",
 							        "value": 0
-							      }, 
+							      },
 							      "deactivation_slope": {
-							        "maxValue": 0, 
-							        "mean": 0, 
-							        "minValue": 0, 
-							        "stddev": 0, 
-							        "type": "exact", 
+							        "maxValue": 0,
+							        "mean": 0,
+							        "minValue": 0,
+							        "stddev": 0,
+							        "type": "exact",
 							        "value": 0
-							      }, 
-							      "description": "Description", 
+							      },
+							      "description": "Description",
 							      "equilibrium_slope": {
-							        "maxValue": 0, 
-							        "mean": 0, 
-							        "minValue": 0, 
-							        "stddev": 0, 
-							        "type": "exact", 
+							        "maxValue": 0,
+							        "mean": 0,
+							        "minValue": 0,
+							        "stddev": 0,
+							        "type": "exact",
 							        "value": 0
-							      }, 
+							      },
 							      "m_initial": {
-							        "maxValue": 0, 
-							        "mean": 0, 
-							        "minValue": 0, 
-							        "stddev": 0, 
-							        "type": "exact", 
+							        "maxValue": 0,
+							        "mean": 0,
+							        "minValue": 0,
+							        "stddev": 0,
+							        "type": "exact",
 							        "value": 0
-							      }, 
-							      "name": "Voltage Gated Ion Channel", 
+							      },
+							      "name": "Voltage Gated Ion Channel",
 							      "r": {
-							        "maxValue": 0, 
-							        "mean": 0, 
-							        "minValue": 0, 
-							        "stddev": 0, 
-							        "type": "exact", 
+							        "maxValue": 0,
+							        "mean": 0,
+							        "minValue": 0,
+							        "stddev": 0,
+							        "type": "exact",
 							        "value": 0
-							      }, 
+							      },
 							      "reversal_potential": {
-							        "maxValue": 0, 
-							        "mean": 0, 
-							        "minValue": 0, 
-							        "stddev": 0, 
-							        "type": "exact", 
+							        "maxValue": 0,
+							        "mean": 0,
+							        "minValue": 0,
+							        "stddev": 0,
+							        "type": "exact",
 							        "value": 0
-							      }, 
+							      },
 							      "v_half": {
-							        "maxValue": 0, 
-							        "mean": 0, 
-							        "minValue": 0, 
-							        "stddev": 0, 
-							        "type": "exact", 
+							        "maxValue": 0,
+							        "mean": 0,
+							        "minValue": 0,
+							        "stddev": 0,
+							        "type": "exact",
 							        "value": 0
 							      }
 							    }
@@ -494,7 +494,7 @@ class Parser:
 
 							channels.append(channel)
 
-				spec['channel'] = channels 
+				spec['channel'] = channels
 
 				spec['type'] = 'NCS'
 
@@ -502,27 +502,27 @@ class Parser:
 
 	        		spec = {
 			          "capacitance": {
-			            "maxValue": 0, 
-			            "mean": 0, 
-			            "minValue": 0, 
-			            "stddev": 0, 
-			            "type": "exact", 
+			            "maxValue": 0,
+			            "mean": 0,
+			            "minValue": 0,
+			            "stddev": 0,
+			            "type": "exact",
 			            "value": 0
-			          }, 
+			          },
 			          "resting_potential": {
-			            "maxValue": 0, 
-			            "mean": 0, 
-			            "minValue": 0, 
-			            "stddev": 0, 
-			            "type": "exact", 
+			            "maxValue": 0,
+			            "mean": 0,
+			            "minValue": 0,
+			            "stddev": 0,
+			            "type": "exact",
 			            "value": 0
-			          }, 
+			          },
 			          "threshold": {
-			            "maxValue": 0, 
-			            "mean": 0, 
-			            "minValue": 0, 
-			            "stddev": 0, 
-			            "type": "exact", 
+			            "maxValue": 0,
+			            "mean": 0,
+			            "minValue": 0,
+			            "stddev": 0,
+			            "type": "exact",
 			            "value": 0
 			          }
 	        		}
@@ -538,8 +538,8 @@ class Parser:
 					del spec['channels']
 					for ch in neuron['parameters']['channels']:
 						channel = {
-						      "className": "voltageGatedChannel",  
-						      "description": "Description", 
+						      "className": "voltageGatedChannel",
+						      "description": "Description",
 						      "name": "Voltage Gated Channel"
 						    }
 
@@ -552,127 +552,127 @@ class Parser:
 								particle = {
 									"alpha": {
 									  "a": {
-									    "maxValue": 0, 
-									    "mean": 0, 
-									    "minValue": 0, 
-									    "stddev": 0, 
-									    "type": "exact", 
+									    "maxValue": 0,
+									    "mean": 0,
+									    "minValue": 0,
+									    "stddev": 0,
+									    "type": "exact",
 									    "value": 0
-									  }, 
+									  },
 									  "b": {
-									    "maxValue": 0, 
-									    "mean": 0, 
-									    "minValue": 0, 
-									    "stddev": 0, 
-									    "type": "exact", 
+									    "maxValue": 0,
+									    "mean": 0,
+									    "minValue": 0,
+									    "stddev": 0,
+									    "type": "exact",
 									    "value": 0
-									  }, 
+									  },
 									  "c": {
-									    "maxValue": 0, 
-									    "mean": 0, 
-									    "minValue": 0, 
-									    "stddev": 0, 
-									    "type": "exact", 
+									    "maxValue": 0,
+									    "mean": 0,
+									    "minValue": 0,
+									    "stddev": 0,
+									    "type": "exact",
 									    "value": 0
-									  }, 
+									  },
 									  "d": {
-									    "maxValue": 0, 
-									    "mean": 0, 
-									    "minValue": 0, 
-									    "stddev": 0, 
-									    "type": "exact", 
+									    "maxValue": 0,
+									    "mean": 0,
+									    "minValue": 0,
+									    "stddev": 0,
+									    "type": "exact",
 									    "value": 0
-									  }, 
+									  },
 									  "f": {
-									    "maxValue": 0, 
-									    "mean": 0, 
-									    "minValue": 0, 
-									    "stddev": 0, 
-									    "type": "exact", 
+									    "maxValue": 0,
+									    "mean": 0,
+									    "minValue": 0,
+									    "stddev": 0,
+									    "type": "exact",
 									    "value": 0
-									  }, 
+									  },
 									  "h": {
-									    "maxValue": 0, 
-									    "mean": 0, 
-									    "minValue": 0, 
-									    "stddev": 0, 
-									    "type": "exact", 
+									    "maxValue": 0,
+									    "mean": 0,
+									    "minValue": 0,
+									    "stddev": 0,
+									    "type": "exact",
 									    "value": 0
 									  }
-									}, 
+									},
 									"beta": {
 									  "a": {
-									    "maxValue": 0, 
-									    "mean": 0, 
-									    "minValue": 0, 
-									    "stddev": 0, 
-									    "type": "exact", 
+									    "maxValue": 0,
+									    "mean": 0,
+									    "minValue": 0,
+									    "stddev": 0,
+									    "type": "exact",
 									    "value": 0
-									  }, 
+									  },
 									  "b": {
-									    "maxValue": 0, 
-									    "mean": 0, 
-									    "minValue": 0, 
-									    "stddev": 0, 
-									    "type": "exact", 
+									    "maxValue": 0,
+									    "mean": 0,
+									    "minValue": 0,
+									    "stddev": 0,
+									    "type": "exact",
 									    "value": 0
-									  }, 
+									  },
 									  "c": {
-									    "maxValue": 0, 
-									    "mean": 0, 
-									    "minValue": 0, 
-									    "stddev": 0, 
-									    "type": "exact", 
+									    "maxValue": 0,
+									    "mean": 0,
+									    "minValue": 0,
+									    "stddev": 0,
+									    "type": "exact",
 									    "value": 0
-									  }, 
+									  },
 									  "d": {
-									    "maxValue": 0, 
-									    "mean": 0, 
-									    "minValue": 0, 
-									    "stddev": 0, 
-									    "type": "exact", 
+									    "maxValue": 0,
+									    "mean": 0,
+									    "minValue": 0,
+									    "stddev": 0,
+									    "type": "exact",
 									    "value": 0
-									  }, 
+									  },
 									  "f": {
-									    "maxValue": 0, 
-									    "mean": 0, 
-									    "minValue": 0, 
-									    "stddev": 0, 
-									    "type": "exact", 
+									    "maxValue": 0,
+									    "mean": 0,
+									    "minValue": 0,
+									    "stddev": 0,
+									    "type": "exact",
 									    "value": 0
-									  }, 
+									  },
 									  "h": {
-									    "maxValue": 0, 
-									    "mean": 0, 
-									    "minValue": 0, 
-									    "stddev": 0, 
-									    "type": "exact", 
+									    "maxValue": 0,
+									    "mean": 0,
+									    "minValue": 0,
+									    "stddev": 0,
+									    "type": "exact",
 									    "value": 0
 									  }
-									}, 
-									"className": "voltageGatedParticle", 
+									},
+									"className": "voltageGatedParticle",
 									"m_power": {
-									  "maxValue": 0, 
-									  "mean": 0, 
-									  "minValue": 0, 
-									  "stddev": 0, 
-									  "type": "exact", 
+									  "maxValue": 0,
+									  "mean": 0,
+									  "minValue": 0,
+									  "stddev": 0,
+									  "type": "exact",
 									  "value": 0
-									}, 
+									},
 									"power": {
-									  "maxValue": 0, 
-									  "mean": 0, 
-									  "minValue": 0, 
-									  "stddev": 0, 
-									  "type": "exact", 
+									  "maxValue": 0,
+									  "mean": 0,
+									  "minValue": 0,
+									  "stddev": 0,
+									  "type": "exact",
 									  "value": 0
-									}, 
+									},
 									"x_initial": {
-									  "maxValue": 0, 
-									  "mean": 0, 
-									  "minValue": 0, 
-									  "stddev": 0, 
-									  "type": "exact", 
+									  "maxValue": 0,
+									  "mean": 0,
+									  "minValue": 0,
+									  "stddev": 0,
+									  "type": "exact",
 									  "value": 0
 									}
 								      }
@@ -681,7 +681,7 @@ class Parser:
 									if 'type' in p_value:
 										del p_value['type']
 						      			particle[p_key] = p_value
-						      			
+
 								del particle['type']
 						      		particles.append(particle)
 
@@ -689,11 +689,11 @@ class Parser:
 						del channel['type']
 						spec['channel'].append(channel)
 
-			neurons.append({"classification": "cells", 
-          						"description": "Description", 
-          						"geometry": neuron['geometry'], 
-          						"name": name, 
-          						"num": neuron['num'], 
+			neurons.append({"classification": "cells",
+          						"description": "Description",
+          						"geometry": neuron['geometry'],
+          						"name": name,
+          						"num": neuron['num'],
           						"parameters": spec
           						})
 
@@ -709,21 +709,21 @@ class Parser:
 
 				spec = {
 				        "current": {
-				          "maxValue": 0, 
-				          "mean": 0, 
-				          "minValue": 0, 
-				          "stddev": 0, 
-				          "type": "exact", 
+				          "maxValue": 0,
+				          "mean": 0,
+				          "minValue": 0,
+				          "stddev": 0,
+				          "type": "exact",
 				          "value": 0
-				        }, 
+				        },
 				        "delay": {
-				          "maxValue": 0, 
-				          "mean": 0, 
-				          "minValue": 0, 
-				          "stddev": 0, 
-				          "type": "exact", 
+				          "maxValue": 0,
+				          "mean": 0,
+				          "minValue": 0,
+				          "stddev": 0,
+				          "type": "exact",
 				          "value": 0
-				        }, 
+				        },
 				        "name": "flatSynapse"
 				      }
 
@@ -737,123 +737,123 @@ class Parser:
 
 				spec = {
 				        "A_ltd_minimum": {
-				          "maxValue": 0, 
-				          "mean": 0, 
-				          "minValue": 0, 
-				          "stddev": 0, 
-				          "type": "exact", 
+				          "maxValue": 0,
+				          "mean": 0,
+				          "minValue": 0,
+				          "stddev": 0,
+				          "type": "exact",
 				          "value": 0
-				        }, 
+				        },
 				        "A_ltp_minimum": {
-				          "maxValue": 0, 
-				          "mean": 0, 
-				          "minValue": 0, 
-				          "stddev": 0, 
-				          "type": "exact", 
+				          "maxValue": 0,
+				          "mean": 0,
+				          "minValue": 0,
+				          "stddev": 0,
+				          "type": "exact",
 				          "value": 0
-				        }, 
+				        },
 				        "delay": {
-				          "maxValue": 0, 
-				          "mean": 0, 
-				          "minValue": 0, 
-				          "stddev": 0, 
-				          "type": "exact", 
+				          "maxValue": 0,
+				          "mean": 0,
+				          "minValue": 0,
+				          "stddev": 0,
+				          "type": "exact",
 				          "value": 0
-				        }, 
+				        },
 				        "last_postfire_time": {
-				          "maxValue": 0, 
-				          "mean": 0, 
-				          "minValue": 0, 
-				          "stddev": 0, 
-				          "type": "exact", 
+				          "maxValue": 0,
+				          "mean": 0,
+				          "minValue": 0,
+				          "stddev": 0,
+				          "type": "exact",
 				          "value": 0
-				        }, 
+				        },
 				        "last_prefire_time": {
-				          "maxValue": 0, 
-				          "mean": 0, 
-				          "minValue": 0, 
-				          "stddev": 0, 
-				          "type": "exact", 
+				          "maxValue": 0,
+				          "mean": 0,
+				          "minValue": 0,
+				          "stddev": 0,
+				          "type": "exact",
 				          "value": 0
-				        }, 
+				        },
 				        "max_conductance": {
-				          "maxValue": 0, 
-				          "mean": 0, 
-				          "minValue": 0, 
-				          "stddev": 0, 
-				          "type": "exact", 
+				          "maxValue": 0,
+				          "mean": 0,
+				          "minValue": 0,
+				          "stddev": 0,
+				          "type": "exact",
 				          "value": 0
-				        },  
+				        },
 				        "psg_waveform_duration": {
-				          "maxValue": 0, 
-				          "mean": 0, 
-				          "minValue": 0, 
-				          "stddev": 0, 
-				          "type": "exact", 
+				          "maxValue": 0,
+				          "mean": 0,
+				          "minValue": 0,
+				          "stddev": 0,
+				          "type": "exact",
 				          "value": 0
-				        }, 
+				        },
 				        "redistribution": {
-				          "maxValue": 0, 
-				          "mean": 0, 
-				          "minValue": 0, 
-				          "stddev": 0, 
-				          "type": "exact", 
+				          "maxValue": 0,
+				          "mean": 0,
+				          "minValue": 0,
+				          "stddev": 0,
+				          "type": "exact",
 				          "value": 0
-				        }, 
+				        },
 				        "reversal_potential": {
-				          "maxValue": 0, 
-				          "mean": 0, 
-				          "minValue": 0, 
-				          "stddev": 0, 
-				          "type": "exact", 
+				          "maxValue": 0,
+				          "mean": 0,
+				          "minValue": 0,
+				          "stddev": 0,
+				          "type": "exact",
 				          "value": 0
-				        }, 
+				        },
 				        "tau_depression": {
-				          "maxValue": 0, 
-				          "mean": 0, 
-				          "minValue": 0, 
-				          "stddev": 0, 
-				          "type": "exact", 
+				          "maxValue": 0,
+				          "mean": 0,
+				          "minValue": 0,
+				          "stddev": 0,
+				          "type": "exact",
 				          "value": 0
-				        }, 
+				        },
 				        "tau_facilitation": {
-				          "maxValue": 0, 
-				          "mean": 0, 
-				          "minValue": 0, 
-				          "stddev": 0, 
-				          "type": "exact", 
+				          "maxValue": 0,
+				          "mean": 0,
+				          "minValue": 0,
+				          "stddev": 0,
+				          "type": "exact",
 				          "value": 0
-				        }, 
+				        },
 				        "tau_ltd": {
-				          "maxValue": 0, 
-				          "mean": 0, 
-				          "minValue": 0, 
-				          "stddev": 0, 
-				          "type": "exact", 
+				          "maxValue": 0,
+				          "mean": 0,
+				          "minValue": 0,
+				          "stddev": 0,
+				          "type": "exact",
 				          "value": 0
-				        }, 
+				        },
 				        "tau_ltp": {
-				          "maxValue": 0, 
-				          "mean": 0, 
-				          "minValue": 0, 
-				          "stddev": 0, 
-				          "type": "exact", 
+				          "maxValue": 0,
+				          "mean": 0,
+				          "minValue": 0,
+				          "stddev": 0,
+				          "type": "exact",
 				          "value": 0
-				        }, 
+				        },
 				        "tau_postsynaptic_conductance": {
-				          "maxValue": 0, 
-				          "mean": 0, 
-				          "minValue": 0, 
-				          "stddev": 0, 
-				          "type": "exact", 
+				          "maxValue": 0,
+				          "mean": 0,
+				          "minValue": 0,
+				          "stddev": 0,
+				          "type": "exact",
 				          "value": 0
-				        }, 
+				        },
 				        "utilization": {
-				          "maxValue": 0, 
-				          "mean": 0, 
-				          "minValue": 0, 
-				          "stddev": 0, 
-				          "type": "exact", 
+				          "maxValue": 0,
+				          "mean": 0,
+				          "minValue": 0,
+				          "stddev": 0,
+				          "type": "exact",
 				          "value": 0
 				        }
 				      }
@@ -868,19 +868,19 @@ class Parser:
 	        		spec["a_ltp_minimum"] = spec.pop("A_ltp_minimum")
 	        		spec["tau_post_synaptic_conductance"] = spec.pop("tau_postsynaptic_conductance")
 
-	        	synapses.append({"classification": "synapseGroup", 
-       							 "description": "Description", 
+	        	synapses.append({"classification": "synapseGroup",
+       							 "description": "Description",
 								 "parameters": spec,
-								 "post": synapse['postsynaptic'][0]['parameters']['name'], 
+								 "post": synapse['postsynaptic'][0]['parameters']['name'],
 								 "postPath": [{
-								  	"index": 0, 
+								  	"index": 0,
 								  	"name": "Home"
-									}], 
+									}],
 								"pre": synapse['presynaptic'][0]['parameters']['name'],
 								"prePath": [{
-								  	"index": 0, 
+								  	"index": 0,
 								  	"name": "Home"
-									}], 
+									}],
 								"prob": synapse['probability']
 	          					})
 
@@ -906,93 +906,93 @@ class Parser:
 
 			spec = {
 			      "amplitude": {
-			        "maxValue": 0, 
-			        "mean": 0, 
-			        "minValue": 0, 
-			        "stddev": 0, 
-			        "type": "exact", 
+			        "maxValue": 0,
+			        "mean": 0,
+			        "minValue": 0,
+			        "stddev": 0,
+			        "type": "exact",
 			        "value": 0
-			      }, 
+			      },
 			      "amplitude_scale": {
-			        "maxValue": 0, 
-			        "mean": 0, 
-			        "minValue": 0, 
-			        "stddev": 0, 
-			        "type": "exact", 
+			        "maxValue": 0,
+			        "mean": 0,
+			        "minValue": 0,
+			        "stddev": 0,
+			        "type": "exact",
 			        "value": 0
-			      }, 
+			      },
 			      "amplitude_shift": {
-			        "maxValue": 0, 
-			        "mean": 0, 
-			        "minValue": 0, 
-			        "stddev": 0, 
-			        "type": "exact", 
+			        "maxValue": 0,
+			        "mean": 0,
+			        "minValue": 0,
+			        "stddev": 0,
+			        "type": "exact",
 			        "value": 0
-			      }, 
+			      },
 			      "current": {
-			        "maxValue": 0, 
-			        "mean": 0, 
-			        "minValue": 0, 
-			        "stddev": 0, 
-			        "type": "exact", 
+			        "maxValue": 0,
+			        "mean": 0,
+			        "minValue": 0,
+			        "stddev": 0,
+			        "type": "exact",
 			        "value": 0
-			      }, 
+			      },
 			      "delay": {
-			        "maxValue": 0, 
-			        "mean": 0, 
-			        "minValue": 0, 
-			        "stddev": 0, 
-			        "type": "exact", 
+			        "maxValue": 0,
+			        "mean": 0,
+			        "minValue": 0,
+			        "stddev": 0,
+			        "type": "exact",
 			        "value": 0
-			      },  
-			      "end_amplitude": {
-			        "maxValue": 0, 
-			        "mean": 0, 
-			        "minValue": 0, 
-			        "stddev": 0, 
-			        "type": "exact", 
+			      },
+			      "ending_amplitude": {
+			        "maxValue": 0,
+			        "mean": 0,
+			        "minValue": 0,
+			        "stddev": 0,
+			        "type": "exact",
 			        "value": 0
-			      }, 
+			      },
 			      "frequency": {
-			        "maxValue": 0, 
-			        "mean": 0, 
-			        "minValue": 0, 
-			        "stddev": 0, 
-			        "type": "exact", 
+			        "maxValue": 0,
+			        "mean": 0,
+			        "minValue": 0,
+			        "stddev": 0,
+			        "type": "exact",
 			        "value": 0
-			      },  
+			      },
 			      "phase": {
-			        "maxValue": 0, 
-			        "mean": 0, 
-			        "minValue": 0, 
-			        "stddev": 0, 
-			        "type": "exact", 
+			        "maxValue": 0,
+			        "mean": 0,
+			        "minValue": 0,
+			        "stddev": 0,
+			        "type": "exact",
 			        "value": 0
-			      }, 
-			      "probability": 0.5, 
-			      "startTime": 0, 
-			      "start_amplitude": {
-			        "maxValue": 0, 
-			        "mean": 0, 
-			        "minValue": 0, 
-			        "stddev": 0, 
-			        "type": "exact", 
+			      },
+			      "probability": 0.5,
+			      "startTime": 0,
+			      "starting_amplitude": {
+			        "maxValue": 0,
+			        "mean": 0,
+			        "minValue": 0,
+			        "stddev": 0,
+			        "type": "exact",
 			        "value": 0
-			      }, 
+			      },
 			      "time_scale": {
-			        "maxValue": 0, 
-			        "mean": 0, 
-			        "minValue": 0, 
-			        "stddev": 0, 
-			        "type": "exact", 
+			        "maxValue": 0,
+			        "mean": 0,
+			        "minValue": 0,
+			        "stddev": 0,
+			        "type": "exact",
 			        "value": 0
-			      }, 
+			      },
 			      "width": {
-			        "maxValue": 0, 
-			        "mean": 0, 
-			        "minValue": 0, 
-			        "stddev": 0, 
-			        "type": "exact", 
+			        "maxValue": 0,
+			        "mean": 0,
+			        "minValue": 0,
+			        "stddev": 0,
+			        "type": "exact",
 			        "value": 0
 			      }
 	        	}
@@ -1000,13 +1000,13 @@ class Parser:
 	        	for key, val in stimulus['parameters'].iteritems():
 	        		spec[key] = val
 
-	        	stimuli.append({"className": "simulationInput", 
-      							"endTime": str(stimulus['end_time']), 
-      							"inputTargets": stimulus['group_names'], 
-      							"name": "Input" + str(index + 1), 
-      							"probability": stimulus['probability'], 
-      							"startTime": stimulus['start_time'], 
-      							"stimulusType": stimulus['stimulusType'], 
+	        	stimuli.append({"className": "simulationInput",
+      							"endTime": str(stimulus['end_time']),
+      							"inputTargets": stimulus['group_names'],
+      							"name": "Input" + str(index + 1),
+      							"probability": stimulus['probability'],
+      							"startTime": stimulus['start_time'],
+      							"stimulusType": stimulus['stimulusType'],
       							"parameters": spec
     							})
 
@@ -1029,15 +1029,15 @@ class Parser:
 	        	else:
 	        		target_report_type = 1
 
-		        reports.append({"className": "simulationOutput", 
-						        "endTime": str(report['end_time']), 
-						      	"name": "Output" + str(index + 1),  
-						      	"possibleReportType": target_report_type, 
-						      	"probability": report['probability'], 
-						      	"reportTargets": report['target_names'], 
-						      	"reportType": report['report_type'], 
+		        reports.append({"className": "simulationOutput",
+						        "endTime": str(report['end_time']),
+						      	"name": "Output" + str(index + 1),
+						      	"possibleReportType": target_report_type,
+						      	"probability": report['probability'],
+						      	"reportTargets": report['target_names'],
+						      	"reportType": report['report_type'],
 						      	"startTime": report['start_time']
-    							})	
+    							})
 
 	        sim['duration'] = script_data['simulation']['run']['duration']
 
@@ -1086,7 +1086,7 @@ class Parser:
 		for key, value in dict.iteritems():
 				if '_' in key:
 					dict[self.underscore_to_camelcase(key)] = dict.pop(key)
-					
+
 				if type(value) is types.DictType:
 					self.convert_keys_to_ncb_input(value)
 

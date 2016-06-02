@@ -29,8 +29,8 @@ sim_port = 8005
 add_user_port = 8009
 ncb_port = 8004
 
-#iface = '10.0.1.40'
-iface = '192.168.1.4'
+iface = '10.0.1.32'
+#iface = '192.168.1.4'
 ncs_iface = '127.0.1.1' # if NCS and the daemon on running on the same machine
 
 # this will hold the services that combine to form the server

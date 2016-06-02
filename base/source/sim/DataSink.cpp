@@ -61,9 +61,10 @@ bool DataSink::init(const std::vector<SpecificPublisher<Signal>*> dependents,
 }
 
 bool DataSink::start() {
-  auto syncer_function = [this]() {
-    report_syncer_->run();
-    delete report_syncer_;
+  auto __syncer_ptr = report_syncer_;
+  auto syncer_function = [__syncer_ptr]() {
+    __syncer_ptr->run();
+    delete __syncer_ptr;
   };
   std::thread thread(syncer_function);
   thread.detach();
@@ -106,7 +107,7 @@ bool DataSink::start() {
         data_buffer->release();
         break;
       }
-      
+
       auto blank = this->getBlank();
       blank->simulation_step = simulation_step;
       blank->setData(data_buffer->getData());

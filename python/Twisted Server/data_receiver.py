@@ -73,9 +73,8 @@ class RecvDataProtocol(Protocol):
 
         spec = txamqp.spec.load("txamqp/amqp0-8.stripped.rabbitmq.xml")
         delegate = TwistedDelegate()
-	iface = '192.168.1.4'
-        self.deferred = ClientCreator(reactor, AMQClient, delegate=delegate, vhost='/', spec=spec).connectTCP("10.0.1.40", 5672)
-        self.deferred.addCallback(self.gotConnection, "test", "test")
+        self.deferred = ClientCreator(reactor, AMQClient, delegate=delegate, vhost='/', spec=spec).connectTCP("10.0.1.32", 5672)
+        self.deferred.addCallback(self.gotConnection, "guest", "guest")
 
     def dataReceived(self, data):
 
@@ -99,7 +98,7 @@ class RecvDataProtocol(Protocol):
             msg = (clientSocket.recvfrom(1))[0]
             if not msg:
                 break
-            msg_size = int(msg) 
+            msg_size = int(msg)
 
             # receive the report name
             #report_name_size = int((connectionSocket.recvfrom(2))[0])
@@ -131,7 +130,7 @@ class RecvDataProtocol(Protocol):
 
                         # unpack the bytes into floats
                         temp = packet.split()
-                        bytes = temp[len(temp) - 1] 
+                        bytes = temp[len(temp) - 1]
                         if len(bytes) < 4:
                             bytes = bytes.zfill(4)
 

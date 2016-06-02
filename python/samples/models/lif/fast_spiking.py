@@ -11,7 +11,7 @@ sys.path.append(ncs_lib_path)
 import ncs
 
 def run(argv):
-	
+
 	calcium_channel = {
 		#type of channel
 		"type": "calcium_dependent",
@@ -52,29 +52,29 @@ def run(argv):
 			calcium_channel,
 		],
 		"capacitance": 1.0,
-		
+
 	}
 
 
 	sim=ncs.Simulation()
-	
+
 	neuron_parameters = sim.addNeuron("ncs_neuron","ncs",ncs_cell)
-	group_1 = sim.addNeuronGroup("group_1",1,"ncs_neuron",None)	
+	group_1 = sim.addNeuronGroup("group_1",1,"ncs_neuron",None)
 
 	#initialize
 	if not sim.init(argv):
 		print "Failed to initialize simulation"
 		return
-	
-	#stimulus 
+
+	#stimulus
 	#sim.addInput("linear_current",{"starting_amplitude":1.98, "ending_amplitude":1.98,"width":0.3,"time_increment":0.01,"dyn_range": ncs.Uniform(250,350)},group_1,1,0.02,1.0)
 	sim.addStimulus("linear_current",{"starting_amplitude": 1.98,"ending_amplitude":1.98},group_1,1,0.02,1.0)
 
 	voltage_report = sim.addReport("group_1","neuron", "neuron_voltage", 1.0,0.0,1.0)
 	voltage_report.toAsciiFile("./fast_voltage.txt")
 	current_report = sim.addReport("group_1","neuron", "input_current", 1.0,0.0,1.0)
-	current_report.toAsciiFile("./fast_current.txt")	
-	
+	current_report.toAsciiFile("./fast_current.txt")
+
 
 	sim.run(duration=1.0)
 	del sim
